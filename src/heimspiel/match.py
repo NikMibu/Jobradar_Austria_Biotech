@@ -9,7 +9,7 @@ from datetime import UTC, date, datetime, timedelta
 import yaml
 from pydantic import BaseModel, Field
 
-from . import llm
+from . import llm, locations
 from .config import Profile
 from .extract import Extraction
 
@@ -41,9 +41,9 @@ def site_travel_ok(
 
 
 def hard_filter(
-    ex: Extraction, profile: Profile, travel_ok: bool | None = None
+    ex: Extraction, profile: Profile, travel_ok: bool | None = None, in_austria: bool = True
 ) -> HardResult:
-    """Die fünf Regeln aus SPEC §6, in Reihenfolge."""
+    """Die Regeln aus SPEC §6, in Reihenfolge."""
     res = HardResult(passed=True)
     if ex.phd_required and not profile.phd_wanted:
         res.passed = False
@@ -56,7 +56,10 @@ def hard_filter(
     if ex.role_family not in profile.role_families_allowed:
         res.passed = False
         res.reasons.append(f"Rollenfamilie {ex.role_family} nicht erlaubt")
-    if travel_ok is False:
+    if not in_austria:
+        res.passed = False
+        res.reasons.append("Standort außerhalb Österreichs")
+    elif travel_ok is False:
         res.passed = False
         res.reasons.append("Kein Anker im Fahrzeit-Limit")
     elif travel_ok is None:
@@ -125,7 +128,12 @@ def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None 
     with typer.progressbar(rows, label="  Score", show_pos=True) as bar:
         for row in bar:
             ex = Extraction.model_validate_json(row["extracted_json"])
-            hard = hard_filter(ex, profile, site_travel_ok(conn, row["site_id"], profile))
+            hard = hard_filter(
+                ex,
+                profile,
+                site_travel_ok(conn, row["site_id"], profile),
+                locations.is_in_austria(conn, ex.location_text),
+            )
             fit: ScoreResult | None = None
             if hard.passed:
                 try:

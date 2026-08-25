@@ -66,6 +66,22 @@ def test_static_city_leaves_ambiguous_cases_to_llm():
     assert loc._static_city("Wien (Vienna), Austria") is None
 
 
+def test_is_in_austria_false_for_recognized_foreign_city(conn, monkeypatch):
+    # XING-Stadtsuche zieht auch DACH-Nachbarländer mit rein (Hamburg, Zürich, ...)
+    monkeypatch.setattr(
+        loc.llm, "parse_structured", lambda *a, **k: LocationResolution(city=None, in_austria=False)
+    )
+    assert loc.is_in_austria(conn, "Hamburg") is False
+    assert loc.resolve_city(conn, "Hamburg") is None
+
+
+def test_is_in_austria_true_for_ambiguous_case(conn, monkeypatch):
+    monkeypatch.setattr(
+        loc.llm, "parse_structured", lambda *a, **k: LocationResolution(city=None, in_austria=True)
+    )
+    assert loc.is_in_austria(conn, "Homeoffice") is True
+
+
 def test_resolve_city_treats_literal_null_string_as_none(conn, monkeypatch):
     # Lokale Modelle geben bei Optional-Feldern manchmal den String "null" statt
     # JSON null zurück (beobachtet mit qwen2.5:7b bei mehrdeutigem Freitext).

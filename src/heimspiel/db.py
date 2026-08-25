@@ -123,6 +123,14 @@ MIGRATIONS: list[list[str]] = [
             resolved_at TEXT NOT NULL
         )""",
     ],
+    [
+        # in_austria: city=NULL bisher zweideutig ("unklar" vs. "eindeutig
+        # Ausland", z. B. XING-Treffer aus Hamburg/München/Zürich) — der harte
+        # Filter (match.py) braucht das Signal, um Auslands-Stellen abzulehnen
+        # statt nur zu flaggen. Default 1 ist sicher: LOCATION_SCHEMA_VERSION-Bump
+        # in derselben Änderung erzwingt ohnehin die Neuauflösung aller Einträge.
+        "ALTER TABLE location_cache ADD COLUMN in_austria INTEGER NOT NULL DEFAULT 1",
+    ],
 ]
 
 

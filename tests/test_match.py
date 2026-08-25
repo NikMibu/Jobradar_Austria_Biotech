@@ -70,6 +70,14 @@ def test_rule4_travel():
     assert any("unbekannt" in f for f in unknown.flags)
 
 
+def test_rule_foreign_location_hard_rejected():
+    # XING-Stadtsuche zieht auch deutsche/schweizer Städte mit (Hamburg, Zürich, ...)
+    # — travel_ok ist None (kein Standort in der DB), darf aber nicht nur flaggen.
+    res = hard_filter(make_extraction(), make_profile(), travel_ok=None, in_austria=False)
+    assert not res.passed
+    assert any("Österreich" in r for r in res.reasons)
+
+
 def test_rule5_short_contract_flagged_not_dropped():
     soon = (date.today() + timedelta(days=200)).isoformat()
     res = hard_filter(make_extraction(contract_end=soon), make_profile(), travel_ok=True)
