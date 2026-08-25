@@ -1,29 +1,28 @@
-# Vorlage — nach config/profile.local.yaml kopieren und ausfüllen.
-# profile.local.yaml ist gitignored (SPEC §13). Quelle: 00_basis/fakten.md
-# aus dem Bewerbungs-Plugin, daraus generieren.
+# Vorlage — nach config/profile.local.yaml kopieren und mit den eigenen Daten
+# ausfüllen. profile.local.yaml ist gitignored (SPEC §13); dieses Beispiel
+# hier bleibt bewusst generisch, damit im öffentlichen Repo nichts Persönliches
+# landet. Werte unten sind frei erfunden, keine echten Personendaten.
 profile_version: 1
 earliest_start: 2026-10-01
-education: msc_fh_bioinformatics
+education: msc_bioinformatics
 phd_wanted: false
 role_families_allowed:
   [bioinformatics, data_science, csv_qa_validation, lab_analytics,
-   downstream_process, mass_spec, data_steward, scientific_software]
+   downstream_process, mass_spec, data_steward, scientific_software, wet_lab_rnd]
 seniority_allowed: [entry, junior, mid]
 interests:
-  - AI/ML-Validierung im GMP-Umfeld
-  - Massenspektrometrie lernen
-  - Data Science + Medizin
-  - Scientific Programming mit AI-Agent-Stack
-  - HPC/lokale AI
+  - Computational Biology / Bioinformatik-Pipelines
+  - Data Science im Life-Science-Umfeld
+  - Laborautomatisierung
 skills:
   programming: [Python, R, Bash, SQL]
   bioinformatics: [NGS-Pipelines, Nextflow, RNA-Seq]
   other: [Docker, Git, Linux]
 hard_no: [Vertrieb, Callcenter, reine Softwaretests ohne Life-Science-Bezug]
 # Anker als Bahnhöfe, nicht Adressen: besseres Routing, nichts Privates im Repo.
-# lat/lon der Bahnhöfe eintragen (für Transitous-Routing nötig).
+# Eigene Bahnhöfe eintragen und lat/lon ergänzen (z. B. via openstreetmap.org
+# Rechtsklick → "Koordinaten anzeigen") — nötig für Transitous-Routing.
 anchors:
-  - {id: home,   label: "<Heimbahnhof NÖ>",    max_minutes: 75, lat: null, lon: null}
-  - {id: wien,   label: "Wien Hauptbahnhof",   max_minutes: 60, lat: 48.1858, lon: 16.3775}
-  - {id: family, label: "Vöcklabruck Bahnhof", max_minutes: 90, lat: 48.0113, lon: 13.6528}
+  - {id: home,   label: "<Heimbahnhof>",       max_minutes: 75, lat: null, lon: null}
+  - {id: work,   label: "<Bahnhof Arbeitsort>", max_minutes: 60, lat: null, lon: null}
 travel_policy: any_anchor   # Standort ok, wenn EIN Anker im Limit ist
