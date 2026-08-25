@@ -41,7 +41,8 @@ interface Meta {
 
 const ROLE_FAMILIES = [
   "bioinformatics", "data_science", "csv_qa_validation", "lab_analytics",
-  "downstream_process", "mass_spec", "data_steward", "scientific_software", "other",
+  "downstream_process", "mass_spec", "data_steward", "scientific_software",
+  "wet_lab_rnd", "other",
 ];
 
 // ---------- Daten laden (Fallback: Demo-Modus) ----------

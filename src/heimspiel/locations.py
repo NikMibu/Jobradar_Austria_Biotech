@@ -4,6 +4,7 @@ Läuft unbeaufsichtigt (wie extract/score), anders als der manuelle, mensch-gepr
 companies.yaml-Flow. Geokodiert selbst nichts — legt nur generische Sites mit
 address_text an, die companies.geocode_missing() unverändert aufgreift."""
 
+import re
 import sqlite3
 from datetime import UTC, datetime
 
@@ -14,8 +15,48 @@ from . import llm
 from .extract import Extraction
 from .normalize import norm_text
 
-LOCATION_SCHEMA_VERSION = 1
+# v2: deterministischer Vorpass + Exonym-/Mehrfachort-Regeln. v1 ließ qwen3:8b
+# "Vienna, Austria" / "GRAZ, Austria" auf null laufen und warf Mehrfachorte weg.
+LOCATION_SCHEMA_VERSION = 2
 COMPANY_SITE_MATCH_THRESHOLD = 85
+
+_EXONYMS = {"vienna": "Wien"}
+# Reine Länder-/Bundesland-Teile (Wien und Salzburg fehlen bewusst: auch Städte)
+_DROP_PARTS = {
+    "austria", "österreich", "at", "aut", "österreichweit",
+    "upper austria", "oberösterreich", "oö",
+    "lower austria", "niederösterreich", "nö", "n",
+    "styria", "steiermark", "stmk",
+    "carinthia", "kärnten", "ktn",
+    "tyrol", "tirol", "t",
+    "vorarlberg", "vbg",
+    "burgenland", "bgld",
+}
+_REMOTE_RE = re.compile(r"home.?office|remote|hybrid|mobil", re.I)
+_CITY_RE = re.compile(r"[A-Za-zÄÖÜäöüß.\- ]{2,40}")
+
+
+def _static_city(location_text: str) -> str | None:
+    """Deterministischer Vorpass: "Graz, Styria, Austria" → "Graz" ohne LLM-Call.
+
+    Greift nur, wenn nach dem Entfernen von Länder-/Bundesland-Teilen genau ein
+    Ortsname übrig bleibt UND mindestens ein Teil entfernt wurde (das belegt den
+    Österreich-Kontext — ein nacktes Einzelwort geht weiter ans LLM)."""
+    if _REMOTE_RE.search(location_text):
+        return None
+    parts = [p.strip() for p in location_text.split(",") if p.strip()]
+    kept: list[str] = []
+    for p in parts:
+        if p.lower() in _DROP_PARTS:
+            continue
+        if p.lower() not in {k.lower() for k in kept}:
+            kept.append(p)
+    if len(kept) != 1 or len(kept) == len(parts):
+        return None
+    city = _EXONYMS.get(kept[0].lower(), kept[0])
+    if not _CITY_RE.fullmatch(city):
+        return None
+    return city.title() if city.isupper() else city
 
 
 class LocationResolution(BaseModel):
@@ -30,7 +71,10 @@ Regeln:
   statt "3400 Klosterneuburg", "Wien" statt "1010 Wien").
 - Bei "Raum <Stadt>", "Großraum <Stadt>", "bei <Stadt>", "Homeoffice möglich, Raum <Stadt>"
   gib <Stadt> zurück.
-- Bei mehreren möglichen Orten (z. B. "Wien oder Graz", "Standort Wien/Linz") gib null zurück.
+- Englische Ortsnamen ins Deutsche übersetzen: "Vienna" → "Wien". "Vienna, Austria",
+  "Wien, Austria", "Graz, Styria, Austria" sind Orte IN Österreich, nicht außerhalb.
+- Bei mehreren möglichen Orten in Österreich (z. B. "Wien oder Graz", "Linz, Wels, Salzburg")
+  gib Wien zurück, wenn Wien darunter ist, sonst den zuerst genannten Ort.
 - Bei reinem Homeoffice/Remote ohne konkrete Ortsangabe gib null zurück.
 - Bei Orten außerhalb Österreichs gib null zurück.
 - Bei leerem, generischem ("Österreich", "diverse Standorte") oder nicht auflösbarem Text
@@ -47,7 +91,9 @@ def _cache_get(conn: sqlite3.Connection, key: str) -> tuple[bool, str | None]:
     return (True, row["city"]) if row else (False, None)
 
 
-def _cache_put(conn: sqlite3.Connection, key: str, raw: str, city: str | None) -> None:
+def _cache_put(
+    conn: sqlite3.Connection, key: str, raw: str, city: str | None, model: str | None = None
+) -> None:
     conn.execute(
         """INSERT OR REPLACE INTO location_cache
            (location_key, location_text_raw, city, schema_version, model, resolved_at)
@@ -57,7 +103,7 @@ def _cache_put(conn: sqlite3.Connection, key: str, raw: str, city: str | None) -
             raw,
             city,
             LOCATION_SCHEMA_VERSION,
-            llm.EXTRACT_MODEL,
+            model or llm.EXTRACT_MODEL,
             datetime.now(UTC).isoformat(timespec="seconds"),
         ),
     )
@@ -84,6 +130,10 @@ def resolve_city(conn: sqlite3.Connection, location_text: str) -> str | None:
     hit, cached = _cache_get(conn, key)
     if hit:
         return cached
+    city = _static_city(location_text)
+    if city is not None:
+        _cache_put(conn, key, location_text, city, model="static")
+        return city
     result = llm.parse_structured(SYSTEM_PROMPT, location_text, LocationResolution, max_tokens=100)
     city = _clean_city(result.city)
     _cache_put(conn, key, location_text, city)

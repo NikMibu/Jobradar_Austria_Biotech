@@ -39,6 +39,33 @@ def test_resolve_city_caches_llm_call(conn, monkeypatch):
     assert len(calls) == 1
 
 
+def _no_llm(monkeypatch):
+    def boom(*a, **k):
+        raise AssertionError("LLM-Call, obwohl der Vorpass greifen sollte")
+
+    monkeypatch.setattr(loc.llm, "parse_structured", boom)
+
+
+def test_static_city_strips_country_and_state(conn, monkeypatch):
+    # v1-Regression: qwen3:8b löste "Vienna, Austria" u. Ä. auf null auf
+    _no_llm(monkeypatch)
+    assert loc.resolve_city(conn, "Vienna, Austria") == "Wien"
+    assert loc.resolve_city(conn, "Graz, Styria, Austria") == "Graz"
+    assert loc.resolve_city(conn, "GRAZ, Austria") == "Graz"
+    assert loc.resolve_city(conn, "Salzburg, Salzburg, Austria") == "Salzburg"
+    assert loc.resolve_city(conn, "Klosterneuburg, N, AT") == "Klosterneuburg"
+
+
+def test_static_city_leaves_ambiguous_cases_to_llm():
+    # Nacktes Einzelwort: kein entfernter Teil belegt Österreich-Kontext → LLM
+    assert loc._static_city("Wien") is None
+    assert loc._static_city("Homeoffice") is None
+    # Remote-Wörter und Mehrfachorte entscheidet das LLM
+    assert loc._static_city("Homeoffice, Österreich") is None
+    assert loc._static_city("Linz, Wels, Salzburg") is None
+    assert loc._static_city("Wien (Vienna), Austria") is None
+
+
 def test_resolve_city_treats_literal_null_string_as_none(conn, monkeypatch):
     # Lokale Modelle geben bei Optional-Feldern manchmal den String "null" statt
     # JSON null zurück (beobachtet mit qwen2.5:7b bei mehrdeutigem Freitext).

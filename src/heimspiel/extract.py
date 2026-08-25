@@ -15,7 +15,9 @@ from pydantic import BaseModel, Field
 from . import llm
 from .normalize import match_company
 
-SCHEMA_VERSION = 2  # v2: role_family-Definitionen im Prompt (236× fälschlich "other" mit v1)
+# v2: role_family-Definitionen im Prompt (236× fälschlich "other" mit v1)
+# v3: + wet_lab_rnd — Nasslabor-F&E (CRISPR Protein Engineer u. Ä. landeten in "other")
+SCHEMA_VERSION = 3
 BATCH_THRESHOLD = 500
 
 RoleFamily = Literal[
@@ -27,6 +29,7 @@ RoleFamily = Literal[
     "mass_spec",
     "data_steward",
     "scientific_software",
+    "wet_lab_rnd",
     "other",
 ]
 
@@ -70,7 +73,8 @@ Regeln:
   - mass_spec: Massenspektrometrie als Kern der Rolle. Beispiele: "Mass Spec Analyst", "LC-MS/MS Operator", "Proteomics Scientist".
   - data_steward: Datenmanagement, Datenqualität, FAIR, Research Data Management. Beispiele: "Data Steward", "Research Data Manager", "Clinical Data Manager".
   - scientific_software: Softwareentwicklung für Wissenschaft/Labor/Forschung. Beispiele: "Scientific Programmer", "Research Software Engineer", "Scientific Researcher / Research Engineer", "LIMS Developer".
-  - other: NUR wenn keine der acht Kategorien passt (z. B. HR, Vertrieb, Einkauf, Personalverrechnung, reine IT-Administration). Eine wissenschaftlich-technische Life-Science-Rolle ist praktisch nie "other" — im Zweifel die nächstliegende Fachkategorie wählen.
+  - wet_lab_rnd: molekularbiologische/biochemische Forschung & Entwicklung im Nasslabor (Klonierung, Proteinexpression und -aufreinigung, Assay-Entwicklung, Zellkultur, CRISPR, akademische Forschungsstellen in Biologie/Biomedizin). Beispiele: "Protein Engineer", "Research Associate Molecular Biology", "Scientist Cell Line Development", "PhD/PostDoc Position Cell Biology", "Master Thesis Student Biotech". NICHT für reine Produktions-/Routinetätigkeit ohne F&E-Anteil (das ist "other").
+  - other: NUR wenn keine der neun Kategorien passt (z. B. HR, Vertrieb, Einkauf, Personalverrechnung, reine IT-Administration, Produktions-/Logistikrollen, Pharmareferenten). Eine wissenschaftlich-technische Life-Science-Rolle mit F&E- oder Analytikanteil ist praktisch nie "other" — im Zweifel die nächstliegende Fachkategorie wählen.
 - Daten (contract_end, application_deadline) als ISO YYYY-MM-DD.
 - Nichts erfinden. null ist erlaubt und richtig, wenn die Information fehlt.
 - summary_2_lines: maximal zwei Sätze, was die Stelle ist und was verlangt wird."""
