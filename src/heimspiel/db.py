@@ -91,6 +91,38 @@ MIGRATIONS: list[list[str]] = [
             diff_closed TEXT
         )""",
     ],
+    [
+        # sites.company_id nullable machen (generische, firmenlose Standorte für
+        # Postings ohne Company-Match) — SQLite kennt kein ALTER COLUMN DROP NOT NULL,
+        # daher Table-Rebuild. id-Werte bleiben stabil (explizite Spaltenkopie), also
+        # bleiben postings.site_id/travel_times.site_id gültig.
+        "PRAGMA foreign_keys=OFF",
+        """CREATE TABLE sites_new(
+            id INTEGER PRIMARY KEY,
+            company_id INTEGER REFERENCES companies(id),
+            label TEXT NOT NULL,
+            lat REAL,
+            lon REAL,
+            address_text TEXT,
+            is_hq INTEGER NOT NULL DEFAULT 0,
+            geocode_source TEXT,
+            UNIQUE(company_id, label)
+        )""",
+        """INSERT INTO sites_new SELECT id, company_id, label, lat, lon,
+           address_text, is_hq, geocode_source FROM sites""",
+        "DROP TABLE sites",
+        "ALTER TABLE sites_new RENAME TO sites",
+        "CREATE UNIQUE INDEX idx_sites_generic_label ON sites(label) WHERE company_id IS NULL",
+        "PRAGMA foreign_keys=ON",
+        """CREATE TABLE location_cache(
+            location_key TEXT PRIMARY KEY,
+            location_text_raw TEXT NOT NULL,
+            city TEXT,
+            schema_version INTEGER NOT NULL,
+            model TEXT NOT NULL,
+            resolved_at TEXT NOT NULL
+        )""",
+    ],
 ]
 
 

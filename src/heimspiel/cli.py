@@ -1,4 +1,4 @@
-"""Typer-CLI: fetch | extract | score | travel | export | daily | report (SPEC §10)."""
+"""Typer-CLI: fetch | extract | locations | score | travel | export | daily | report (SPEC §10)."""
 
 import os
 from datetime import datetime
@@ -83,6 +83,16 @@ def extract(limit: int | None = typer.Option(None, help="max. Anzahl")) -> None:
 
 
 @app.command()
+def locations(limit: int | None = typer.Option(None, help="max. Anzahl")) -> None:
+    """LLM-Normalisierung von location_text → sites.site_id (gecacht)."""
+    from . import locations as loc
+
+    conn = db.connect()
+    done = loc.resolve_locations(conn, limit=limit)
+    typer.echo(f"{done} Postings einem Standort zugeordnet.")
+
+
+@app.command()
 def score(limit: int | None = typer.Option(None)) -> None:
     """Harte Filter + LLM-Score gegen profile.local.yaml."""
     from . import match
@@ -147,12 +157,14 @@ def report(
 
 @app.command()
 def daily(career_pages: bool | None = typer.Option(None, help="Karriereseiten erzwingen/übergehen (default: sonntags)")) -> None:
-    """Kompletter Tageslauf: fetch → extract → score → travel → export → report."""
+    """Kompletter Tageslauf: fetch → extract → locations → companies → travel → score → export → report."""
     with_career = career_pages if career_pages is not None else datetime.now().weekday() == 6
     fetch(career_pages=with_career)
     extract(limit=None)
-    score(limit=None)
+    locations(limit=None)
+    companies(geocode=True)
     travel(rebuild=False)
+    score(limit=None)
     export()
     report(days=1, out=None)
 
