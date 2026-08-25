@@ -63,8 +63,10 @@ def hard_filter(
         # (z. B. XING-Stadtsuche zieht Hamburg/München/Zürich mit, kann aber relevant sein).
         res.flags.append("Standort außerhalb Österreichs")
     elif travel_ok is False:
-        res.passed = False
-        res.reasons.append("Kein Anker im Fahrzeit-Limit")
+        # Kein Ausschluss mehr (Nutzer-Feedback: Anker sollen nicht hart ausschließen,
+        # sonst verschwinden echte Österreich-Stellen einfach aus dem Radar) — nur Flag,
+        # Frontend/Filter (Score ≥, Anker ≤ min) blenden bei Bedarf aus.
+        res.flags.append("Kein Anker im Fahrzeit-Limit")
     elif travel_ok is None:
         res.flags.append("Standort/Fahrzeit unbekannt")
     if ex.contract_end:

@@ -64,7 +64,11 @@ def test_rule3_role_family():
 
 
 def test_rule4_travel():
-    assert not hard_filter(make_extraction(), make_profile(), travel_ok=False).passed
+    # Kein Ausschluss mehr (Nutzer-Feedback) — nur Flag, sonst verschwinden
+    # echte Österreich-Stellen außerhalb des Fahrzeit-Limits einfach aus dem Radar.
+    outside = hard_filter(make_extraction(), make_profile(), travel_ok=False)
+    assert outside.passed
+    assert any("Fahrzeit-Limit" in f for f in outside.flags)
     unknown = hard_filter(make_extraction(), make_profile(), travel_ok=None)
     assert unknown.passed
     assert any("unbekannt" in f for f in unknown.flags)

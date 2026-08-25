@@ -39,6 +39,25 @@ _DROP_PARTS = {
 }
 _REMOTE_RE = re.compile(r"home.?office|remote|hybrid|mobil", re.I)
 _CITY_RE = re.compile(r"[A-Za-zÄÖÜäöüß.\- ]{2,40}")
+_PAREN_RE = re.compile(r"\([^)]*\)")
+# NUR für den Ausland-Fallback unten — bestimmt NICHT, ob ein Ort in Österreich
+# liegt (das entscheidet ausschließlich _static_city/_DROP_PARTS oder das LLM).
+_FOREIGN_NOISE = {
+    "deutschland", "germany", "d", "de", "schweiz", "switzerland", "ch",
+    "hybrid", "remote", "on-site", "onsite", "vor ort",
+}
+
+
+def _best_effort_foreign_city(location_text: str) -> str | None:
+    """Grobe Stadt-Extraktion, wenn das LLM in_austria=false meldet, aber bei
+    knappem/verschachteltem Text (Klammern, Land ohne Stadt) den Stadtnamen
+    selbst vergisst — sonst kein Karten-Pin trotz bekanntem Standort."""
+    text = _PAREN_RE.sub("", location_text).strip()
+    parts = [p.strip() for p in text.split(",") if p.strip()]
+    kept = [p for p in parts if p.lower() not in _FOREIGN_NOISE]
+    if len(kept) != 1:
+        return None
+    return kept[0] if _CITY_RE.fullmatch(kept[0]) else None
 
 
 def _static_city(location_text: str) -> str | None:
@@ -156,6 +175,8 @@ def _resolve(conn: sqlite3.Connection, location_text: str) -> tuple[str | None, 
         return city, True
     result = llm.parse_structured(SYSTEM_PROMPT, location_text, LocationResolution, max_tokens=100)
     city = _clean_city(result.city)
+    if city is None and not result.in_austria:
+        city = _best_effort_foreign_city(location_text)
     _cache_put(conn, key, location_text, city, result.in_austria)
     return city, result.in_austria
 

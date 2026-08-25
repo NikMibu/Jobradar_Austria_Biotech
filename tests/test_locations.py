@@ -66,13 +66,25 @@ def test_static_city_leaves_ambiguous_cases_to_llm():
     assert loc._static_city("Wien (Vienna), Austria") is None
 
 
-def test_is_in_austria_false_for_recognized_foreign_city(conn, monkeypatch):
-    # XING-Stadtsuche zieht auch DACH-Nachbarländer mit rein (Hamburg, Zürich, ...)
+def test_is_in_austria_false_recovers_city_via_fallback(conn, monkeypatch):
+    # XING-Stadtsuche zieht auch DACH-Nachbarländer mit rein (Hamburg, Zürich, ...).
+    # Das LLM meldet in_austria=false zuverlässig, vergisst bei knappem Text aber
+    # manchmal den Stadtnamen — _best_effort_foreign_city holt ihn zurück, sonst
+    # kein Karten-Pin trotz bekanntem Standort.
     monkeypatch.setattr(
         loc.llm, "parse_structured", lambda *a, **k: LocationResolution(city=None, in_austria=False)
     )
     assert loc.is_in_austria(conn, "Hamburg") is False
-    assert loc.resolve_city(conn, "Hamburg") is None
+    assert loc.resolve_city(conn, "Hamburg") == "Hamburg"
+
+
+def test_best_effort_foreign_city_handles_parens_and_noise():
+    assert loc._best_effort_foreign_city("Hamburg (Hybrid)") == "Hamburg"
+    assert loc._best_effort_foreign_city("Bensheim, Deutschland (D)") == "Bensheim"
+    assert loc._best_effort_foreign_city("Bern (CH)") == "Bern"
+    # Mehrdeutig (zwei echte Ortsteile übrig) -> lieber nichts als geraten
+    assert loc._best_effort_foreign_city("Karlsruhe, Heidelberg, Mannheim") is None
+    assert loc._best_effort_foreign_city("Deutschland (Helmholtz-Assoziation)") is None
 
 
 def test_is_in_austria_true_for_ambiguous_case(conn, monkeypatch):

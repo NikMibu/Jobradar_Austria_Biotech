@@ -261,6 +261,12 @@ async function main() {
   let initiativeMarkers: Marker[] = [];
   let colorMode: "score" | "travel" = "score";
 
+  // -1 = raus (grau), -2 = kein Score (blau) — mirrors scoreColor()'s Sonderfälle,
+  // damit die Cluster-Aggregation (MAX) exakt dieselbe Farblogik trifft.
+  const scoreNum = (j: Job): number =>
+    effectiveSegment(j) === "raus" ? -1 : (j.fit_score ?? -2);
+  const TRAVEL_UNKNOWN = 9999; // MIN-Aggregation kennt kein null — Sentinel für "unbekannt"
+
   function jobsGeojson(list: Job[], f: Filters): GeoJSON.FeatureCollection {
     return {
       type: "FeatureCollection",
@@ -272,10 +278,32 @@ async function main() {
           properties: {
             id: j.id,
             color: colorMode === "score" ? scoreColor(j) : travelColor(bestTravel(j, f.anchor)),
+            score_num: scoreNum(j),
+            travel_num: bestTravel(j, f.anchor) ?? TRAVEL_UNKNOWN,
           },
         })),
     };
   }
+
+  // Cluster-Kreise sollen den besten Punkt darin zeigen (MAX-Score / MIN-Fahrzeit),
+  // sonst verschwindet jeder Top-Treffer optisch in einem grauen/blauen Klumpen.
+  const CLUSTER_SCORE_COLOR: maplibregl.ExpressionSpecification = [
+    "case",
+    ["==", ["get", "max_score"], -1], "#9ca3af",
+    ["==", ["get", "max_score"], -2], "#60a5fa",
+    [">=", ["get", "max_score"], 80], "#16a34a",
+    [">=", ["get", "max_score"], 60], "#84cc16",
+    [">=", ["get", "max_score"], 40], "#f59e0b",
+    "#ef4444",
+  ];
+  const CLUSTER_TRAVEL_COLOR: maplibregl.ExpressionSpecification = [
+    "case",
+    [">=", ["get", "min_travel"], TRAVEL_UNKNOWN], "#9ca3af",
+    ["<=", ["get", "min_travel"], 45], "#16a34a",
+    ["<=", ["get", "min_travel"], 60], "#84cc16",
+    ["<=", ["get", "min_travel"], 90], "#f59e0b",
+    "#ef4444",
+  ];
 
   map.on("load", () => {
     map.addSource("jobs", {
@@ -284,11 +312,15 @@ async function main() {
       cluster: true,
       clusterMaxZoom: 13,
       clusterRadius: 42,
+      clusterProperties: {
+        max_score: ["max", ["accumulated"], ["get", "score_num"]],
+        min_travel: ["min", ["accumulated"], ["get", "travel_num"]],
+      },
     });
     map.addLayer({
       id: "clusters", type: "circle", source: "jobs", filter: ["has", "point_count"],
       paint: {
-        "circle-color": "#3b82f6", "circle-opacity": 0.85,
+        "circle-color": CLUSTER_SCORE_COLOR, "circle-opacity": 0.85,
         "circle-radius": ["step", ["get", "point_count"], 14, 10, 18, 50, 24],
       },
     });
@@ -469,6 +501,10 @@ async function main() {
   // Farbmodus-Umschalter
   $<HTMLSelectElement>("f-color").addEventListener("change", (e) => {
     colorMode = (e.target as HTMLSelectElement).value as "score" | "travel";
+    map.setPaintProperty(
+      "clusters", "circle-color",
+      colorMode === "score" ? CLUSTER_SCORE_COLOR : CLUSTER_TRAVEL_COLOR
+    );
     render();
   });
   document.querySelectorAll("#filters select, #filters input").forEach((el) =>
