@@ -1,9 +1,49 @@
 # Firmen für Karriereseiten-Watcher und Initiativ-Score (SPEC §10).
 # Seed: eigene Zielliste + biotechjobs.at-Verzeichnis + LISAvienna/Biotech-Austria-Listen.
 # Standorte händisch pflegen — Werk ≠ Firmensitz ist der häufigste Fehler in Inseraten.
-- name: Beispiel Biotech GmbH
-  website: https://example.at
-  career_url: https://example.at/karriere
+#
+# Unten: Firmen aus applications/Bewerbungen_GPT (bereits beworbene Stellen) als
+# Seed für Initiativ-Score/Karriereseiten-Watcher. Adressen aus den jeweiligen
+# Inseraten, coords bewusst leer gelassen — `heimspiel companies --geocode` füllt
+# sie (Nominatim-Vorschlag, vor Übernahme prüfen).
+- name: Novartis Pharmaceutical Manufacturing
   seed_source: manual
   sites:
-    - {label: "Wien Zentrale", lat: 48.21, lon: 16.37, is_hq: true}
+    - {label: "Schaftenau", address: "Schaftenau, Österreich", is_hq: true}
+- name: VTU Engineering
+  seed_source: manual
+  sites:
+    - {label: "Wien", address: "Wien, Österreich", is_hq: true}
+- name: IMC Krems (Institut Krems Bioanalytik)
+  seed_source: manual
+  sites:
+    - {label: "Krems", address: "Krems, Österreich", is_hq: true}
+- name: Myllia Biotechnology
+  seed_source: manual
+  sites:
+    - {label: "Wien", address: "Wien, Österreich", is_hq: true}
+- name: Fragrami GmbH
+  seed_source: manual
+  sites:
+    - {label: "Vienna BioCenter", address: "Vienna BioCenter, Wien, Österreich", is_hq: true}
+- name: Hain Celestial Group
+  seed_source: manual
+  sites:
+    - {label: "Wien Zentrale", address: "1010 Wien, Österreich", is_hq: true}
+- name: Pfizer
+  seed_source: manual
+  sites:
+    - {label: "Orth an der Donau", address: "Orth an der Donau, Österreich", is_hq: false}
+- name: Seibersdorf Labor
+  seed_source: manual
+  sites:
+    - {label: "Seibersdorf", address: "Seibersdorf, Österreich", is_hq: true}
+- name: CBmed GmbH
+  seed_source: manual
+  sites:
+    - {label: "Graz", address: "Stiftingtalstraße 14, 8010 Graz, Österreich", is_hq: true}
+- name: Senacor Technologies
+  seed_source: manual
+  notes: "Freie Standortwahl DACH laut Inserat, Wien als Anlaufstelle."
+  sites:
+    - {label: "Wien", address: "Wien, Österreich", is_hq: false}
