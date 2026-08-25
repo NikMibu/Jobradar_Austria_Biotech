@@ -2,7 +2,15 @@
 
 import json
 
-from heimspiel.sources import biotechjobs, erecruiter, euraxess, karriere_at, successfactors, vbc
+from heimspiel.sources import (
+    biotechjobs,
+    erecruiter,
+    euraxess,
+    karriere_at,
+    successfactors,
+    vbc,
+    xing,
+)
 
 
 def test_karriere_list_parsing(fixtures):
@@ -65,6 +73,23 @@ def test_euraxess_parsing(fixtures):
     assert len(jobs) >= 5
     assert all(j["id"].isdigit() and j["title"] for j in jobs)
     assert all(j["url"].startswith("https://euraxess.ec.europa.eu/jobs/") for j in jobs)
+
+
+def test_xing_search_parsing(fixtures):
+    html = (fixtures / "xing_search.html").read_text(errors="replace")
+    jobs = xing.parse_search(html)
+    assert len(jobs) >= 15
+    assert all(j["id"].isdigit() and j["title"] for j in jobs)
+    assert all(j["url"].startswith("https://www.xing.com/jobs/") for j in jobs)
+
+
+def test_xing_detail_parsing(fixtures):
+    html = (fixtures / "xing_detail.html").read_text(errors="replace")
+    d = xing.parse_detail(html)
+    assert d.get("title") and "Application Specialist" in d["title"]
+    assert d.get("text") and len(d["text"]) > 200
+    assert "<" not in d["text"].replace("<=", "")  # HTML raus
+    assert d.get("company")
 
 
 def test_successfactors_parsing(fixtures):

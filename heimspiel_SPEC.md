@@ -59,6 +59,7 @@ Pipeline läuft lokal (`uv run heimspiel daily`), schreibt `site/public/data/*.j
 | eRecruiter | `https://{host}/Jobs` → JSON-Array im HTML, Details `/Job/{Id}` | täglich | Hosts kuratiert in `config/ats.yaml` (AGES, AIT, TU Wien, …). robots.txt sperrt nur Login/Register |
 | SuccessFactors | `https://{tenant}/search/?q=&locationsearch=Austria` → `/job/{slug}/{id}/` | täglich | Tenants in `config/ats.yaml` (Boehringer RCV) |
 | EURAXESS | `/jobs/search?f[0]=job_country:791&page=N`, Details `/jobs/{id}` | täglich | **robots.txt widerspricht sich** (`Allow: /jobs` vs. nachträglich angeklebtem `Disallow: /jobs/*`); bewusste Entscheidung, trotzdem zu crawlen — dafür ≥ 3 s Pause, ehrlicher User-Agent `heimspiel/0.1`, hartes Seitenlimit. Begründung im Adapter-Docstring (`sources/euraxess.py`) |
+| XING | `/jobs/search?keywords=…&location=<Stadt>` (SSR, 20/Seite), Details `/jobs/{slug}-{id}` mit JobPosting-JSON-LD | täglich | v0.2-Bedingung erfüllt (Google Jobs liefert 0). robots.txt: `/jobs/search` für `*` gesperrt, für AI-Agents (ClaudeBot, GPTBot, …) explizit erlaubt; Detailseiten frei. Konservativ: 3 s Pause, ehrlicher UA, Details nur für neue IDs (`sources/xing.py`) |
 | Firmen-Karriereseiten | `companies.yaml` → fetch → `trafilatura` Text → LLM: "liste offene Positionen (title, url, location)" → Diff zum letzten Snapshot | wöchentlich (So) | Playwright nur bei JS-only-Seiten. Diff liefert `new` / `closed` → Basis für Einstellungs-Historie |
 
 **`config/search.yaml`** (Start; DE/EN mischen)

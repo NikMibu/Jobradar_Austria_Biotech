@@ -19,6 +19,7 @@ def fetch(
     biotech: bool = typer.Option(True, help="biotechjobs.at"),
     vbc: bool = typer.Option(True, help="Vienna BioCenter"),
     ats: bool = typer.Option(True, help="eRecruiter/SuccessFactors/EURAXESS (config/ats.yaml)"),
+    xing: bool = typer.Option(True, help="XING (Stadt-Suchen aus search.yaml)"),
     career_pages: bool = typer.Option(False, "--career-pages", help="Firmen-Karriereseiten (wöchentlich)"),
 ) -> None:
     """Alle aktivierten Quellen abrufen und in postings_raw schreiben."""
@@ -71,6 +72,16 @@ def fetch(
 
         total += run_source(
             "EURAXESS", lambda: euraxess.fetch(max_pages=ats_cfg.euraxess_max_pages)
+        )
+    if xing:
+        from .sources import xing as xing_src
+
+        known = {
+            r["source_id"]
+            for r in conn.execute("SELECT source_id FROM postings_raw WHERE source='xing'")
+        }
+        total += run_source(
+            "XING", lambda: xing_src.fetch(search.terms, search.locations, known_ids=known)
         )
     if jobspy:
         from .sources import jobspy_src
