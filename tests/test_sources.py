@@ -75,6 +75,11 @@ def test_euraxess_parsing(fixtures):
     assert all(j["url"].startswith("https://euraxess.ec.europa.eu/jobs/") for j in jobs)
 
 
+def test_xing_clean_strips_soft_hyphens():
+    assert xing._clean("Da\xadta Scien\xadtists") == "Data Scientists"
+    assert xing._clean(None) is None
+
+
 def test_xing_search_parsing(fixtures):
     html = (fixtures / "xing_search.html").read_text(errors="replace")
     jobs = xing.parse_search(html)

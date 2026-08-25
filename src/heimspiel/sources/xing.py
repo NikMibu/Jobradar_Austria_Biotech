@@ -39,6 +39,12 @@ _JSONLD_RE = re.compile(
 _TAG_RE = re.compile(r"<[^>]+>")
 
 
+def _clean(s: str | None) -> str | None:
+    # xing.com fügt &shy;-Soft-Hyphens (U+00AD) für Zeilenumbrüche in Titeln ein
+    # ("Da­ta Scien­tists") — unsichtbar/störend außerhalb des eigenen Renderers.
+    return s.replace("\xad", "") if s else s
+
+
 def parse_search(html: str) -> list[dict]:
     soup = BeautifulSoup(html, "html.parser")
     jobs, seen = [], set()
@@ -51,7 +57,7 @@ def parse_search(html: str) -> list[dict]:
         if not m or m.group(1) in seen:
             continue
         seen.add(m.group(1))
-        title = (a.get("aria-label") or a.get_text(" ", strip=True) or "").strip()
+        title = _clean((a.get("aria-label") or a.get_text(" ", strip=True) or "").strip())
         jobs.append({"id": m.group(1), "url": BASE + href, "title": title})
     return jobs
 
@@ -72,10 +78,10 @@ def parse_detail(html: str) -> dict:
             loc = loc[0] if loc else {}
         addr = loc.get("address") or {}
         out = {
-            "title": d.get("title"),
-            "text": desc or None,
-            "company": (d.get("hiringOrganization") or {}).get("name"),
-            "location": addr.get("addressLocality") or addr.get("addressRegion"),
+            "title": _clean(d.get("title")),
+            "text": _clean(desc) or None,
+            "company": _clean((d.get("hiringOrganization") or {}).get("name")),
+            "location": _clean(addr.get("addressLocality") or addr.get("addressRegion")),
         }
         if d.get("employmentType"):
             out["text"] = f"Anstellung: {d['employmentType']}\n\n{out['text'] or ''}".strip()
