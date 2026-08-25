@@ -159,6 +159,9 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 // ---------- App ----------
 let coordFilter: { lat: number; lon: number } | null = null;
 let noLocationFilter = false;
+let foreignFilter = false;
+const isForeign = (j: Job): boolean =>
+  !!j.hard_reasons?.flags.includes("Standort außerhalb Österreichs");
 
 async function main() {
   const { jobs, companies, meta, prefix, demo } = await loadData();
@@ -242,6 +245,7 @@ async function main() {
       }
       if (coordFilter && (j.lat !== coordFilter.lat || j.lon !== coordFilter.lon)) return false;
       if (noLocationFilter && j.lat != null) return false;
+      if (foreignFilter && isForeign(j)) return false;
       return true;
     });
     const sorters: Record<string, (a: Job, b: Job) => number> = {
@@ -349,6 +353,7 @@ async function main() {
     }
     const wm = String(ex.workplace_mode ?? "");
     if (wm === "hybrid" || wm === "remote") badges.push(`<span class="chip chip-alt">${wm}</span>`);
+    if (isForeign(job)) badges.push(`<span class="chip chip-warn" title="Standort außerhalb Österreichs">🌍 Ausland</span>`);
     if (ex.salary_min_eur_month) badges.push(`<span class="chip">≥ ${Number(ex.salary_min_eur_month).toLocaleString("de-AT")} €</span>`);
     const ct = String(ex.contract_type ?? "");
     if (ct && ct !== "permanent" && ct !== "unknown") badges.push(`<span class="chip chip-warn">${ct}</span>`);
@@ -382,6 +387,15 @@ async function main() {
     noLoc.textContent = `ohne Standort (${noLocCount})`;
     noLoc.onclick = () => { noLocationFilter = !noLocationFilter; render(); };
     chipbar.appendChild(noLoc);
+
+    const foreignCount = jobs.filter(isForeign).length;
+    if (foreignCount) {
+      const foreign = document.createElement("button");
+      foreign.className = "chip chip-filter" + (foreignFilter ? " on" : "");
+      foreign.textContent = `Ausland ausblenden (${foreignCount})`;
+      foreign.onclick = () => { foreignFilter = !foreignFilter; render(); };
+      chipbar.appendChild(foreign);
+    }
 
     if (f.initiative) {
       $("meta-line").textContent = `${companies.length} Initiativ-Kandidaten · Stand ${new Date(meta.generated_at).toLocaleDateString("de-AT")}`;

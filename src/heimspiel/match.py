@@ -56,9 +56,12 @@ def hard_filter(
     if ex.role_family not in profile.role_families_allowed:
         res.passed = False
         res.reasons.append(f"Rollenfamilie {ex.role_family} nicht erlaubt")
-    if not in_austria:
-        res.passed = False
-        res.reasons.append("Standort außerhalb Österreichs")
+    if ex.workplace_mode == "remote":
+        pass  # vollständig Remote: Standort/Fahrzeit irrelevant
+    elif not in_austria:
+        # Ausland (onsite/hybrid): kein Ausschluss, nur Flag — Frontend filtert bei Bedarf
+        # (z. B. XING-Stadtsuche zieht Hamburg/München/Zürich mit, kann aber relevant sein).
+        res.flags.append("Standort außerhalb Österreichs")
     elif travel_ok is False:
         res.passed = False
         res.reasons.append("Kein Anker im Fahrzeit-Limit")
