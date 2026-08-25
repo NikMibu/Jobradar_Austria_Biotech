@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from . import llm
 from .normalize import match_company
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # v2: role_family-Definitionen im Prompt (236× fälschlich "other" mit v1)
 BATCH_THRESHOLD = 500
 
 RoleFamily = Literal[
@@ -61,7 +61,16 @@ Regeln:
 - phd_required = true NUR bei explizitem "PhD/Doktorat erforderlich", nicht bei "von Vorteil" oder "wünschenswert".
 - german_required = true nur, wenn Deutsch explizit verlangt wird (nicht bloß Inserat auf Deutsch).
 - seniority: entry = Absolvent/keine Erfahrung, junior = 0-2 Jahre, mid = 2-5 Jahre, senior = 5+ Jahre oder Lead-Rolle.
-- role_family: die passendste Kategorie; other nur, wenn wirklich nichts passt.
+- role_family — wähle die passendste Kategorie nach diesen Definitionen:
+  - bioinformatics: Analyse biologischer Daten (NGS, Genomik, Omics, Pipelines). Beispiele: "Bioinformatician", "Bioinformatiker", "Computational Biologist", "NGS Data Analyst".
+  - data_science: Datenanalyse/ML/Statistik, auch ohne Biologie-Bezug. Beispiele: "Data Scientist", "Machine Learning Engineer", "Biostatistiker".
+  - csv_qa_validation: Computer System Validation, Qualifizierung, QA im GMP-Umfeld. Beispiele: "CSV Engineer", "Validierungsingenieur", "Qualification Expert", "QA Specialist GMP".
+  - lab_analytics: Labor-Analytik nasschemisch/instrumentell (HPLC, Assays, QC-Labor). Beispiele: "Laborant Analytik", "QC Analyst", "Labortechniker HPLC", "Laboranalytiker".
+  - downstream_process: Aufreinigung/Prozessentwicklung Biopharma. Beispiele: "Downstream Processing Scientist", "Purification Chemist", "DSP Engineer", "Protein Purification".
+  - mass_spec: Massenspektrometrie als Kern der Rolle. Beispiele: "Mass Spec Analyst", "LC-MS/MS Operator", "Proteomics Scientist".
+  - data_steward: Datenmanagement, Datenqualität, FAIR, Research Data Management. Beispiele: "Data Steward", "Research Data Manager", "Clinical Data Manager".
+  - scientific_software: Softwareentwicklung für Wissenschaft/Labor/Forschung. Beispiele: "Scientific Programmer", "Research Software Engineer", "Scientific Researcher / Research Engineer", "LIMS Developer".
+  - other: NUR wenn keine der acht Kategorien passt (z. B. HR, Vertrieb, Einkauf, Personalverrechnung, reine IT-Administration). Eine wissenschaftlich-technische Life-Science-Rolle ist praktisch nie "other" — im Zweifel die nächstliegende Fachkategorie wählen.
 - Daten (contract_end, application_deadline) als ISO YYYY-MM-DD.
 - Nichts erfinden. null ist erlaubt und richtig, wenn die Information fehlt.
 - summary_2_lines: maximal zwei Sätze, was die Stelle ist und was verlangt wird."""

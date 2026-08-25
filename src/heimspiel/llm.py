@@ -30,20 +30,24 @@ def client():
 
 
 def parse_structured[T: BaseModel](
-    system: str, user: str, output: type[T], max_tokens: int = 2500
+    system: str, user: str, output: type[T], max_tokens: int = 2500, model: str | None = None
 ) -> T:
-    """Ein Structured-Output-Call, Backend-unabhängig."""
+    """Ein Structured-Output-Call, Backend-unabhängig. model überschreibt EXTRACT_MODEL
+    (für Modellvergleiche wie `heimspiel eval-roles`)."""
     if BACKEND == "ollama":
         resp = requests.post(
             f"{OLLAMA_URL}/api/chat",
             json={
-                "model": EXTRACT_MODEL,
+                "model": model or EXTRACT_MODEL,
                 "messages": [
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},
                 ],
                 "format": output.model_json_schema(),
                 "stream": False,
+                # Qwen3 & Co. schreiben sonst <think>-Blöcke vor das JSON und
+                # brechen Structured Output (Ollama >= 0.9 kennt den Parameter)
+                "think": False,
                 "options": {"num_predict": max_tokens},
             },
             timeout=600,
@@ -52,7 +56,7 @@ def parse_structured[T: BaseModel](
         return output.model_validate_json(resp.json()["message"]["content"])
 
     response = client().messages.parse(
-        model=EXTRACT_MODEL,
+        model=model or EXTRACT_MODEL,
         max_tokens=max_tokens,
         system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": user}],

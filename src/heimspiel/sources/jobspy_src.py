@@ -45,6 +45,12 @@ def _rows_to_postings(rows: list[dict[str, Any]]) -> list[RawPosting]:
 
 
 def fetch(terms: list[str], hours_old: int = 24, results_wanted: int = 100) -> list[RawPosting]:
+    """Diagnose-Befunde 2026-08-25 (gegen Live-Indeed/-Google gemessen):
+    - Indeed wendet hours_old als harten Serverfilter an → bei Nischen-Termen 0 Treffer.
+      Indeed läuft darum OHNE Zeitfilter; die (source, source_id)-Idempotenz macht
+      wiedergesehene Inserate ohnehin zu reinen last_seen-Updates.
+    - Google Jobs liefert von EU-IPs 0 Ergebnisse ("initial cursor not found", bekannter
+      jobspy-Defekt) — auch mit dem offiziellen Query-Format. Deshalb deaktiviert."""
     try:
         from jobspy import scrape_jobs
     except ImportError as e:
@@ -54,29 +60,41 @@ def fetch(terms: list[str], hours_old: int = 24, results_wanted: int = 100) -> l
 
     postings: list[RawPosting] = []
     for i, term in enumerate(terms):
-        sites = ["indeed", "google"]
-        if i < LINKEDIN_MAX_QUERIES:
-            sites.append("linkedin")
-        print(f"  [{i + 1}/{len(terms)}] {term} ({'+'.join(sites)}) …", flush=True)
+        with_linkedin = i < LINKEDIN_MAX_QUERIES
+        label = "indeed" + ("+linkedin" if with_linkedin else "")
+        print(f"  [{i + 1}/{len(terms)}] {term} ({label}) …", flush=True)
+        batch: list[RawPosting] = []
         try:
             df = scrape_jobs(
-                site_name=sites,
+                site_name=["indeed"],
                 search_term=term,
-                google_search_term=f"{term} jobs Österreich",
                 location="Austria",
                 country_indeed="Austria",
-                hours_old=hours_old,
+                hours_old=None,
                 results_wanted=results_wanted,
                 description_format="markdown",
-                linkedin_fetch_description=True,
                 verbose=0,
             )
+            batch += _rows_to_postings(df.to_dict("records"))
         except Exception as e:  # noqa: BLE001 — eine geblockte Query darf den Lauf nicht beenden
-            print(f"      fehlgeschlagen: {e}", flush=True)
-            continue
-        batch = _rows_to_postings(df.to_dict("records"))
+            print(f"      indeed fehlgeschlagen: {e}", flush=True)
+        if with_linkedin:
+            try:
+                df = scrape_jobs(
+                    site_name=["linkedin"],
+                    search_term=term,
+                    location="Austria",
+                    hours_old=hours_old,
+                    results_wanted=results_wanted,
+                    description_format="markdown",
+                    linkedin_fetch_description=True,
+                    verbose=0,
+                )
+                batch += _rows_to_postings(df.to_dict("records"))
+            except Exception as e:  # noqa: BLE001
+                print(f"      linkedin fehlgeschlagen: {e}", flush=True)
         postings.extend(batch)
         print(f"      {len(batch)} Treffer", flush=True)
-        if "linkedin" in sites and i + 1 < len(terms):
+        if with_linkedin and i + 1 < len(terms):
             time.sleep(LINKEDIN_PAUSE_S)
     return postings

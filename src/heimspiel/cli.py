@@ -14,10 +14,11 @@ app = typer.Typer(help="Heimspiel — persönlicher Jobradar", no_args_is_help=T
 
 @app.command()
 def fetch(
-    jobspy: bool = typer.Option(True, help="Indeed/LinkedIn/Google via JobSpy"),
+    jobspy: bool = typer.Option(True, help="Indeed/LinkedIn via JobSpy"),
     karriere: bool = typer.Option(True, help="karriere.at"),
     biotech: bool = typer.Option(True, help="biotechjobs.at"),
     vbc: bool = typer.Option(True, help="Vienna BioCenter"),
+    ats: bool = typer.Option(True, help="eRecruiter/SuccessFactors/EURAXESS (config/ats.yaml)"),
     career_pages: bool = typer.Option(False, "--career-pages", help="Firmen-Karriereseiten (wöchentlich)"),
 ) -> None:
     """Alle aktivierten Quellen abrufen und in postings_raw schreiben."""
@@ -51,11 +52,31 @@ def fetch(
         total += run_source(
             "karriere.at", lambda: karriere_at.fetch(search.terms, search.locations)
         )
+    if ats:
+        ats_cfg = cfg.load_ats()
+        if ats_cfg.erecruiter_hosts:
+            from .sources import erecruiter
+
+            total += run_source(
+                "eRecruiter", lambda: erecruiter.fetch(ats_cfg.erecruiter_hosts)
+            )
+        if ats_cfg.successfactors_tenants:
+            from .sources import successfactors
+
+            total += run_source(
+                "SuccessFactors",
+                lambda: successfactors.fetch(ats_cfg.successfactors_tenants),
+            )
+        from .sources import euraxess
+
+        total += run_source(
+            "EURAXESS", lambda: euraxess.fetch(max_pages=ats_cfg.euraxess_max_pages)
+        )
     if jobspy:
         from .sources import jobspy_src
 
         total += run_source(
-            "JobSpy (Indeed/LinkedIn/Google)", lambda: jobspy_src.fetch(search.terms)
+            "JobSpy (Indeed/LinkedIn)", lambda: jobspy_src.fetch(search.terms)
         )
     if career_pages:
         from .sources import career_pages as cp
@@ -90,6 +111,18 @@ def locations(limit: int | None = typer.Option(None, help="max. Anzahl")) -> Non
     conn = db.connect()
     done = loc.resolve_locations(conn, limit=limit)
     typer.echo(f"{done} Postings einem Standort zugeordnet.")
+
+
+@app.command("eval-roles")
+def eval_roles(
+    models: str = typer.Option("qwen2.5:7b,qwen3:8b,gpt-oss:20b", help="Kommagetrennte Modellliste"),
+    n_random: int = typer.Option(20, help="Zufalls-Postings zusätzlich zu den Verdachtsfällen"),
+) -> None:
+    """role_family-Klassifikation mehrerer Modelle auf ~30 DB-Postings vergleichen."""
+    from . import eval_roles as er
+
+    conn = db.connect()
+    er.run(conn, [m.strip() for m in models.split(",") if m.strip()], n_random=n_random)
 
 
 @app.command()

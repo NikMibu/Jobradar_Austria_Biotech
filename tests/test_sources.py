@@ -2,7 +2,7 @@
 
 import json
 
-from heimspiel.sources import biotechjobs, karriere_at, vbc
+from heimspiel.sources import biotechjobs, erecruiter, euraxess, karriere_at, successfactors, vbc
 
 
 def test_karriere_list_parsing(fixtures):
@@ -47,3 +47,28 @@ def test_vbc_parsing(fixtures):
     assert all(j["url"] and j["title"] for j in jobs)
     assert any(j["organisation"] for j in jobs)
     assert any(j["date"] for j in jobs)
+    # relative PDF-Links müssen absolut werden (Frontend: new URL() im Drawer)
+    assert all(j["url"].startswith("http") for j in jobs)
+
+
+def test_erecruiter_parsing(fixtures):
+    html = (fixtures / "erecruiter_ages.html").read_text(errors="replace")
+    jobs = erecruiter.parse_jobs_json(html)
+    assert len(jobs) >= 5
+    assert all(isinstance(j["Id"], int) and j["Title"] for j in jobs)
+    assert any(j.get("Location") for j in jobs)
+
+
+def test_euraxess_parsing(fixtures):
+    html = (fixtures / "euraxess_search.html").read_text(errors="replace")
+    jobs = euraxess.parse_search(html)
+    assert len(jobs) >= 5
+    assert all(j["id"].isdigit() and j["title"] for j in jobs)
+    assert all(j["url"].startswith("https://euraxess.ec.europa.eu/jobs/") for j in jobs)
+
+
+def test_successfactors_parsing(fixtures):
+    html = (fixtures / "successfactors_bi.html").read_text(errors="replace")
+    jobs = successfactors.parse_list(html, "https://jobs.boehringer-ingelheim.com")
+    assert len(jobs) >= 2
+    assert all(j["id"].isdigit() and j["title"] and j["url"].startswith("https://") for j in jobs)

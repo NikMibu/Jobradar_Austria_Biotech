@@ -1,9 +1,11 @@
 * { box-sizing: border-box; margin: 0; }
 :root {
   --bg: #ffffff; --fg: #111827; --muted: #6b7280; --border: #e5e7eb; --card: #f9fafb;
+  --ok: #16a34a; --bad: #ef4444;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #111827; --fg: #f3f4f6; --muted: #9ca3af; --border: #374151; --card: #1f2937; }
+  :root { --bg: #111827; --fg: #f3f4f6; --muted: #9ca3af; --border: #374151; --card: #1f2937;
+          --ok: #4ade80; --bad: #f87171; }
 }
 body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--fg); }
 #app { display: flex; flex-direction: column; height: 100vh; }
@@ -29,6 +31,20 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--f
 .star { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; }
 .star.on { color: #f59e0b; }
 .empty { color: var(--muted); padding: 1rem; }
+#chipbar { display: flex; flex-wrap: wrap; gap: 0.3rem; padding: 0.4rem 0.6rem 0; }
+#chipbar:empty { display: none; }
+.card-badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
+.chip { font-size: 0.72rem; border: 1px solid var(--border); border-radius: 999px;
+        padding: 0.05rem 0.45rem; color: var(--fg); background: var(--bg); white-space: nowrap; }
+.chip-role { cursor: pointer; background: var(--card); font-weight: 600; }
+.chip-role:hover { border-color: var(--muted); }
+.chip-alt { color: #3b82f6; }
+.chip-warn { color: #f59e0b; }
+.chip-dim { color: var(--muted); }
+.chip-filter { cursor: pointer; background: var(--card); }
+.chip-filter.on { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.role-picker { font-size: 0.75rem; margin-left: 0.3rem; background: var(--card);
+               color: var(--fg); border: 1px solid var(--border); border-radius: 4px; }
 #drawer { position: fixed; top: 0; right: 0; width: min(560px, 100vw); height: 100vh; background: var(--bg); border-left: 1px solid var(--border); box-shadow: -4px 0 24px rgba(0,0,0,0.25); overflow-y: auto; padding: 1.2rem; z-index: 20; }
 #drawer h2 { margin-bottom: 0.3rem; }
 #drawer h3 { margin: 0.9rem 0 0.3rem; font-size: 0.95rem; }

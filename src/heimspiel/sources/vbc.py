@@ -16,6 +16,8 @@ REQUEST_DELAY_S = 1.5
 
 
 def parse_positions(html: str) -> list[dict]:
+    from urllib.parse import urljoin
+
     soup = BeautifulSoup(html, "html.parser")
     jobs = []
     for item in soup.select(".open-vacancies__grid-item .item"):
@@ -26,7 +28,9 @@ def parse_positions(html: str) -> list[dict]:
         t = item.select_one("time")
         jobs.append(
             {
-                "url": a["href"],
+                # PDF-Links der Seite sind relativ (/fileadmin/…) → absolut machen,
+                # sonst wirft new URL() im Frontend und der Drawer bleibt leer
+                "url": urljoin(URL, a["href"]),
                 "title": title.get_text(strip=True),
                 "organisation": item.get("data-organisation"),
                 "date": t.get("datetime") if t else None,

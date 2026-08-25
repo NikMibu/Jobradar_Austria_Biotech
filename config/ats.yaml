@@ -1,0 +1,17 @@
+# ATS-Hosts für die generischen Adapter (Plan „Ausbeute und Interface", Teil 2).
+# Kuratierte Listen — jobs.{domain} raten funktioniert nicht (0/11 bei Pharma-Firmen).
+# Format: host → Arbeitgebername (landet als raw_company in der Pipeline).
+
+# eRecruiter: GET https://{host}/Jobs liefert die Stellenliste als JSON im HTML.
+# robots.txt geprüft (sperrt nur /Login/ und /Register/) — sauberer Vertrag.
+erecruiter_hosts:
+  jobs.ages.at: AGES        # Laboranalytik, Tiergesundheit, Lebensmittel
+  jobs.ait.ac.at: AIT Austrian Institute of Technology
+  jobs.tuwien.ac.at: TU Wien
+
+# SAP SuccessFactors: GET https://{tenant}/search/?q=&locationsearch=Austria
+successfactors_tenants:
+  jobs.boehringer-ingelheim.com: Boehringer Ingelheim RCV   # Wiens größter Biotech-Arbeitgeber
+
+# EURAXESS (akademische Stellen, alle AT-Unis/Institute): Seitenlimit pro Lauf
+euraxess_max_pages: 5

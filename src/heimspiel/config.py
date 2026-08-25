@@ -50,6 +50,24 @@ def load_search(path: Path | None = None) -> SearchConfig:
     return SearchConfig(terms=d.get("terms", []), locations=d.get("locations", []))
 
 
+@dataclass
+class AtsConfig:
+    erecruiter_hosts: dict[str, str]
+    successfactors_tenants: dict[str, str]
+    euraxess_max_pages: int
+
+
+def load_ats(path: Path | None = None) -> AtsConfig:
+    p = path or paths.config_dir() / "ats.yaml"
+    d = _load_yaml(p) if p.exists() else {}
+    d = d or {}
+    return AtsConfig(
+        erecruiter_hosts=d.get("erecruiter_hosts") or {},
+        successfactors_tenants=d.get("successfactors_tenants") or {},
+        euraxess_max_pages=int(d.get("euraxess_max_pages", 5)),
+    )
+
+
 def load_companies(path: Path | None = None) -> list[dict[str, Any]]:
     p = path or paths.config_dir() / "companies.yaml"
     if not p.exists():

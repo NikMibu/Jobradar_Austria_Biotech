@@ -17,6 +17,20 @@
         <div id="map"></div>
         <aside id="sidebar">
           <div id="filters">
+            <select id="f-segment">
+              <option value="treffer">Treffer</option>
+              <option value="grenzfall">Grenzfälle</option>
+              <option value="alle">Alle</option>
+            </select>
+            <select id="f-sort">
+              <option value="score">Score ↓</option>
+              <option value="travel">Fahrzeit ↑</option>
+              <option value="new">Neu zuerst</option>
+            </select>
+            <select id="f-color">
+              <option value="score">Farbe: Score</option>
+              <option value="travel">Farbe: Fahrzeit</option>
+            </select>
             <select id="f-role"><option value="">Rollenfamilie</option></select>
             <select id="f-source"><option value="">Quelle</option></select>
             <select id="f-contract"><option value="">Vertragsart</option></select>
@@ -27,6 +41,7 @@
             <label class="toggle"><input id="f-initiative" type="checkbox" /> Initiativ-Kandidaten</label>
             <label class="toggle"><input id="f-saved" type="checkbox" /> ★ Merkliste</label>
           </div>
+          <div id="chipbar"></div>
           <div id="list"></div>
         </aside>
       </div>
