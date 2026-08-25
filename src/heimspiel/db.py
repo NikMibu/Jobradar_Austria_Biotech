@@ -1,0 +1,115 @@
+"""SQLite-Schema und Migrationen (eine Datei, siehe SPEC §4)."""
+
+import sqlite3
+from pathlib import Path
+
+from . import paths
+
+# Migrationen laufen über PRAGMA user_version; jede Liste = ein Versionssprung.
+MIGRATIONS: list[list[str]] = [
+    [
+        """CREATE TABLE companies(
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE,
+            website TEXT,
+            career_url TEXT,
+            seed_source TEXT,
+            notes TEXT
+        )""",
+        """CREATE TABLE sites(
+            id INTEGER PRIMARY KEY,
+            company_id INTEGER NOT NULL REFERENCES companies(id),
+            label TEXT NOT NULL,
+            lat REAL,
+            lon REAL,
+            address_text TEXT,
+            is_hq INTEGER NOT NULL DEFAULT 0,
+            geocode_source TEXT,
+            UNIQUE(company_id, label)
+        )""",
+        """CREATE TABLE anchors(
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            lat REAL NOT NULL,
+            lon REAL NOT NULL
+        )""",
+        """CREATE TABLE postings_raw(
+            id INTEGER PRIMARY KEY,
+            source TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            url TEXT,
+            first_seen TEXT NOT NULL,
+            last_seen TEXT NOT NULL,
+            raw_title TEXT,
+            raw_company TEXT,
+            raw_location TEXT,
+            raw_text TEXT,
+            content_hash TEXT NOT NULL,
+            duplicate_of INTEGER REFERENCES postings_raw(id),
+            UNIQUE(source, source_id)
+        )""",
+        "CREATE INDEX idx_raw_hash ON postings_raw(content_hash)",
+        "CREATE INDEX idx_raw_company ON postings_raw(raw_company)",
+        """CREATE TABLE postings(
+            id INTEGER PRIMARY KEY,
+            raw_id INTEGER NOT NULL UNIQUE REFERENCES postings_raw(id),
+            company_id INTEGER REFERENCES companies(id),
+            site_id INTEGER REFERENCES sites(id),
+            extracted_json TEXT NOT NULL,
+            schema_version INTEGER NOT NULL,
+            model TEXT NOT NULL,
+            extracted_at TEXT NOT NULL
+        )""",
+        """CREATE TABLE scores(
+            posting_id INTEGER NOT NULL REFERENCES postings(id),
+            profile_version INTEGER NOT NULL,
+            hard_pass INTEGER NOT NULL,
+            hard_reasons TEXT,
+            fit_score INTEGER,
+            fit_reasons TEXT,
+            gaps TEXT,
+            angle TEXT,
+            model TEXT,
+            scored_at TEXT NOT NULL,
+            PRIMARY KEY (posting_id, profile_version)
+        )""",
+        """CREATE TABLE travel_times(
+            site_id INTEGER NOT NULL REFERENCES sites(id),
+            anchor_id TEXT NOT NULL REFERENCES anchors(id),
+            minutes INTEGER,
+            transfers INTEGER,
+            engine TEXT NOT NULL,
+            computed_at TEXT NOT NULL,
+            PRIMARY KEY (site_id, anchor_id)
+        )""",
+        """CREATE TABLE career_snapshots(
+            id INTEGER PRIMARY KEY,
+            company_id INTEGER NOT NULL REFERENCES companies(id),
+            fetched_at TEXT NOT NULL,
+            positions_json TEXT NOT NULL,
+            diff_new TEXT,
+            diff_closed TEXT
+        )""",
+    ],
+]
+
+
+def connect(path: Path | None = None) -> sqlite3.Connection:
+    p = path or paths.db_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(p)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")
+    migrate(conn)
+    return conn
+
+
+def migrate(conn: sqlite3.Connection) -> None:
+    version = conn.execute("PRAGMA user_version").fetchone()[0]
+    for target, statements in enumerate(MIGRATIONS, start=1):
+        if version < target:
+            for stmt in statements:
+                conn.execute(stmt)
+            conn.execute(f"PRAGMA user_version = {target}")
+            conn.commit()

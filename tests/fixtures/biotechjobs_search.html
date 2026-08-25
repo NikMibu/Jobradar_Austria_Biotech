@@ -1,0 +1,1842 @@
+<!DOCTYPE html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <meta name="facebook-domain-verification" content="sy1d1qsdft94ha6ao1mdo50o8a2g36" /><title>BIOTECHJOBS.AT - Einfach die Besten finden</title><meta name='description' content='Biotechjobs.at hat die meisten Stellenauschreibungen im 
+	Bereich Biotechnologie, Life-Science, Pharmazie und Lebensmitteltechnologie
+	in Österreich. Finde alle Unternehmen der Branche auf einer Plattform!'>    
+    <link rel="stylesheet" href="https://www.biotechjobs.at/jobstyle.css" type="text/css">
+    <link rel="stylesheet" href="https://www.biotechjobs.at/stemjobs_style.css" type="text/css">
+    <link rel="shortcut icon" href="https://www.biotechjobs.at/images/btja/favicon.ico" />
+    <link rel="icon" type="image/vnd.microsoft.icon" href="https://www.biotechjobs.at/images/btja/favicon.ico">
+    <link rel="apple-touch-icon" href="https://www.biotechjobs.at/images/btja/apple-touch-icon.png">
+    <script src="/js/jquery-3.2.1.min.js"></script>
+    
+    <script>
+      'use strict';
+      document.addEventListener("DOMContentLoaded", function(){
+
+       
+        //Modalbox - AG/BW Registrierung
+        var modal = document.querySelector(".m1");
+        var btnModal = document.querySelector(".openModal");
+        var btnModalFtr = document.querySelector(".openModalFtr");
+        var btnModalMobil = document.querySelector(".openModalMobil");
+        var span = document.querySelector(".c1");
+        var ag = document.querySelector("#ag");
+        var bw = document.querySelector("#bw");
+        
+        //Buttons
+        /*
+        //Banner Button
+        btnModal.addEventListener("click", () => {
+            modal.style.display = "block";
+        });
+        */
+        //Footer Button
+        btnModalFtr.addEventListener("click", () => {
+            modal.style.display = "block";
+        });
+        /*
+        //Banner Button Mobil
+        btnModalMobil.addEventListener("click", () => {
+            modal.style.display = "block";
+        });*/
+        //Modal Close Button
+        span.addEventListener("click", () => {
+            modal.style.display = "none";
+        });
+        //Unternehmen Registration Button
+        ag.addEventListener("click", () => {
+          modal.style.display = "none";
+          window.location.assign('https://www.biotechjobs.at/user/user_anmeldung.php');
+        });
+        //Bewerber Registration Button
+        bw.addEventListener("click", () => {
+          modal.style.display = "none";
+          window.location.assign('https://www.biotechjobs.at/candidates/candidates_anmeldung.php');
+        });
+        //Wenn man neben das modal klickt, schließt sich das Fenster auch
+        window.onclick = function(event) {
+            if (event.target == modal) {
+              modal.style.display = "none";
+            }
+        };
+        
+         //Modalbox - AG/BW Login
+        var modal0 = document.querySelector(".m0");
+        var btnModal0 = document.querySelector(".openModal0");
+        var btnModal0Mobil = document.querySelector(".openModal0Mobil");
+        var span0 = document.querySelector(".c0");
+        var ag0 = document.querySelector("#ag0");
+        var bw0 = document.querySelector("#bw0");
+        
+        //Buttons
+        //Banner Button
+        btnModal0.addEventListener("click", () => {
+            modal0.style.display = "block";
+        });
+        //Banner Button Mobil
+        btnModal0Mobil.addEventListener("click", () => {
+            modal0.style.display = "block";
+        });
+        //Modal Close Button
+        span0.addEventListener("click", () => {
+            modal0.style.display = "none";
+        });
+        //Unternehmen Login Button
+        ag0.addEventListener("click", () => {
+          modal0.style.display = "none";
+          window.location.assign('https://www.biotechjobs.at/user/login.php');
+        });
+        //Bewerber Login Button
+        bw0.addEventListener("click", () => {
+          modal0.style.display = "none";
+          window.location.assign('https://www.biotechjobs.at/candidates/login.php');
+        });
+        //Wenn man neben das modal klickt, schließt sich das Fenster auch
+        window.onclick = function(event) {
+            if (event.target == modal0) {
+              modal0.style.display = "none";
+            }
+        };
+
+      });
+
+      //Print-function
+      function printFunction() {
+          window.print();
+      }
+
+      // Click on burgermenue -> shows the navigation
+      function myFunction() {
+        var x = document.getElementById("myLinks");
+        if (x.style.display === "block") {
+          x.style.display = "none";
+        } else {
+          x.style.display = "block";
+        }
+      }
+     
+    </script>
+    <script language="Javascript">
+
+      //Fügt den ausgewählten Vorschlag in das Input-Feld ein
+      function set_search_item(item){
+        document.getElementById('search_company').value = item;
+        document.getElementById("suggests").innerHTML = "";
+        //document.forms.search.submit();
+      }
+      //Holt die Vorschläge per AJAX
+      function searchFor(suchbegriff){
+
+        if (event.keyCode > 36 && event.keyCode < 41) {
+          // when arrow keys were pressed, do nothing
+          return false;
+        }
+
+        var xmlHttp = null;
+        if (typeof XMLHttpRequest != 'undefined') {
+          xmlHttp = new XMLHttpRequest();
+        }
+        if (!xmlHttp) {
+          alert("Keine volle Funktion!")
+        }
+        // Wenn das Objekt erfolgreich erzeugt wurde      
+        if (xmlHttp) {
+          var url = "search_tab.php";
+          var params = "suchbegriff="+suchbegriff;
+          
+          xmlHttp.open("POST", url, true);
+          
+          //Headerinformationen für den POST Request
+          xmlHttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+          xmlHttp.setRequestHeader("Content-length", params.length);
+          xmlHttp.setRequestHeader("Connection", "close");          
+        
+          xmlHttp.onreadystatechange = function () {
+            if (xmlHttp.readyState == 4) {
+              document.getElementById("datalist").innerHTML = xmlHttp.responseText;
+              //console.log(xmlHttp.responseText);
+            }
+          };        
+          xmlHttp.send(params);
+        }     
+      };
+    </script>
+    <style>
+      @media print {
+        @page {
+          size: A3;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+        }
+  
+        .col-3, .col-1, .companys, .row_portale, .footer, .topnav, #search-bar, .bewerben, .job-text iframe{
+          display: none;
+        }
+        .row-job-job .col-7{
+          display: block;
+          width: 100%;
+        }
+        
+        .row-job-job{
+          margin-top: -150px !important;
+          padding-top: 0;
+          padding-bottom: 0;
+          width: 100%;
+        }
+        .col-7 object{
+          margin-top: 0;
+          padding-top: 0;
+          width: 100%;
+        }  
+      }
+
+      @font-face { 
+        font-family: 'Barlow_semi';
+        src: url('https://www.biotechjobs.at/fonts/Barlow/Barlow-SemiBold.ttf') format('truetype'); 
+      }
+
+      @font-face { 
+        font-family: 'Barlow_medium';
+        src: url('https://www.biotechjobs.at/fonts/Barlow/Barlow-Medium.ttf') format('truetype'); 
+      }
+      
+      @font-face { 
+        font-family: 'Barlow_bold';
+        src: url('https://www.biotechjobs.at/fonts/Barlow/Barlow-Bold.ttf') format('truetype'); 
+      }
+
+      @font-face { 
+        font-family: 'Barlow_extra';
+        src: url('https://www.biotechjobs.at/fonts/Barlow/Barlow-ExtraBold.ttf') format('truetype'); 
+      }
+      
+      a:hover{
+        color: #64a930;
+      }
+      .nav-or a:hover{
+        color: whitesmoke;
+      }
+      .nav-r a:hover{
+        color: whitesmoke;
+      }
+
+      /*Arrow-Image*/
+      .row-arrow .arrow2 {
+        display: none;  
+      }
+      .row-arrow:hover .arrow2 {
+        display: block;  
+      }
+      .row-arrow:hover .arrow1 {
+        display: none;  
+      }
+    </style>
+
+      </head>
+  <body>
+       <!-- cookie law -->
+       <script src="https://webcachex-eu.datareporter.eu/loader/v2/cmp-load.js?url=aa0a4bfb-863e-4301-8e63-697f9b3d605e.yx3tn8Pnpk7p.K90" defer></script>    <!-- top-nav-menu -->
+    <div class="topnav" style="background-color:#64a930; background-image:linear-gradient(to bottom, #72b53f , #358716);">
+      <ul style="margin-top: 0;">
+        
+                  <li class="nav-l"><a href="https://www.biotechjobs.at/index.php"><img src="https://www.biotechjobs.at/EF-ICONS/biotech-logo-white.png" height="28px"></a></li>
+          <li class="nav-or"><a class="openModal0" style="background-color:#fb5c62">Login</a></li><li class="nav-r"><a href="https://www.biotechjobs.at/company_info.php">Für Unternehmen</a></li><li class="nav-r"><a href="https://www.biotechjobs.at/candidates/candidates_info.php">Für Bewerber*innen</a></li><li class="nav-r"><a href="https://www.biotechjobs.at/bildung.php">Bildung</a></li><li class="nav-r"><a href="https://www.biotechjobs.at/blog/all">Branchen News</a></li>    
+      </ul>
+    </div>
+    <!-- END top-nav-menu -->     
+    <!-- Top Navigation Menu - Mobile -->
+    <div class="mobile-container">
+      <div class="topnav-m sticky_nav" style="background-color:#64a930; background-image:linear-gradient(to bottom, #72b53f , #358716);">
+                  <a href="https://www.biotechjobs.at/index.php" class="active" style="background-color: transparent;"><img  id="header_img" src="https://www.biotechjobs.at/EF-ICONS/biotech-logo-white.png" width="220px"></a>
+                  
+        <div id="myLinks" style="background-color:#fb5c62">
+          <br>
+          <a href="https://www.biotechjobs.at/company_info.php">Für Unternehmen</a>
+          <a href="https://www.biotechjobs.at/candidates/candidates_info.php">Für Bewerber*innen</a><a href="https://www.biotechjobs.at/bildung.php">Bildung</a><a href="https://www.biotechjobs.at/blog/all">Branchen News</a><a class="nav-or openModal0Mobil" style="background-color: white">Login</a>          <a href="https://www.biotechjobs.at/impressum.php">Impressum</a>
+          <a href="https://www.biotechjobs.at/company_info.php#kontakt">Kontakt</a>
+          <br>
+        </div>
+        <a href="javascript:void(0);" class="icon" onclick="myFunction()">
+          <img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Header/JM-Hamburger-menue.svg" width="40px">
+          <i class="fa fa-bars"></i>
+        </a>
+      </div>
+    </div>
+    <!-- END Navigation Menu - Mobile -->
+    
+    <!-- ModalBox - Registration -->
+    <div class="modal m1">
+      <div class="modalContent">
+          <span class="close c1">×</span>
+          <img  id="header_img" src="https://www.biotechjobs.at/EF-ICONS/biotech-logo-color.png" width="200px">
+          <p>Wie möchten Sie sich registrieren?</p>
+          <button id="ag" class="orange-btn-large" style="background-color:#64a930">Unternehmen</button>
+          <button id="bw" class="orange-btn-large" style="background-color:#64a930">Bewerber*in</button>
+      </div>
+    </div>
+   <!-- END ModalBox -->
+
+    <!-- ModalBox - Login -->
+    <div class="modal m0">
+      <div class="modalContent">
+          <span class="close c0">×</span>
+          <img  id="header_img" src="https://www.biotechjobs.at/EF-ICONS/biotech-logo-color.png" width="200px">
+          <p>Wie möchten Sie sich anmelden?</p>
+          <button id="ag0" class="orange-btn-large" style="background-color:#64a930">Unternehmen</button>
+          <button id="bw0" class="orange-btn-large" style="background-color:#64a930">Bewerber*in</button>
+      </div>
+    </div>
+    <!-- END ModalBox --><style>.flag-top-r-video {
+  margin-bottom: -14px;
+  margin-right: 0px;
+}
+  @media screen and (min-width: 0px) and (max-width: 720px) {
+  #top-quer {
+    bottom: 5px;
+    left: -5px;
+    width: 50px;
+    position: absolute;
+  }
+}
+</style><script>
+      function showAlarmQuestion(link) {	
+        var alarm = document.querySelector("#jat11");
+        var span = document.querySelector(".cl1");
+        var modal = document.querySelector(".j1");
+
+        modal.style.display = "block";
+
+        
+        //Bewerber Registration Button
+        alarm.addEventListener("click", () => {
+          modal.style.display = "none";
+          $("form[action='https://www.biotechjobs.at/search.php']").attr("action", 'https://www.biotechjobs.at/'+link).submit();
+        });
+        
+
+        
+        
+
+        //Modal Close Button
+        span.addEventListener("click", () => {
+            modal.style.display = "none";
+        });
+       
+        //Wenn man neben das modal klickt, schließt sich das Fenster auch
+        window.onclick = function(event) {
+            if (event.target == modal) {
+              modal.style.display = "none";
+            }
+        };
+
+
+      }
+
+     
+    </script>
+   
+   
+    
+    <!-- ModalBox - Job-Save -->
+    <div class="modal j1">
+      <div class="modalContent">
+          <span class="close cl1">×</span>
+          <img  id="header_img" src="https://www.biotechjobs.at/EF-ICONS/biotech-logo-color.png" width="200px"><br><br>
+          <img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Arbeitgeberseite/JM-Megafon.svg" width="50px">
+          <h2>JobMail</h2>
+          <form action="https://www.biotechjobs.at/search.php" method="post">
+            <p><input id="jat1" type="checkbox" name="save" value="1" checked>Ich möchte die neuesten Jobs passend zu meiner Suche per Mail erhalten!</p>
+            <!-- <button id="jat1" class="orange-btn-large" style="background-color:#64a930">Alarm aktivieren</button> -->
+            <input type="submit" id="jat11" value="Suche merken" class="orange-btn-large" style="background-color:#64a930">
+          </form>
+          <br>
+      </div>
+    </div>
+   <!-- END ModalBox -->
+  <script>
+  function clearPlaceholder(x) {
+    x.placeholder = " ";
+  }
+  </script>
+    
+    <!-- Header-Image -->
+    <div class="header-image" style="background-image: url('https://www.biotechjobs.at/EF-Headerbilder/EF-biotech-o-3.jpg');">
+      <div id="innerHeader">
+      <div class="row">
+        <div class="header-text desktop">
+            <h1 style="color: #ffffff; text-align: left;">Einfach die Besten finden <a href="match_bot" class="orange-btn-large" style="background-color:#fb5c62;float: none;margin-left: 10px;margin-top: 0px;">MATCH-BOT</a></h1>
+            <h5 style="color: #ffffff; text-align: left;">Biotechjobs.at hat die meisten Stellenauschreibungen im
+	Bereich Biotechnologie, Life-Science, Pharmazie und Lebensmitteltechnologie
+	in Österreich. Finde alle Unternehmen der Branche auf einer Plattform!</h5>
+        </div>
+        <br>
+        <div class="search-container">
+            <form action="search.php" method="get">
+              <input class="search_company" onkeyup="searchFor(this.value);" onfocus="clearPlaceholder(this)" list="datalist" style="background-color: #ffffff; color: #64a930" onkeyup="searchFor(this.value);" autocomplete="off" id="search_company" type="text" placeholder="Stichwort, Beruf, Unternehmen" name="search_company"
+              >
+              <br>
+              <select name="search_city" id="search_city" class="dtl-search" style="background-color: #ffffff; color: #64a930;">
+              <option style="background-color: white;" value=""><font color="#c5c5c5">Region w&auml;hlen...</font></option>
+              <option style="background-color: white;"  selected value=""><font color="#c5c5c5">alle...</font></option>
+              <option style='background-color: white;' value='123' >Nieder&ouml;sterreich</option><option style='background-color: white;' value='124' >Wien</option><option style='background-color: white;' value='125' >Burgenland</option><option style='background-color: white;' value='126' >Ober&ouml;sterreich</option><option style='background-color: white;' value='127' >Salzburg</option><option style='background-color: white;' value='128' >K&auml;rnten</option><option style='background-color: white;' value='129' >Steiermark</option><option style='background-color: white;' value='130' >Tirol</option><option style='background-color: white;' value='131' >Vorarlberg</option><option style='background-color: white;' value='132' >&Ouml;sterreich</option><option style='background-color: white;' value='133' >Sonstige</option>    		    </select>
+              <!-- <input class="search_city" style="background-color: #396b3c; color: " onkeyup="locationFor(this.value);" autocomplete="off" id="search_city" type="text" placeholder="Stadt, Umgebung" name="search_city">
+              --> <br>  
+              <input name="quan" id="quan" type="hidden" value="">
+              <input name="num_page" id="num_page" type="hidden" value="0">
+              
+              <button id="search-btn" class="orange-btn-large" style="background-color:#fb5c62">Suche</button>
+              <!-- Suggests -->
+              <datalist class="suggests-cont" id="datalist">
+              <!-- <div id="suggests" class="suggests"></div> -->
+              </datalist>
+            </form>
+        </div> 
+        </div> 
+      </div> 
+    </div>
+    <!-- Suche Ende --> 
+    
+    
+
+  <!-- Alle Jobs von einem User -->
+  
+   <!-- Suchergebnis -->
+   <div class="actual-jobs-cont">
+  <div class="actual-jobs">
+  <button id='sc_name_btn' class='actual-btn'>
+
+  <button class="actual-btn"><h1 style="margin-bottom: 5px">Alle <span id="counter">225</span> Jobs</h1></button><br>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69967/0/Aussendienstmitarbeiter-(m-w-d)"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/D/logoTrenkwalder-Personaldienste-GmbH-3635AT-2312191633.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69967&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69967/0/Aussendienstmitarbeiter-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Außendienstmitarbeiter (m/w/d)</h1>
+             <h3>Trenkwalder Personaldienste GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69967&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69478/0/Manufacturing-Operator-(m-w-d)"><div class="center">
+                <img src="https://www.stemjobs.at/files/115_logo_19.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69478&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69478/0/Manufacturing-Operator-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Manufacturing Operator (m/w/d)</h1>
+             <h3>Boehringer Ingelheim </h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien, Österreich, Wien | Fertigung & Produktion<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69478&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69477/0/Lagermitarbeiter-in-mit-Funduuml;hrerschein-B"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61530364_logo.png" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69477&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69477/0/Lagermitarbeiter-in-mit-Funduuml;hrerschein-B"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Lagermitarbeiter/in mit F&uuml;hrerschein B</h1>
+             <h3>Sigmapharm Arzneimittel GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Burgenland | Lager<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69477&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69476/0/Projektmanager-in-funduuml;r-die-Lohnherstellung-Pharma"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61530364_logo.png" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69476&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69476/0/Projektmanager-in-funduuml;r-die-Lohnherstellung-Pharma"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Projektmanager/in f&uuml;r die Lohnherstellung Pharma</h1>
+             <h3>Sigmapharm Arzneimittel GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Burgenland | alle...<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69476&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69463/0/Business-Process-Manager-(w-m-d)-Process-Excellence"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/C/logoGetzner-Werkstoffe-GmbH-97339AT-2103121205.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69463&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69463/0/Business-Process-Manager-(w-m-d)-Process-Excellence"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Business Process Manager (w/m/d) Process Excellence</h1>
+             <h3>Getzner Werkstoffe GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Bürs | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69463&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69462/0/Pharmareferent-(m-w-d)-fuer-Salzburg-und-Oberoesterreich"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/N/logoNegri-Consulting-e-U-19326AT.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69462&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69462/0/Pharmareferent-(m-w-d)-fuer-Salzburg-und-Oberoesterreich"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Pharmareferent (m/w/d) für Salzburg und Oberösterreich</h1>
+             <h3>Negri Consulting</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Oberösterreich | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69462&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69461/0/Pharmareferent-(m-w-d)-fuer-Salzburg-und-Oberoesterreich"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/N/logoNegri-Consulting-e-U-19326AT.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69461&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69461/0/Pharmareferent-(m-w-d)-fuer-Salzburg-und-Oberoesterreich"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Pharmareferent (m/w/d) für Salzburg und Oberösterreich</h1>
+             <h3>Negri Consulting</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Salzburg | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69461&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69430/0/Flow-Cytometry-Core-Specialist-(w-m-d)"><div class="center">
+                <img src="https://www.biotechjobs.at/files/2024-07-15_08:47:55bild_YMBK.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69430&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69430/0/Flow-Cytometry-Core-Specialist-(w-m-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Flow Cytometry Core Specialist (w/m/d)</h1>
+             <h3>St. Anna Kinderkrebsforschung </h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | Biotechnologie<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69430&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69429/0/Anlagenfahrer-Schmelze-Kesselhaus-(m-w-d)"><div class="center">
+                <img src="https://www.biotechjobs.at/files/105_logo_27.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69429&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69429/0/Anlagenfahrer-Schmelze-Kesselhaus-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Anlagenfahrer Schmelze/Kesselhaus (m/w/d)</h1>
+             <h3>Donau Chemie AG</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> K&auml;rnten | Facharbeit / Technik<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69429&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69428/0/IT-Support-Specialist-(m-w-d)"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61530378_logo.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69428&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69428/0/IT-Support-Specialist-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">IT Support Specialist (m/w/d)</h1>
+             <h3>ViruSure GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | IT-Support<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69428&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69415/0/Pharmareferenten-(M-W-D)-Teilzeit-(20-30h-Woche)-oder-geringfuegig"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/8/logoMedTriX-GmbH-120232AT-2502271003.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69415&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69415/0/Pharmareferenten-(M-W-D)-Teilzeit-(20-30h-Woche)-oder-geringfuegig"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Pharmareferenten (M/W/D) Teilzeit (20-30h/Woche) oder geringfügig</h1>
+             <h3>MedTriX GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69415&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69408/0/Cleaning-Coordinator-(m-w-d)-Shift"><div class="center">
+                <img src="https://www.stemjobs.at/files/115_logo_19.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69408&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69408/0/Cleaning-Coordinator-(m-w-d)-Shift"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Cleaning Coordinator (m/w/d) Shift</h1>
+             <h3>Boehringer Ingelheim </h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien, Österreich, Wien | Fertigung & Produktion<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69408&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69407/0/Group-Principal-Engineer-(m-f-d)----Technical-Unit"><div class="center">
+                <img src="https://www.stemjobs.at/files/165_logo4.png" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69407&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69407/0/Group-Principal-Engineer-(m-f-d)----Technical-Unit"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Group Principal Engineer (m/f/d)  - Technical Unit</h1>
+             <h3>Octapharma Pharmazeutika Produktionsges.m.b.H</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | Technical<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69407&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69392/0/Sterility-Assurance-Specialist-(m-w-d)---Teilzeit"><div class="center">
+                <img src="https://www.stemjobs.at/files/165_logo4.png" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69392&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69392/0/Sterility-Assurance-Specialist-(m-w-d)---Teilzeit"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Sterility Assurance Specialist (m/w/d) - Teilzeit</h1>
+             <h3>Octapharma Pharmazeutika Produktionsges.m.b.H</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | Quality<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69392&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69352/0/Senior-Manager-Business-Transformation-(m-w-d)"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/F/logoSchulmeister-Management-Consulting-GmbH-3581AT-2203300951.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69352&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69352/0/Senior-Manager-Business-Transformation-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Senior Manager Business Transformation (m/w/d)</h1>
+             <h3>Schulmeister Management Consulting</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wels | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69352&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69346/0/Laboranalytiker-in-(w-m-d)-Tiergesundheit"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61530349_logo.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69346&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69346/0/Laboranalytiker-in-(w-m-d)-Tiergesundheit"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Laboranalytiker:in (w/m/d) Tiergesundheit </h1>
+             <h3>AGES - Österreichische Agentur für Gesundheit ...</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Linz | Labor/Analyse<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69346&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69317/0/Pharmareferent-(m-w-d)---Wien-und-Niederoesterreich"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/A/logoPARI-GmbH-42356AT-2602181242.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69317&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69317/0/Pharmareferent-(m-w-d)---Wien-und-Niederoesterreich"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Pharmareferent (m/w/d) - Wien und Niederösterreich</h1>
+             <h3>PARI GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69317&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69316/0/Produktionsarbeiter--in-Bereich-sterile-Abfuellung-und-visuelle-Kontrolle"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/A/logoJOBS-Experts-Zeitarbeit-GmbH-24454AT-2410041023.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69316&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69316/0/Produktionsarbeiter--in-Bereich-sterile-Abfuellung-und-visuelle-Kontrolle"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Produktionsarbeiter/-in Bereich sterile Abfüllung und visuelle Kontrolle</h1>
+             <h3>JOBS Experts Industrieservice GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Krems | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69316&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69282/0/Scientific-Director-Group-Leader-(m-f-d)"><div class="center">
+                <img src="https://www.stemjobs.at/files/115_logo_19.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69282&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69282/0/Scientific-Director-Group-Leader-(m-f-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Scientific Director Group Leader (m/f/d)</h1>
+             <h3>Boehringer Ingelheim </h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Vienna, Austria, Vienna | Research<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69282&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69277/0/Manufacturing-Operator-(m-w-d)"><div class="center">
+                <img src="https://www.stemjobs.at/files/115_logo_19.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69277&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69277/0/Manufacturing-Operator-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Manufacturing Operator (m/w/d)</h1>
+             <h3>Boehringer Ingelheim </h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien, Österreich, Wien | Fertigung & Produktion<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69277&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69276/0/Manufacturing-Operator-(m-w-d)"><div class="center">
+                <img src="https://www.stemjobs.at/files/115_logo_19.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69276&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69276/0/Manufacturing-Operator-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Manufacturing Operator (m/w/d)</h1>
+             <h3>Boehringer Ingelheim </h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien, Österreich, Wien | Fertigung & Produktion<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69276&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69257/0/Teamleiter-Qualitaetsmanagement-|-Supplier-Quality-und-Labor-(m-w-d)"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/9/logoJOB-TIME-Personalbereitstellung-GmbH-48953AT-2103081054.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69257&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69257/0/Teamleiter-Qualitaetsmanagement-|-Supplier-Quality-und-Labor-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Teamleiter Qualitätsmanagement | Supplier Quality & Labor (m/w/d)</h1>
+             <h3>JOB TIME Personalbereitstellung GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69257&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69256/0/Mitarbeiter-in-(m-w-d)-in-der-Verladung-im-Schichtdienst"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/1/logoMunzer-Bioindustrie-GmbH-103662AT-2107021216.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69256&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69256/0/Mitarbeiter-in-(m-w-d)-in-der-Verladung-im-Schichtdienst"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Mitarbeiter:in (m/w/d) in der Verladung im Schichtdienst</h1>
+             <h3>Münzer Bioindustrie GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69256&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69255/0/Mitarbeiter-(m-w-d)-Labor-und-Supplier-Quality-Management"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/9/logoJOB-TIME-Personalbereitstellung-GmbH-48953AT-2103081054.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69255&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69255/0/Mitarbeiter-(m-w-d)-Labor-und-Supplier-Quality-Management"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Mitarbeiter (m/w/d) Labor & Supplier Quality Management</h1>
+             <h3>JOB TIME Personalbereitstellung GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69255&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69249/0/Produktionsmitarbeiter-(m-w-d)"><div class="center">
+                <img src="https://www.biotechjobs.at/files/2019-07-09_12_31_32bild.jpeg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69249&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69249/0/Produktionsmitarbeiter-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Produktionsmitarbeiter (m/w/d)</h1>
+             <h3>CROMA-PHARMA GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Leobendorf | Pharmazie<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69249&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69248/0/Lagermitarbeiter-(m-w-d)"><div class="center">
+                <img src="https://www.biotechjobs.at/files/2019-07-09_12_31_32bild.jpeg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69248&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69248/0/Lagermitarbeiter-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Lagermitarbeiter (m/w/d)</h1>
+             <h3>CROMA-PHARMA GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Leobendorf | Pharmazie<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69248&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69247/0/Marketing-Specialist-(m-w-d)"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61530378_logo.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69247&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69247/0/Marketing-Specialist-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Marketing Specialist (m/w/d)</h1>
+             <h3>ViruSure GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | Marketing/PR<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69247&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69235/0/Teamleiter-Versand---Lagerlogistik-(m-w-d)"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/A/logoAndreas-Fahl-Medizintechnik-Vertrieb-GmbH-21658AT.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69235&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69235/0/Teamleiter-Versand---Lagerlogistik-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Teamleiter Versand / Lagerlogistik (m/w/d)</h1>
+             <h3>Andreas Fahl Medizintechnik-Vertrieb GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wiener Neudorf | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69235&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69233/0/Produktionstechniker-(m-w-d)-undndash;-Pharma"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61529383_logo_34.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69233&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69233/0/Produktionstechniker-(m-w-d)-undndash;-Pharma"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Produktionstechniker (m/w/d) &ndash; Pharma</h1>
+             <h3>globe personal services GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | Produktion<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69233&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69232/0/Produktionsmitarbeiter---Pharma-(m-w-d)-Wien"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61529383_logo_34.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69232&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69232/0/Produktionsmitarbeiter---Pharma-(m-w-d)-Wien"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Produktionsmitarbeiter - Pharma (m/w/d) Wien</h1>
+             <h3>globe personal services GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | Produktion<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69232&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69231/0/Schichtleiter-in-Pharmaproduktion"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61530364_logo.png" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69231&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69231/0/Schichtleiter-in-Pharmaproduktion"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Schichtleiter/in Pharmaproduktion</h1>
+             <h3>Sigmapharm Arzneimittel GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Burgenland | Produktion<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69231&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69230/0/Postdoctoral-Fellow-or-Bioinformatics-Scientist,-Nomburg-Lab-(all-genders)"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61530734_logo65.png" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69230&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69230/0/Postdoctoral-Fellow-or-Bioinformatics-Scientist,-Nomburg-Lab-(all-genders)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Postdoctoral Fellow or Bioinformatics Scientist, Nomburg Lab (all genders)</h1>
+             <h3>AITHYRA GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | Wissenschaftliche Arbeiten<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69230&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69221/0/Kundenbetreuer---Key-Account-Innendienst---Pharma-(m-w-d)"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/F/logoTRANSFER-Personalmanagement-59525AT-1910070959.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69221&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69221/0/Kundenbetreuer---Key-Account-Innendienst---Pharma-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Kundenbetreuer / Key Account Innendienst - Pharma (m/w/d)</h1>
+             <h3>TRANSFER Personalmanagement</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Leopoldsdorf bei Wien | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69221&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69218/0/Scientist--Technical-Assistant-Biomedical-Mass-Spectrometry-(m-w-d)"><div class="center">
+                <img src="https://www.biotechjobs.at/files/121_logo13.png" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69218&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69218/0/Scientist--Technical-Assistant-Biomedical-Mass-Spectrometry-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Scientist /Technical Assistant Biomedical Mass Spectrometry (m/w/d)</h1>
+             <h3>IMC Krems</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Nieder&ouml;sterreich | Wissenschaftliche Arbeiten<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69218&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69183/0/Senior-Logistics-Project-Manager"><div class="center">
+                <img src="https://www.it-career.at/files/61530388_logo.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69183&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69183/0/Senior-Logistics-Project-Manager"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">
+			Senior Logistics Project Manager
+		</h1>
+             <h3>Red Bull GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> 
+				Elsbethen
+			 | Biotechnologie<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69183&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69170/0/Mitarbeiter-Produktion---mit-Maschinenerfahrung-(m-w-d)"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/A/logoADLER-Werk-Lackfabrik-Johann-Berghofer-GmbH-Co-KG-3503AT.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69170&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69170/0/Mitarbeiter-Produktion---mit-Maschinenerfahrung-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Mitarbeiter Produktion - mit Maschinenerfahrung (m/w/d)</h1>
+             <h3>ADLER-Werk Lackfabrik Johann Berghofer GmbH & Co ...</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Schwaz | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69170&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69169/0/Mitarbeiter-fuer-Blutabnahmen-im-Labor-(Wien)-gesucht-20-25-Wochenstunden,-DGKP,-PFA,-Medizinstudent*Innen,-Student*innen-der-biomedizinischen-Analytik"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/F/logoMediCare-Personaldienstleistungen-GmbH-14146AT-2007131339.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69169&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69169/0/Mitarbeiter-fuer-Blutabnahmen-im-Labor-(Wien)-gesucht-20-25-Wochenstunden,-DGKP,-PFA,-Medizinstudent*Innen,-Student*innen-der-biomedizinischen-Analytik"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Mitarbeiter für Blutabnahmen im Labor (Wien) gesucht 20-25 Wochenstunden, DGKP, PFA, ...</h1>
+             <h3>MediCare Personaldienstleistungen GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69169&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69168/0/Medizintechniker---Elektroniker-(m-w-d)-in-Wels-(38,5h-Std.-Woche)"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/4/logoHELBO-Medizintechnik-GmbH-157571AT-2508111541.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69168&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69168/0/Medizintechniker---Elektroniker-(m-w-d)-in-Wels-(38,5h-Std.-Woche)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Medizintechniker - Elektroniker (m/w/d) in Wels (38,5h Std./Woche)</h1>
+             <h3>HELBO Medizintechnik GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wels | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69168&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69167/0/Mitarbeiter*in-im-Qualitaetsmanagement-ISO-13485-(m-w-d)-in-Wels-(Teilzeit-20-30-Std.-Woche)"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/4/logoHELBO-Medizintechnik-GmbH-157571AT-2508111541.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69167&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69167/0/Mitarbeiter*in-im-Qualitaetsmanagement-ISO-13485-(m-w-d)-in-Wels-(Teilzeit-20-30-Std.-Woche)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Mitarbeiter*in im Qualitätsmanagement ISO 13485 (m/w/d) in Wels (Teilzeit 20-30 Std./Woche)</h1>
+             <h3>HELBO Medizintechnik GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wels | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69167&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69160/0/Founderund#039;s-Associate-(f-m-x)"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61530600_logo_25.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69160&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69160/0/Founderund#039;s-Associate-(f-m-x)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Founder&#039;s Associate (f/m/x)</h1>
+             <h3>Talentor Austria GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | alle...<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69160&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69125/0/Mitarbeiter-in-Qualitaetsmanagement-Transportlogistik"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/P/logoPHOENIX-Arzneiwarengrosshandlung-GmbH-61292AT.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69125&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69125/0/Mitarbeiter-in-Qualitaetsmanagement-Transportlogistik"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Mitarbeiter:in Qualitätsmanagement Transportlogistik</h1>
+             <h3>PHOENIX Arzneiwarengroßhandlung GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69125&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69124/0/Gebietsverkaufsleiter---Vertriebstalent---Dental-Aussendienst---Oesterreich-(m-w-d)"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/9/logoAmerican-Dental-Systems-GmbH-34655AT-2607281525.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69124&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69124/0/Gebietsverkaufsleiter---Vertriebstalent---Dental-Aussendienst---Oesterreich-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Gebietsverkaufsleiter / Vertriebstalent / Dental-Außendienst - Österreich (m/w/d)</h1>
+             <h3>American Dental Systems GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wohnort: Wien oder Umgebung | Vertriebsgebiet: Österreich (ohne Tirol & Vorarlberg) | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69124&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69120/0/Deputy-Head-of-Talent-Acquisition-(m-w-d)-–-Digital-undamp;-Transformation"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61530600_logo_25.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69120&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69120/0/Deputy-Head-of-Talent-Acquisition-(m-w-d)-–-Digital-undamp;-Transformation"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">
+Deputy Head of Talent Acquisition (m/w/d) – Digital &amp; Transformation</h1>
+             <h3>Talentor Austria GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> &Ouml;sterreich | Management<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69120&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69106/0/Innovation-Unit-Specialist-undndash;-Focus-Area-Data-Science-and-Artificial-Intelligence"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61529633_logo.png" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69106&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69106/0/Innovation-Unit-Specialist-undndash;-Focus-Area-Data-Science-and-Artificial-Intelligence"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Innovation Unit Specialist &ndash; Focus Area Data Science and Artificial Intelligence</h1>
+             <h3>Vienna Biocenter Core Facilities GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | Sonstiges<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69106&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69104/0/Scientific-Researcher---Research-Engineer-(f-m-d)"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61530685_logo48.png" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69104&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69104/0/Scientific-Researcher---Research-Engineer-(f-m-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Scientific Researcher / Research Engineer (f/m/d)</h1>
+             <h3>CBmed GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Steiermark | Wissenschaftliche Arbeiten<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69104&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69103/0/Master-Thesis-Student---Student-Research-Assistant-(f-m-d)"><div class="center">
+                <img src="https://www.biotechjobs.at/files/61530685_logo48.png" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69103&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69103/0/Master-Thesis-Student---Student-Research-Assistant-(f-m-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Master Thesis Student / Student Research Assistant (f/m/d)</h1>
+             <h3>CBmed GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Steiermark | Wissenschaftliche Arbeiten<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69103&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69098/0/Expansion-Project-Manager"><div class="center">
+                <img src="https://www.it-career.at/files/61530388_logo.jpg" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69098&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69098/0/Expansion-Project-Manager"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">
+			Expansion Project Manager
+		</h1>
+             <h3>Red Bull GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> 
+				Elsbethen
+			 | Biotechnologie<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69098&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69084/0/Study-Nurse-der-Klinik-fuer-Gynaekologie,-Geburtshilfe-und-Gynaekologische-Endokrinologie"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/9/logoKepler-Universitaetsklinikum-GmbH-89598AT-2003230843.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69084&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69084/0/Study-Nurse-der-Klinik-fuer-Gynaekologie,-Geburtshilfe-und-Gynaekologische-Endokrinologie"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">Study Nurse der Klinik für Gynäkologie, Geburtshilfe und Gynäkologische Endokrinologie</h1>
+             <h3>Kepler Universitätsklinikum GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Linz | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69084&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69083/0/QUALITY-CONTROL-OFFICER-(m-w-d)---PHARMA"><div class="center">
+                <img src="http://www.stepstone.at/upload_AT/logo/K/logoKwizda_Pharma_GmbH_19695AT.gif" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69083&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69083/0/QUALITY-CONTROL-OFFICER-(m-w-d)---PHARMA"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">QUALITY CONTROL OFFICER (m/w/d) - PHARMA</h1>
+             <h3>Kwizda Pharma GmbH</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> 1160 Wien | <!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69083&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a>
+          <div class="row row-arrow">
+            <div class="column_top-job"><a href="https://www.biotechjobs.at/69082/0/(Senior)-HR-Business-Partner-(m-w-d)"><div class="center">
+                <img src="https://www.stemjobs.at/files/165_logo4.png" width="120%">
+              </div>
+              </a>
+              <div class="rate-job-d-w mobil"><img id="video" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                <br><a href="candidates/login.php?aid=69082&fav=0&modus=2&search_term=*|**|*"><img id="star" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+            </div><a href="https://www.biotechjobs.at/69082/0/(Senior)-HR-Business-Partner-(m-w-d)"><div class="column_top-job-arrow">
+              <div class="center">
+              <img class="arrow1" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-Standard.svg" width="60px;">
+              <img class="arrow2" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pfeil-green.svg" width="60px;">
+              </div>
+            </div>       
+            <div class="column-middle">
+            <h1 style="color: #3B6C3D">(Senior) HR Business Partner (m/w/d)</h1>
+             <h3>Octapharma Pharmazeutika Produktionsges.m.b.H</h3>                                                                     
+              <p class="job-info" ><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Pin.svg" width="8px"> Wien | Personalwesen<!-- | 24.08.2026 --><br></p>
+            </div>
+            </a>
+            <div class="column-rate">
+              <div class="rate-top-job"><img class="flag-top-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-not-visible.svg" width="50px"><br><img class="rate-r" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Video-Button-not-visible.svg" width="20px">
+                  <br><a href="candidates/login.php?aid=69082&fav=0&modus=2&search_term=*|**|*"><img class="rate-btm-r" src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" width="40px" title="als Favorit markieren"></a></div>
+              </div>  
+          </div>
+        </a><a href= https://www.biotechjobs.at/search.php?a=1&search_term=*|**|*0'><img src='https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Navigation-Icons/JM-Vor-Zurueck-Buttons-LL-red.svg' width='40px'></a> 
+              <a href= https://www.biotechjobs.at/search.php?a=1&search_term=*|**|*-1'><img src='https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Navigation-Icons/JM-Vor-Zurueck-Buttons-L-red.svg' width='40px'></a><p class='page_num'>1 von 5</p><a href= https://www.biotechjobs.at/search.php?a=1&search_term=*|**|*1'><img src='https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Navigation-Icons/JM-Vor-Zurueck-Buttons-R-red.svg' width='40px'></a>
+                <a href= https://www.biotechjobs.at/search.php?a=1&search_term=*|**|*4'><img src='https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Navigation-Icons/JM-Vor-Zurueck-Buttons-RR-red.svg' width='40px'></a></div> 
+  </div>    <!-- Footer --> 
+    <div class="footer footer-stemjobs" style="background-color:#64a930; background-image:linear-gradient(to bottom, #72b53f , #358716);">
+    
+            <div class="row" style="background-color: transparent;  text-align: left; padding-bottom: 0;">
+            <div style="border-bottom: 1px solid #fff; padding-bottom: 8px;">
+                <span style="text-transform: uppercase; color: #fff; padding-bottom: 10px; font-size: 12px; vertical-align: middle;">Folgen Sie uns:</span> <a href="https://www.facebook.com/Biotechjobs.at" target="_blank" ><img src="https://www.biotechjobs.at/images/facebook-icon_white.png" width="25px" style="display: inline"></a>&nbsp;&nbsp;<a href="https://www.instagram.com/biotechjobsat/" target="_blank"><img src="https://www.biotechjobs.at/images/instagram-icon_white.png" width="25px" style="display: inline"></a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.linkedin.com/company/biotechjobs-at/" target="_blank"><img src="https://www.biotechjobs.at/images/linkedin-icon_white.png" width="25px" style="display: inline"></a>
+            </div>
+        </div>
+    
+      <div class="row" style="background-color: transparent;">
+        
+        <div class="column">
+            <ul>
+              <li><img src="https://www.biotechjobs.at/EF-ICONS/biotech-logo-white.png" width="250px"></li>
+              <!-- <li id="search-bar-bottom" style="background-color:#64a930">
+                <form action="https://www.biotechjobs.at/search.php" method="post">
+
+                <input class="search_company" style="color: #64a930" onkeyup="searchFor(this.value);" autocomplete="off" id="search_company" type="text" placeholder="Stichwort, Beruf, Unternehmen" name="search_company">
+              <br>
+              <select name="search_city" id="search_city" class="dtl-search" style="color:#64a930">
+              <option value="alle..."><font color="#c5c5c5">Region w&auml;hlen...</font></option>
+              <option value="alle..."><font color="#c5c5c5">alle...</font></option>
+                  		    </select> 
+            
+                  <input name="quan" id="quan" type="hidden" value="1000">
+                  <br>
+                  <button id="search-btn" class="orange-btn-large" style="background-color:#fb5c62;  padding-right: 85px;">Suche</button>
+
+                </form>
+              </li> -->
+            </ul>
+          </div>
+                    <div class="column" style='width:25%'>
+            <ul>
+              <li><b>JobPlattform</b></li>
+              <a href="https://www.biotechjobs.at/vision.php"><li>Vision</li></a>
+              <a href="https://www.biotechjobs.at/bildung.php"><li>Bildung</li></a>
+                          </ul>
+          </div>
+          <div class="column" style='width:25%'>  
+            <ul>
+              <li><b>Arbeitgeber</b></li>
+              <a href="https://www.biotechjobs.at/company_info.php"><li>Möglichkeiten Arbeitgeber</li></a>
+              <a href="https://www.biotechjobs.at/unternehmen_views.php"><li>Partner</li></a>
+              <a href="https://www.biotechjobs.at/company_info.php#kontakt"><li>Kontakt</li></a>
+              <a class="openModalFtr"><li>Registrierung</li></a>
+            </ul>
+          </div>
+          <div class="column" style='width:25%'>  
+            <ul>
+              <li><b>Weitere Plattformen</b></li>
+              <a href="https://www.stemjobs.at" target="_blank"><li>stemjobs.at</li></a>
+              <a href="https://www.it-career.at" target="_blank"><li>IT-Career.at</li></a>
+              <a href="https://www.businessjobs.at" target="_blank"><li>Businessjobs.at</li></a>
+              <a href="https://www.biotechjobs.at" target="_blank"><li>biotechjobs.at</li></a>
+              <a href="https://www.biotechjobs24.de" target="_blank"><li>biotechjobs24.de</li></a>
+            </ul>
+          </div>
+          <div class="column" style='width:25%'>  
+            <ul>
+              <li class="desktop"><img src="https://www.biotechjobs.at/EF-ICONS/biotech-logo-white.png" width="120px"></li>
+              <li><b>Betreiber</b></li>
+              <a href="https://www.epiframe.com/" target="_blank"><li>&copy; Epiframe.com</li></a>
+              <a href="https://www.biotechjobs.at/impressum.php" target="_blank"><li>Impressum</li></a>
+              <a href="https://www.biotechjobs.at/datenschutz.php" target="_blank"><li>Datenschutz</li></a>
+              <a href ="javascript:dr_revokeChoice();" ><li>Cookie Einstellungen</li><a>
+            </ul>
+          </div>
+      </div>
+    </div>
+
+    <script language="javascript">
+      function MM_openBrWindow(theURL,winName,features) {
+        event.preventDefault()
+        window.open(theURL,winName,features);
+      }
+      </script>
+    
+
+
+  </body>
+</html><script>
+//ShareMenü Btn mobile
+    const data = {
+          title: 'Job auf biotechjobs.at',
+          text: 'Hi, habe folgenden Job auf biotechjobs.at gefunden und dabei an dich gedacht! Vielleicht ist er Interesant für dich: (Senior) HR Business Partner (m/w/d)',
+          url: window.location,
+    }
+
+     //const btn = document.getElementById('share-link');
+    var btns = document.getElementsByClassName('tooltip_down');
+    var i;
+
+    for (i = 0; i < btns.length; i++) {
+      
+        if(navigator.share && navigator.canShare && navigator.canShare(data)){
+          btns[i].addEventListener('click',() => {
+          navigator.share(data);
+          });
+        }else{
+          //btn.remove();
+        }
+      
+    }
+    //ShareMenü Btn mobile END
+    </script>
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/de_DE/sdk.js#xfbml=1&version=v13.0" nonce="yP7lYYi2"></script>
+
+<script> 
+  //Jobs counter animation
+  document.addEventListener("DOMContentLoaded", function () {
+    let counts = setInterval(updated);
+    let upto = 0;
+    function updated() {
+          let count = document.getElementById("counter");
+          var counted_jobs = Math.floor('225');
+          console.log('counted jobs: '+counted_jobs);
+          if(upto <= parseInt('225')-800){
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = upto.toLocaleString('de-DE');
+          }else if(upto <= parseInt('225')-200){
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = ++upto;
+            count.innerHTML = upto.toLocaleString('de-DE');
+          }else if(upto <= Math.floor('225')-50){
+              count.innerHTML = ++upto;
+              count.innerHTML = ++upto;
+              count.innerHTML = ++upto;
+              count.innerHTML = upto.toLocaleString('de-DE');
+          }else{
+            count.innerHTML = ++upto;
+            count.innerHTML = upto.toLocaleString('de-DE');
+          }
+          
+         
+          if (upto === Math.floor('225')) {
+            count.innerHTML = upto.toLocaleString('de-DE');
+            clearInterval(counts);
+          }
+    }
+  });
+</script>

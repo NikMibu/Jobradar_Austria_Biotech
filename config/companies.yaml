@@ -1,0 +1,9 @@
+# Firmen für Karriereseiten-Watcher und Initiativ-Score (SPEC §10).
+# Seed: eigene Zielliste + biotechjobs.at-Verzeichnis + LISAvienna/Biotech-Austria-Listen.
+# Standorte händisch pflegen — Werk ≠ Firmensitz ist der häufigste Fehler in Inseraten.
+- name: Beispiel Biotech GmbH
+  website: https://example.at
+  career_url: https://example.at/karriere
+  seed_source: manual
+  sites:
+    - {label: "Wien Zentrale", lat: 48.21, lon: 16.37, is_hq: true}

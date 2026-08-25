@@ -1,0 +1,26 @@
+[
+  {
+    "company_id": 1,
+    "name": "Alpenpharm GmbH (Demo)",
+    "website": "https://example.com",
+    "career_url": "https://example.com/karriere",
+    "initiative_score": 3.5,
+    "relevant_12m": 3,
+    "relevant_24m": 1,
+    "open_now": 0,
+    "summary": "hat in 12 Monaten 3× relevant gesucht, davor 1×, aktuell nichts Passendes offen → Initiativbewerbung",
+    "sites": [{"label": "Wien Werk", "lat": 48.24, "lon": 16.41, "is_hq": 1}]
+  },
+  {
+    "company_id": 2,
+    "name": "Donau Diagnostics (Demo)",
+    "website": "https://example.com",
+    "career_url": null,
+    "initiative_score": 2.0,
+    "relevant_12m": 2,
+    "relevant_24m": 0,
+    "open_now": 0,
+    "summary": "hat in 12 Monaten 2× relevant gesucht, aktuell nichts Passendes offen → Initiativbewerbung",
+    "sites": [{"label": "Krems", "lat": 48.41, "lon": 15.6, "is_hq": 1}]
+  }
+]

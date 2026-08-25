@@ -1,0 +1,25 @@
+# Privates Profil und lokale Daten — nie committen (siehe SPEC §13)
+config/profile.local.yaml
+/data/
+.env
+
+# Echte Pipeline-Exporte bleiben lokal; nur die Demo-Daten sind Teil des Repos
+site/public/data/*
+!site/public/data/demo/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+dist/
+*.egg-info/
+
+# Site
+site/node_modules/
+site/dist/
+
+# OS/Editor
+.DS_Store
+*:Zone.Identifier

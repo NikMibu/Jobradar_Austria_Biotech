@@ -1,0 +1,51 @@
+[project]
+name = "heimspiel"
+version = "0.1.0"
+description = "Persönlicher Jobradar: Life-Science-Stellen in Österreich, gescort gegen Profil und Öffi-Erreichbarkeit"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = [
+    "typer>=0.12",
+    "pyyaml>=6.0",
+    "pydantic>=2.7",
+    "anthropic>=0.40",
+    "rapidfuzz>=3.9",
+    "requests>=2.32",
+    "beautifulsoup4>=4.12",
+]
+
+[project.optional-dependencies]
+scrape = [
+    "python-jobspy>=1.1.80",
+    "trafilatura>=1.12",
+    "curl_cffi>=0.7",
+]
+geo = ["h3>=4.0"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.2",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+heimspiel = "heimspiel.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/heimspiel"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501", "B008"]  # B008: typer.Option in Defaults ist das Typer-Idiom
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

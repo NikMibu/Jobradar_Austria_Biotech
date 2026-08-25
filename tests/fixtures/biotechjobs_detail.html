@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="canonical" href="https://www.biotechjobs.at/69104/0/Scientific-Researcher---Research-Engineer-(f-m-d)"><meta name='description' content='Scientific Researcher / Research Engineer (f/m/d) bei CBmed GmbH | BIOTECHJOBS.AT'><title>Scientific Researcher / Research Engineer (f/m/d) bei CBmed GmbH | BIOTECHJOBS.AT</title>
+    <meta property="og:url"                content="https://www.biotechjobs.at/job.php?aid=69104&ref=fb" />
+    <meta property="og:type"               content="website" />
+    <meta property="og:title"              content="Scientific Researcher / Research Engineer (f/m/d) " />
+    <meta property="og:description"        content="CBmed GmbH" />
+    <meta property="og:image"              content="https://www.biotechjobs.at/images/fb_bg_btja.png" />
+    <meta property="og:image:width"        content="1200" />
+    <meta property="og:image:height"       content="627" />
+
+    
+    <link rel="stylesheet" href="https://www.biotechjobs.at/stemjobs_style.css" type="text/css">
+    <link rel="shortcut icon" href="https://www.biotechjobs.at/images/btja/favicon.ico" />
+    <script src="/js/jquery-3.2.1.min.js"></script>
+    
+
+    <script>
+      'use strict';
+      function clearPlaceholder(x) {
+        x.placeholder = " ";
+      }
+   
+      document.addEventListener("DOMContentLoaded", function () {
+        blend();
+       
+        //Modalbox - AG/BW Registrierung
+        var modal = document.querySelector(".m1");
+        //var btnModal = document.querySelector(".openModal");
+        var btnModalFtr = document.querySelector(".openModalFtr");
+        var btnModalMobil = document.querySelector(".openModalMobil");
+        var span = document.querySelector(".c1");
+        var ag = document.querySelector("#ag");
+        var bw = document.querySelector("#bw");
+        
+        //Buttons
+        /*btnModal.addEventListener("click", () => {
+            modal.style.display = "block";
+        });*/
+        btnModalFtr.addEventListener("click", () => {
+            modal.style.display = "block";
+        });
+        /*btnModalMobil.addEventListener("click", () => {
+            modal.style.display = "block";
+        });*/
+
+        span.addEventListener("click", () => {
+            modal.style.display = "none";
+        });
+        ag.addEventListener("click", () => {
+          modal.style.display = "none";
+          window.location.assign('https://www.biotechjobs.at/user/user_anmeldung.php');
+        });
+        bw.addEventListener("click", () => {
+          modal.style.display = "none";
+          window.location.assign('https://www.biotechjobs.at/candidates/candidates_anmeldung.php');
+        });
+        window.onclick = function(event) {
+            if (event.target == modal) {
+              modal.style.display = "none";
+            }
+        };
+
+        //Modalbox - AG/BW Login
+        var modal2 = document.querySelector(".m2");
+        var btnModal2 = document.querySelector(".openModal2");
+        var btnModal2Mobil = document.querySelector(".openModal2Mobil");
+        var span2 = document.querySelector(".c2");
+        var agl = document.querySelector("#agl");
+        var bwl = document.querySelector("#bwl");
+        
+        //Buttons
+        btnModal2.addEventListener("click", () => {
+            modal2.style.display = "block";
+        });
+        btnModal2Mobil.addEventListener("click", () => {
+            modal2.style.display = "block";
+        });
+
+        span2.addEventListener("click", () => {
+            modal2.style.display = "none";
+        });
+        agl.addEventListener("click", () => {
+          modal2.style.display = "none";
+          window.location.assign('https://www.biotechjobs.at/user/login.php');
+        });
+        bwl.addEventListener("click", () => {
+          modal2.style.display = "none";
+          window.location.assign('https://www.biotechjobs.at/candidates/login.php');
+        });
+        window.onclick = function(event) {
+            if (event.target == modal2) {
+              modal.style.display = "none";
+            }
+        };
+
+
+      });
+
+
+      //Print-function
+      function printFunction() {
+          window.print();
+      }
+
+      
+      // Click on burgermenue -> shows the navigation
+      function myFunction() {
+        var x = document.getElementById("myLinks");
+        if (x.style.display === "block") {
+          x.style.display = "none";
+        } else {
+          x.style.display = "block";
+        }
+      }
+
+      </script>
+      <script language="Javascript">
+
+      function search_fonts(){
+        document.getElementById('search_field').style.color = "#808080";
+
+      }
+
+      function set_search_item(item) {
+        document.getElementById('search_company').value = item;
+        document.getElementById("suggests").innerHTML = "";
+        //document.forms.search.submit();
+      }
+
+      function searchFor(suchbegriff){
+  
+      var xmlHttp = null;
+      
+      if (typeof XMLHttpRequest != 'undefined') {
+        xmlHttp = new XMLHttpRequest();
+      }
+      if (!xmlHttp) {
+        alert("Keine volle Funktion!")
+      }
+      // Wenn das Objekt erfolgreich erzeugt wurde      
+      if (xmlHttp) {
+
+
+        var url = "search_tab.php";
+        var params = "suchbegriff="+suchbegriff;
+        
+        xmlHttp.open("POST", url, true);
+        
+        //Headerinformationen für den POST Request
+        xmlHttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xmlHttp.setRequestHeader("Content-length", params.length);
+        xmlHttp.setRequestHeader("Connection", "close");          
+      
+        xmlHttp.onreadystatechange = function () {
+          if (xmlHttp.readyState == 4) {
+            document.getElementById("suggests").innerHTML = xmlHttp.responseText;
+          }
+        };        
+        xmlHttp.send(params);
+      }     
+    }
+
+
+    </script>
+    <style>
+      .offerImageOverlay {
+        opacity: 0;
+        position: absolute;
+        z-index: 3;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        background: rgba(33,33,33,.3);
+        color: #fff;
+        transition: opacity .3s ease-out;
+        text-align: center;
+      }
+
+      .offerImageOverlay:hover {
+        opacity: 1;
+      }
+
+      @media print {
+        @page {
+          size: A3;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          color-adjust:exact;
+          -webkit-print-color-adjust:exact;
+        }
+  
+        .col-3, .col-1, .companys, .row_portale, .footer, .topnav, #search-bar, .bewerben, .job-text iframe, .header-image, .mobile{
+          display: none;
+        }
+        .row-job-job .col-7{
+          display: block;
+          width: 100%;
+        }
+        .row-job{
+          display: none;
+        }
+        
+   
+        .col-7 object{
+          margin-top: 0;
+          padding-top: 0;
+          width: 100%;
+        }  
+
+        #iframeHtml5{
+          display: block;
+        }
+        .msg{
+          display: none;
+        }
+      }
+
+      
+      @font-face { 
+        font-family: 'Barlow_semi';
+        src: url('https://www.biotechjobs.at/fonts/Barlow/Barlow-SemiBold.ttf') format('truetype'); 
+      }
+
+      @font-face { 
+        font-family: 'Barlow_medium';
+        src: url('https://www.biotechjobs.at/fonts/Barlow/Barlow-Medium.ttf') format('truetype'); 
+      }
+      
+      @font-face { 
+        font-family: 'Barlow_bold';
+        src: url('https://www.biotechjobs.at/fonts/Barlow/Barlow-Bold.ttf') format('truetype'); 
+      }
+
+      @font-face { 
+        font-family: 'Barlow_extra';
+        src: url('https://www.biotechjobs.at/fonts/Barlow/Barlow-ExtraBold.ttf') format('truetype'); 
+      }
+      
+      a:hover{
+        color: #64a930;
+      }
+      .nav-or a:hover{
+        color: whitesmoke;
+      }
+      .nav-r a:hover{
+        color: whitesmoke;
+      }
+      
+
+      #fb:hover {
+        content: url('https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Facebook/Facebook-Icon-fb-blue-P.svg');
+      }
+      .topnav{
+      box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+      margin-bottom: 12px;
+      padding-left: 40px;
+    }
+    #search-bar #search-btn{
+      float: none;
+      margin-left: 5px;
+    }
+    #search-bar{
+      padding: 0px;
+    }
+    .job-text .center{
+      position: relative;
+      margin-top: 25px;
+      width: 70%;
+    }
+    .job-text #pdf_obj{
+    min-height: 1350px;
+    }
+    @media screen and (min-width: 1059px) and (max-width: 1400px){
+      #search-bar{
+        display: none;
+      }
+    }
+   
+
+    @media screen and (min-width: 721px) and (max-width: 1060px){
+    /* Company-info*/
+
+    .mobile{
+      display: none;
+    }
+    .row-job-job .col-7{
+    padding: 0;
+    margin-left: 0;
+    width: 100%;
+    }
+    .row-job-job .col-1{
+    padding: 0;
+    margin-left: 0;
+    width: 2.5%;
+    }
+    /*.row-job-job .col-3{
+    display: none;
+    }*/
+
+    .col-3 {
+      width: 100%;
+    }
+
+    .col-1 {
+      display: none;
+    }
+}
+@media screen and (min-width: 0px) and (max-width: 720px){
+  .row-job-job{
+    padding-top: 46px;
+  }
+  .col-3 {
+    width: 100%;
+  }
+  .col-1 {
+    display: none;
+  }
+  .col-7 {
+    width: 100%;
+  }
+  .desktop{
+    display: none;
+  }
+  .mobile{
+    display: -webkit-box;
+  }
+  .job-text #pdf_obj{
+    min-height: 580px;
+  }
+  .back_to_search{
+    display: block;
+  }
+  body {
+    display: block !important;
+  }
+}
+
+/* CSS um Styles der Anzeigen zu unterdrücken ... damit sie nicht einfluss auf das gesamte Layout haben*/
+   /*Walter Group */
+  .container [class*="col-"]{
+    float: inherit;
+  }
+  /*Roche */
+  /*
+  Zerstört Layout von ACP
+  #mobile-scale img{
+    max-width: 100%;
+  }
+  */
+  #mobile-scale .jobAd .jobAdHeader .hideOnPrint{
+    max-width: 120px;
+  }
+
+  #mobile-scale #m4_css_prefix___inserat ul.m4_css_prefix___zzel_ul li.m4_css_prefix___zzel_li::before{
+    content: "";
+  }
+
+  /*Siemens*/
+  .siemens .benefit-text{
+    float: left;
+    margin-top: 66px;
+    margin-left: -76px;
+    font-size: 13px;
+  }
+  .siemens .benefit-icon{
+    float: left;
+    margin-right: 10px;
+  }
+  * {
+    color: unset;
+  }
+
+
+
+  @media screen and (min-width: 0px) and (max-width: 720px){
+  /*Siemens*/
+  .siemens .benefit-text{
+    font-size: 10px;
+  }
+  .siemens .benefit-icon{
+    float: left;
+    margin-right: 10px;
+    /*width: 20%;*/
+  }
+  /* ASCO Engineering GmbH */
+  #job-cont .col-7{
+    max-width: 100%;
+  }
+}
+
+
+
+    </style>
+  
+   
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org/",
+
+      "@type": "JobPosting",
+
+      "title": "Scientific Researcher / Research Engineer (f/m/d)",
+
+    
+      "description" : "<p>Für alle Infos zur ausgeschriebenen Stelle: Scientific Researcher / Research Engineer (f/m/d) der Firma CBmed GmbH, nutzen Sie den Buttom: 'Bewerben auf: biotechjobs.at' <br> </p>",
+
+   
+
+      "identifier": {
+
+       "@type": "PropertyValue",
+
+       "name": "CBmed GmbH",
+
+       "value": "69104"
+
+     },
+
+     "datePosted": "2026-07-27",
+
+     "validThrough": "2026-11-23",
+
+     "employmentType": "Vollzeit",
+
+     "hiringOrganization": {
+
+       "@type": "Organization",
+
+       "name": "CBmed GmbH",
+
+       "sameAs": "",
+
+       "logo": "https://www.biotechjobs.at/files/61530685_logo48.png"
+
+     },
+
+     "jobLocation": {
+
+     "@type": "Place",
+
+       "address": {
+
+       "@type": "PostalAddress",
+
+       "streetAddress": "Stiftingtalstraße 14",
+
+       "addressLocality": "Graz",
+
+       "addressRegion": "Graz",
+
+       "postalCode": "8010",
+
+       "addressCountry": "AUT"
+
+       }
+
+     }
+
+    }
+   </script>  </head>
+  <body>
+    <!-- cookie law -->
+    <script src="https://webcachex-eu.datareporter.eu/loader/v2/cmp-load.js?url=aa0a4bfb-863e-4301-8e63-697f9b3d605e.yx3tn8Pnpk7p.K90" defer></script>  <!-- top-nav-menu -->
+  <div class="topnav" style="background-color:#64a930; background-image:linear-gradient(to bottom, #72b53f , #358716);">
+      <ul>
+        <li class="nav-l"><a href="https://www.biotechjobs.at/index.php"><img src="https://www.biotechjobs.at/EF-ICONS/biotech-logo-white.png" height="28px" style="width: auto !important; height: 28px !important;"></a></li>
+        <li class="nav-l" id="search-bar" style="width:54%; background-color:transparent" >
+          <form action="https://www.biotechjobs.at/search.php" method="get">
+                <input class="search_company banner_search" onfocus="clearPlaceholder(this)" style="background-color: #fff; color: #64a930; line-height: 1rem;" id="search_company" type="text" placeholder="Stichwort, Beruf, Unternehmen" name="search_company"
+                >
+                
+                <select name="search_city" id="search_city" class="dtl-search" style="background-color: #fff; color: #64a930; margin-left: 5px; line-height: 1rem;">
+                <option style="background-color: white;" value=""><font color="#c5c5c5">Region w&auml;hlen...</font></option>
+              <option style="background-color: white;"  selected value=""><font color="#c5c5c5">alle...</font></option>
+              <option style='background-color: white;' value='123' >Nieder&ouml;sterreich</option><option style='background-color: white;' value='124' >Wien</option><option style='background-color: white;' value='125' >Burgenland</option><option style='background-color: white;' value='126' >Ober&ouml;sterreich</option><option style='background-color: white;' value='127' >Salzburg</option><option style='background-color: white;' value='128' >K&auml;rnten</option><option style='background-color: white;' value='129' >Steiermark</option><option style='background-color: white;' value='130' >Tirol</option><option style='background-color: white;' value='131' >Vorarlberg</option><option style='background-color: white;' value='132' >&Ouml;sterreich</option><option style='background-color: white;' value='133' >Sonstige</option>              </select> 
+                <input name="num_page" id="num_page" type="hidden" value="0">
+                
+                <button id="search-btn" class="orange-btn-large" style="background-color:#fb5c62;  margin-top: 0px;">Suche</button>
+          </form>
+        </li>
+        <li class="nav-or"><a class="openModal2" style="background-color:#fb5c62">Login</a></li> 
+          <!-- <li class="nav-or"><a class="openModal" style="background-color:#fb5c62">Registrieren</a></li> --><li class="nav-r"><a href="https://www.biotechjobs.at/company_info.php">Für Unternehmen</a></li><li class="nav-r"><a href="https://www.biotechjobs.at/candidates/candidates_info.php">Für Bewerber*innen</a></li>    
+      </ul>
+           
+    </div>
+    <!-- END top-nav-menu -->     
+    <!-- Top Navigation Menu - Mobile -->
+    <div class="mobile-container">
+      <div class="topnav-m sticky_nav" >
+        <a href="https://www.biotechjobs.at/index.php" class="active" style="background-color:#64a930; background-image:linear-gradient(to bottom, #72b53f , #358716);"><img  id="header_img" src="https://www.biotechjobs.at/EF-ICONS/biotech-logo-white.png" width="200px"></a>
+        <a href="https://www.biotechjobs.at/search.php" class="facebook"><img src="https://www.biotechjobs.at/images/lupe_weiss.png"></a>
+        <div id="myLinks" style="background-color:#fb5c62">
+          <br>
+          <a href="https://www.biotechjobs.at/company_info.php">Für Unternehmen</a>
+          <a href="https://www.biotechjobs.at/candidates/candidates_info.php">Für Bewerber*innen</a><!-- <a class="nav-or" href="https://www.biotechjobs.at/candidates/login.php" style="background-color: white">Login</a>-->
+                    <!-- <a class="nav-or openModalMobil" style="background-color: white">Registrieren</a> -->
+                    <a class="nav-or openModal2Mobil" style="background-color: white">Login</a>          <a href="https://www.biotechjobs.at/impressum.php">Impressum</a>
+          <a href="https://www.biotechjobs.at/company_info.php#kontakt">Kontakt</a>
+          <br>
+        </div>
+        <a href="javascript:void(0);" class="icon" onclick="myFunction()">
+          <img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Header/JM-Hamburger-menue.svg" width="40px">
+          <i class="fa fa-bars"></i>
+        </a>
+      </div>
+    </div>
+    <!-- END Navigation Menu - Mobile -->
+
+     <!-- ModalBox - Registration -->
+    <div class="modal m1">
+      <div class="modalContent">
+          <span class="close c1">×</span>
+          <img  id="header_img" src="https://www.biotechjobs.at/EF-ICONS/biotech-logo-color.png" width="200px">
+          <p>Wie möchten Sie sich registrieren?</p>
+          <button id="ag" class="orange-btn-large" style="background-color:#64a930">Unternehmen</button>
+          <button id="bw" class="orange-btn-large" style="background-color:#64a930">Bewerber*in</button>
+      </div>
+    </div>
+   <!-- END ModalBox -->
+
+    <!-- ModalBox - Login -->
+    <div class="modal m2">
+      <div class="modalContent">
+          <span class="close c2">×</span>
+          <img  id="header_img" src="https://www.biotechjobs.at/EF-ICONS/biotech-logo-color.png" width="200px">
+          <p>Wie möchten Sie sich anmelden?</p>
+          <button id="agl" class="orange-btn-large" style="background-color:#64a930">Unternehmen</button>
+          <button id="bwl" class="orange-btn-large" style="background-color:#64a930">Bewerber*in</button>
+      </div>
+    </div>
+    <!-- END ModalBox -->
+
+<div id="fb-root"></div>
+  <script>
+
+    function loadFb(){
+      window.fbAsyncInit = function() {
+        FB.init({
+          xfbml      : true,
+          version    : 'v2.10'
+        });
+      };
+
+      (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s); js.id = id;
+        js.src = "//connect.facebook.net/de_DE/sdk.js#xfbml=1&version=v2.10";
+        fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', 'facebook-jssdk'));
+    }  
+    document.addEventListener("DOMContentLoaded", function () {
+      (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s); js.id = id;
+        js.src = "//connect.facebook.net/de_DE/sdk.js#xfbml=1&version=v2.10";
+        fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', 'facebook-jssdk'));
+    });
+
+    //if mousover or scrolling visit get counted every 10sec
+    window.onscroll = function(){count_views('scrolling')};
+ 
+    var myTimeout;
+    var block = false;
+    var first = 1;
+    function count_views(x){   
+      if(!block){
+          console.log("I count views with "+x+"!");
+          //Funktion einbauen um Visit mit allen Parametern zu speichern
+          block = true;
+
+
+          var location = window.location.href;
+          //console.log ("address: "+location);
+          var location = window.location.href;
+          console.log ("address: "+location);
+          var pathArray = location.split('/');
+          //const getFirstPart = location => (location.match(/\/.*?\/.*?\/.*?(?=\/)/) || [])[0];
+
+          console.log("cuted address: "+pathArray[3])
+          const aid_stat = pathArray[3];
+          console.log("final aid: "+aid_stat);
+          $.ajax({
+              url      : 'https://www.biotechjobs.at/count_visit.php',
+              data     : { aid: aid_stat, action: x, time: first, adcode: 'kein', inserat: 1},
+              dataType : 'json',
+              method   : 'post',
+              success  : function(visit_saved) {
+                  console.log(visit_saved);
+              },
+              error    : function(message) {
+                  console.log(message);
+              }
+          }); 
+          first = first+10;
+          myTimeout = setTimeout(checkAgain, 10000);
+      }
+      function checkAgain(){
+          console.log("timout over");
+          block = false;
+      }
+    }
+  </script>
+
+
+  <div class="actual-jobs-cont page" onmouseover="count_views('mousover')" ontouchstart="count_views('touchstart')">
+<div class="row-job-job page-inner" id="job-cont">
+
+    <div class="col-1 menu desktop">
+
+    </div>
+
+
+
+    <div class="col-7">
+
+    
+
+        
+    <div class="row-job desktop">
+        <div class="column_top-job" style="background-color:#64a930; background-image: linear-gradient(to bottom, #72b53f , #358716);">
+            <div class="center job-logo-center" style="background-color: white; height: 110px; width: 110px; left: 65px;">
+                <img src="https://www.biotechjobs.at/files/61530685_logo48.png" width="100%" style="position: absolute; left: 54.5px; top: 55px; transform: translate(-50%, -50%);">
+            </div>
+        </div>
+        <div class="column-middle job-col-middle" style="background-color:#64a930; background-image: linear-gradient(to bottom, #72b53f , #358716);">
+            <h1>Scientific Researcher / Research Engineer (f/m/d)</h1><h3 style="top: 10px; right: 15px; font-weight: bold; color: #c0cfdf;">Wissenschaftliche Arbeiten</h3>
+            <h3>CBmed GmbH</h3><h3 style="top: 30px; right: 15px; color: #c0cfdf;">Steiermark</h3>
+            <!-- <h3 style="top: 50px; right: 5px; color: #c0cfdf;">24.08.2026</h3> -->
+            <div class="icons-job">
+                <div class="icons-left">
+                    <button style="background-color: transparent; border: none; /*margin-left:5px;*/"><a href="https://www.biotechjobs.at/61530685/Alle_Jobs_von_CBmed_GmbH" target="_blank" style="color: white; font-family: Barlow_semi;">Alle Inserate</a></button>
+                    <!-- <button class="orange-btn" style="background-color: transparent"><a href="https://www.biotechjobs.at/search.php?uid=61530685" target="_blank">Alle Inserate</a></button> -->
+                </div>
+                <div class="icons-right"><a href="https://www.biotechjobs.at/candidates/login.php?aid=69104&fav=0" target="_blank"><img src="https://www.biotechjobs.at/EF-ICONS/herz-passive.svg" title="als Favorit markieren" width="50px" style="margin-right: -8px; margin-top: 4px;"></a>
+       <div class="tooltip_down" id="share-link"><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Single-Ansicht-Header/JM-Links-Single-white.svg" title="Teilen" width="20px" style="margin: 2px 15px">
+           <span class="tooltiptext"><a href="mailto:?subject=Interessanter Job auf biotechjobs.at&body=Hi, habe folgenden Job auf biotechjobs.at gefunden und dabei an dich gedacht! %0AVielleicht ist er interessant für dich: %0A%0AScientific Researcher / Research Engineer (f/m/d)%0Ahttps://www.biotechjobs.at/69104/0/Scientific-Researcher---Research-Engineer-(f-m-d)"><div style="background-color: #7d7d7d; margin: 3px 6px;">
+            <img style="margin-right: 0px;" src="https://www.biotechjobs.at/EF-ICONS/mail_white.svg" title="Empfehlen per E-Mail" width="35px">
+            </div></a><a href='' onClick=MM_openBrWindow('https://www.facebook.com/sharer/sharer.php?u=https://www.biotechjobs.at/job.php?aid=69104&ref=fb','test','width=600,height=450')><div style="background-color: #4267b2; margin: 3px 6px;">
+            <img src="https://www.biotechjobs.at/images/facebook_icon_white.png" title="Teilen auf Facebook" style="height: 24px; width: 24px; margin-bottom: 3px; margin-top: 3px;">
+            </div></a><a href='' onClick=MM_openBrWindow('https://twitter.com/intent/tweet?url=https://www.biotechjobs.at/job.php?aid=69104&ref=fb','test','width=600,height=450')><div style="background-color: #03a9f4; margin: 3px 6px;">
+            <img src="https://www.biotechjobs.at/images/twitter_icon_white.png" title="Teilen auf Twitter" style="height: 24px; width: 24px; margin-bottom: 3px; margin-top: 3px;">
+            </div></a><a href='' onClick=MM_openBrWindow('https://linkedin.com/shareArticle?url=https://www.biotechjobs.at/job.php?aid=69104&ref=fb','test','width=600,height=450')><div style="background-color: #0077b7; margin: 3px 6px;">
+            <img src="https://www.biotechjobs.at/images/linkedin_icon_white.png" title="Teilen auf LinkedIn" style="height: 24px; width: 24px; margin-bottom: 3px; margin-top: 3px;">
+            </div></a><a href='' onClick=MM_openBrWindow('https://www.xing.com/spi/shares/new?url=https://www.biotechjobs.at/job.php?aid=69104&ref=fb','test','width=600,height=450')><div style="background-color: #1a7576; margin: 3px 6px;">
+            <img src="https://www.biotechjobs.at/images/xing_icon_white.png" title="Teilen auf Xing" style="height: 24px; width: 24px; margin-bottom: 3px; margin-top: 3px;">
+            </div></a>
+           </span>      
+       </div>
+                    <a href="mailto:?subject=Interessanter Job auf biotechjobs.at&body=Hi, habe folgenden Job auf biotechjobs.at gefunden und dabei an dich gedacht! %0AVielleicht ist er Interessant für dich: %0AScientific Researcher / Research Engineer (f/m/d)%0Ahttps://www.biotechjobs.at/69104/0/Scientific-Researcher---Research-Engineer-(f-m-d)"><img style="margin-right: 0px;" src="https://www.biotechjobs.at/EF-ICONS/mail_white.svg" title="Empfehlen per E-Mail" width="35px"></a>
+                    <button id="print" onclick="printFunction()"><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Single-Ansicht-Header/JM-Print-Single-white.svg" title="drucken" width="20px"></button>
+                    <button class="orange-btn-large" id="bewerben" style="background-color: #7ac1eb"><a href="https://www.biotechjobs.at/application.php?aid=69104" target="_blank">Bewerben</a></button>
+                </div>
+            </div>
+        </div>
+    </div>    <!--
+    <div class="header-image mobile" style="background-image: url('https://www.biotechjobs.at/EF-Headerbilder/EF-biotech-o-4.jpg'); min-height: 200px;">
+      <div id="innerHeader" style="top: 38%;">
+        <div class="header-text desktop">
+          <h1 style="color: ; text-align: left;">Einfach die Besten finden <a href="match_bot" class="orange-btn-large" style="background-color:#fb5c62;float: none;margin-left: 10px;margin-top: 0px;">MATCH-BOT</a></h1>
+          <h5 style="color: ; text-align: left;">Biotechjobs.at hat die meisten Stellenauschreibungen im
+	Bereich Biotechnologie, Life-Science, Pharmazie und Lebensmitteltechnologie
+	in Österreich. Finde alle Unternehmen der Branche auf einer Plattform!</h5>
+        </div>
+        <br>
+        <div class="search-container">
+            <form action="https://www.biotechjobs.at/search.php" method="post">
+              <input class="search_company" style="background-color: #ffffff; color: #64a930" id="search_company" type="text" placeholder="Stichwort, Beruf, Unternehmen" name="search_company">
+              <br>
+              <select name="search_city" id="search_city" class="dtl-search" style="background-color: #ffffff; color: #64a930;">
+                <option style="background-color: white;" value=""><font color="#c5c5c5">Region w&auml;hlen...</font></option>
+                <option style="background-color: white;"  selected value=""><font color="#c5c5c5">alle...</font></option>
+                <option style='background-color: white;' value='123' >Nieder&ouml;sterreich</option><option style='background-color: white;' value='124' >Wien</option><option style='background-color: white;' value='125' >Burgenland</option><option style='background-color: white;' value='126' >Ober&ouml;sterreich</option><option style='background-color: white;' value='127' >Salzburg</option><option style='background-color: white;' value='128' >K&auml;rnten</option><option style='background-color: white;' value='129' >Steiermark</option><option style='background-color: white;' value='130' >Tirol</option><option style='background-color: white;' value='131' >Vorarlberg</option><option style='background-color: white;' value='132' >&Ouml;sterreich</option><option style='background-color: white;' value='133' >Sonstige</option>              </select>
+              <br>  
+              <input name="num_page" id="num_page" type="hidden" value="0">
+              
+              <button id="search-btn" class="orange-btn-large" style="background-color:#fb5c62; padding-right: 24px">Suche</button>
+            </form>
+        </div>
+      </div> 
+    </div>
+              -->
+    
+    <div class="row-job mobile not_tablet" style="background-color:#64a930;">
+        
+        <div class="column-middle job-col-middle-mobil" style="background-color:#64a930;">
+            <h1>Scientific Researcher / Research Engineer (f/m/d)</h1> 
+            <h3 style="padding-right: 30px;">CBmed GmbH</h3>
+            <h3 style="top: 130px; font-weight: bold; color: #c0cfdf; padding-right: 30px;">Wissenschaftliche Arbeiten</h3>
+            <h3 style="top: 147px; color: #c0cfdf; padding-right: 30px;">Steiermark</h3>
+            <div class="icons-job">
+                <div class="icons-left-mobile">
+                    <a href="https://www.biotechjobs.at/61530685/Alle_Jobs_von_CBmed_GmbH" target="_blank" style="color: white; font-family: Barlow_semi;">Alle Inserate</a>
+                </div>
+                <div class="icons-right">
+                <div class="icons-functions-mobil"><a href="https://www.biotechjobs.at/candidates/login.php?aid=69104&fav=0" target="_blank"><img src="https://www.biotechjobs.at/EF-ICONS/herz-passive.svg" width="50px" style="margin-right: -5px; margin-top: 2px;" title="als Favorit markieren"></a>
+       <div class="tooltip_down" id="share-link"><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Single-Ansicht-Header/JM-Links-Single-white.svg" title="Teilen" width="20px" style="margin: 2px 15px">
+           <span class="tooltiptext"><a href="mailto:?subject=Interessanter Job auf biotechjobs.at&body=Hi, habe folgenden Job auf biotechjobs.at gefunden und dabei an dich gedacht! %0AVielleicht ist er interessant für dich: %0A%0AScientific Researcher / Research Engineer (f/m/d)%0Ahttps://www.biotechjobs.at/69104/0/Scientific-Researcher---Research-Engineer-(f-m-d)"><div style="background-color: #7d7d7d; margin: 3px 6px;">
+            <img style="margin-right: 0px;" src="https://www.biotechjobs.at/EF-ICONS/mail_white.svg" title="Empfehlen per E-Mail" width="35px">
+            </div></a><a href='' onClick=MM_openBrWindow('https://www.facebook.com/sharer/sharer.php?u=https://www.biotechjobs.at/job.php?aid=69104&ref=fb','test','width=600,height=450')><div style="background-color: #4267b2; margin: 3px 6px;">
+            <img src="https://www.biotechjobs.at/images/facebook_icon_white.png" title="Teilen auf Facebook" style="height: 24px; width: 24px; margin-bottom: 3px; margin-top: 3px;">
+            </div></a><a href='' onClick=MM_openBrWindow('https://twitter.com/intent/tweet?url=https://www.biotechjobs.at/job.php?aid=69104&ref=fb','test','width=600,height=450')><div style="background-color: #03a9f4; margin: 3px 6px;">
+            <img src="https://www.biotechjobs.at/images/twitter_icon_white.png" title="Teilen auf Twitter" style="height: 24px; width: 24px; margin-bottom: 3px; margin-top: 3px;">
+            </div></a><a href='' onClick=MM_openBrWindow('https://linkedin.com/shareArticle?url=https://www.biotechjobs.at/job.php?aid=69104&ref=fb','test','width=600,height=450')><div style="background-color: #0077b7; margin: 3px 6px;">
+            <img src="https://www.biotechjobs.at/images/linkedin_icon_white.png" title="Teilen auf LinkedIn" style="height: 24px; width: 24px; margin-bottom: 3px; margin-top: 3px;">
+            </div></a><a href='' onClick=MM_openBrWindow('https://www.xing.com/spi/shares/new?url=https://www.biotechjobs.at/job.php?aid=69104&ref=fb','test','width=600,height=450')><div style="background-color: #1a7576; margin: 3px 6px;">
+            <img src="https://www.biotechjobs.at/images/xing_icon_white.png" title="Teilen auf Xing" style="height: 24px; width: 24px; margin-bottom: 3px; margin-top: 3px;">
+            </div></a>
+           </span>      
+       </div>
+                    <button id="print" onclick="printFunction()"><img src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Single-Ansicht-Header/JM-Print-Single-white.svg" width="20px"></button>
+                    </div>
+                    <button class="orange-btn-large" id="bewerben" style="background-color:#7ac1eb;"><a href="https://www.biotechjobs.at/application.php?aid=69104" target="_blank">Bewerben</a></button>
+                </div>
+            </div>
+        </div>
+        <div class="column_top-job" style="background-color:#64a930">
+            <div class="center job-logo-center-mobil" style="background-color: white; height: 100px; width: 100px; left: 28px;">
+            <img src="https://www.biotechjobs.at/files/61530685_logo48.png" width="100%" style="position: absolute; left: 48px; top: 50px; transform: translate(-50%, -50%);">
+            </div>
+        </div>
+    </div><div class='header_bild'></div><div class="job-text" id="mobile_inserat" style="background-color: white;"><div style="position: relative;"><a href='https://www.biotechjobs.at/inserate/pdfs/biotechjobs.at_2026-07-27_61530685_zVVf.pdf' target='_blank'><img src='https://www.biotechjobs.at/inserate/pdf_images/biotechjobs.at_2026-07-27_61530685_zVVf.jpg' width='100%'><div class='offerImageOverlay'>
+        <br><br><br><br><br><br>
+        <img src='https://www.biotechjobs.at/images/lupe_zoom_weiss.png' title='Dieses Inserat hat 2 Seiten - Bitte klicken um das ganze PDF zu öffnen!'>
+        </div></a></div></div><div class="bewerben" style="background-color: #64a930; background-image: linear-gradient(to bottom, #72b53f , #358716);  text-align: center">
+
+            <button class="orange-btn-large" style="background-color: #7ac1eb"><a href="https://www.biotechjobs.at/application.php?aid=69104" target="_blank">Bewerben</a></button>
+
+          </div>  
+        </div>
+  
+<div class="col-3 menu" id="m-side-search">
+<br class="mobile">
+<!-- <a class="mobile back_to_search" href="https://www.biotechjobs.at/search.php" style="text-align: center; color: #64a930; margin-bottom: 20px;">Suche ändern</a> -->
+<div class="all_jobs_side">
+<a class="mobile back_to_search" href="https://www.biotechjobs.at/search.php?uid=61530685" style="text-align: center; color: #64a930; margin-bottom: 20px;">Alle Jobs von CBmed GmbH</a>
+
+</div>
+<ul>
+
+
+
+<li><div class="row-job-side aid" onclick="reload(this.id)" id="63361" name="CeMM-International-Postdoc-Program-(Vienna,-Austria)-Pre-ERC-Postdoc-Program-(m-f-d)">
+        <a>
+            <div class="column-middle">
+            <h4 style="color: #3B6C3D">CeMM International Postdoc Program (Vienna, ...</h4>
+              <h5>CeMM - Research Center for Molecular Medicine of ...</h5>
+              <h6 class="funktion" style="color: #64a930; letter-spacing: 0;">Wissenschaftliche Arbeiten</h6>
+              <h6></h6>
+              <p class="job-info" style="color: #64a930; letter-spacing: 0;">Wien</p>
+            </div>
+          </a>
+          <div class="column_top-job">
+          <a>
+            <div class="center">
+              <img src="https://www.biotechjobs.at/files/2019-05-31_10_55_39bild.jpeg" width="120%">
+            </div>
+            </a>
+            <h6 class="aid" style="display: none;">63361</h6>
+            <div class="rate-job-d-w">
+            <br><span class="rate-r" style="width: 20px; bottom: 0; right: 30px; top: 14px; text-transform:uppercase;" title="Sprache des Inserat-Text">en</span><a href="https://www.biotechjobs.at/candidates/login.php?aid=63361&fav=0"><img src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" style="width: 40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+          </div>
+
+         </div>
+       
+    </li><li><div class="row-job-side aid" onclick="reload(this.id)" id="65003" name="ERC-postdoc-positions-in-vascular,-computational,-and-cardiac-biology">
+        <a>
+            <div class="column-middle">
+            <h4 style="color: #3B6C3D">ERC postdoc positions in vascular, computational, ...</h4>
+              <h5>IMBA Institute of Molecular Biotechnology GmbH</h5>
+              <h6 class="funktion" style="color: #64a930; letter-spacing: 0;">Wissenschaftliche Arbeiten</h6>
+              <h6></h6>
+              <p class="job-info" style="color: #64a930; letter-spacing: 0;">Wien</p>
+            </div>
+          </a>
+          <div class="column_top-job">
+          <a>
+            <div class="center">
+              <img src="https://www.stemjobs.at/files/131_logo51.png" width="120%">
+            </div>
+            </a>
+            <h6 class="aid" style="display: none;">65003</h6>
+            <div class="rate-job-d-w">
+            <br><span class="rate-r" style="width: 20px; bottom: 0; right: 30px; top: 14px; text-transform:uppercase;" title="Sprache des Inserat-Text">en</span><a href="https://www.biotechjobs.at/candidates/login.php?aid=65003&fav=0"><img src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" style="width: 40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+          </div>
+
+         </div>
+       
+    </li><li><div class="row-job-side aid" onclick="reload(this.id)" id="68665" name="Research-Technician(s)-and-Lab-Manager-in-CNS-metabolism,-organoids,-cell-biology-(m-f-d)">
+        <a>
+            <div class="column-middle">
+            <h4 style="color: #3B6C3D">Research Technician(s) and Lab Manager in CNS ...</h4>
+              <h5>CeMM - Research Center for Molecular Medicine of ...</h5>
+              <h6 class="funktion" style="color: #64a930; letter-spacing: 0;">Forschung & Entwicklung</h6>
+              <h6></h6>
+              <p class="job-info" style="color: #64a930; letter-spacing: 0;">Steiermark</p>
+            </div>
+          </a>
+          <div class="column_top-job">
+          <a>
+            <div class="center">
+              <img src="https://www.biotechjobs.at/files/2019-05-31_10_55_39bild.jpeg" width="120%">
+            </div>
+            </a>
+            <h6 class="aid" style="display: none;">68665</h6>
+            <div class="rate-job-d-w">
+            <br><span class="rate-r" style="width: 20px; bottom: 0; right: 30px; top: 14px; text-transform:uppercase;" title="Sprache des Inserat-Text">en</span><a href="https://www.biotechjobs.at/candidates/login.php?aid=68665&fav=0"><img src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" style="width: 40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+          </div>
+
+         </div>
+       
+    </li><li><div class="row-job-side aid" onclick="reload(this.id)" id="68666" name="Postdoctoral-Fellows-to-Decode-and-Engineer-Metabolism-(m-f-d)">
+        <a>
+            <div class="column-middle">
+            <h4 style="color: #3B6C3D">Postdoctoral Fellows to Decode and Engineer ...</h4>
+              <h5>CeMM - Research Center for Molecular Medicine of ...</h5>
+              <h6 class="funktion" style="color: #64a930; letter-spacing: 0;">Wissenschaftliche Arbeiten</h6>
+              <h6></h6>
+              <p class="job-info" style="color: #64a930; letter-spacing: 0;">Steiermark</p>
+            </div>
+          </a>
+          <div class="column_top-job">
+          <a>
+            <div class="center">
+              <img src="https://www.biotechjobs.at/files/2019-05-31_10_55_39bild.jpeg" width="120%">
+            </div>
+            </a>
+            <h6 class="aid" style="display: none;">68666</h6>
+            <div class="rate-job-d-w">
+            <br><span class="rate-r" style="width: 20px; bottom: 0; right: 30px; top: 14px; text-transform:uppercase;" title="Sprache des Inserat-Text">en</span><a href="https://www.biotechjobs.at/candidates/login.php?aid=68666&fav=0"><img src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" style="width: 40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+          </div>
+
+         </div>
+       
+    </li><li><div class="row-job-side aid" onclick="reload(this.id)" id="68872" name="PhD-Student-Postdoc-(f-m-d)-undndash;-Computational-Pediatric-Cancer-Genomics">
+        <a>
+            <div class="column-middle">
+            <h4 style="color: #3B6C3D">PhD Student/Postdoc (f/m/d) &ndash; Computational ...</h4>
+              <h5>St. Anna Kinderkrebsforschung </h5>
+              <h6 class="funktion" style="color: #64a930; letter-spacing: 0;">alle...</h6>
+              <h6></h6>
+              <p class="job-info" style="color: #64a930; letter-spacing: 0;">Wien</p>
+            </div>
+          </a>
+          <div class="column_top-job">
+          <a>
+            <div class="center">
+              <img src="https://www.biotechjobs.at/files/2024-07-15_08:47:55bild_YMBK.jpg" width="120%">
+            </div>
+            </a>
+            <h6 class="aid" style="display: none;">68872</h6>
+            <div class="rate-job-d-w">
+            <br><span class="rate-r" style="width: 20px; bottom: 0; right: 30px; top: 14px; text-transform:uppercase;" title="Sprache des Inserat-Text">en</span><a href="https://www.biotechjobs.at/candidates/login.php?aid=68872&fav=0"><img src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" style="width: 40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+          </div>
+
+         </div>
+       
+    </li><li><div class="row-job-side aid" onclick="reload(this.id)" id="68909" name="Office-Manager-(m-f-d)">
+        <a>
+            <div class="column-middle">
+            <h4 style="color: #3B6C3D">Office Manager (m/f/d)</h4>
+              <h5>CeMM Research Center for Molecular Medicine</h5>
+              <h6 class="funktion" style="color: #64a930; letter-spacing: 0;"></h6>
+              <h6></h6>
+              <p class="job-info" style="color: #64a930; letter-spacing: 0;">Graz</p>
+            </div>
+          </a>
+          <div class="column_top-job">
+          <a>
+            <div class="center">
+              <img src="http://www.stepstone.at/upload_AT/logo/5/logoCeMM-Center-for-Molecular-Medicine-12921AT.gif" width="120%">
+            </div>
+            </a>
+            <h6 class="aid" style="display: none;">68909</h6>
+            <div class="rate-job-d-w">
+            <br><span class="rate-r" style="width: 20px; bottom: 0; right: 30px; top: 14px; text-transform:uppercase;" title="Sprache des Inserat-Text">en</span><a href="https://www.biotechjobs.at/candidates/login.php?aid=68909&fav=0"><img src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" style="width: 40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+          </div>
+
+         </div>
+       
+    </li><li><div class="row-job-side aid" onclick="reload(this.id)" id="69022" name="CeMM-International-Postdoc-Program-(Vienna,-Austria)-Pre--ERC-Postdoc-Program-(m-f-d)">
+        <a>
+            <div class="column-middle">
+            <h4 style="color: #3B6C3D">CeMM International Postdoc Program (Vienna, ...</h4>
+              <h5>CeMM - Research Center for Molecular Medicine of ...</h5>
+              <h6 class="funktion" style="color: #64a930; letter-spacing: 0;">Wissenschaftliche Arbeiten</h6>
+              <h6></h6>
+              <p class="job-info" style="color: #64a930; letter-spacing: 0;">Wien</p>
+            </div>
+          </a>
+          <div class="column_top-job">
+          <a>
+            <div class="center">
+              <img src="https://www.biotechjobs.at/files/2019-05-31_10_55_39bild.jpeg" width="120%">
+            </div>
+            </a>
+            <h6 class="aid" style="display: none;">69022</h6>
+            <div class="rate-job-d-w">
+            <br><span class="rate-r" style="width: 20px; bottom: 0; right: 30px; top: 14px; text-transform:uppercase;" title="Sprache des Inserat-Text">en</span><a href="https://www.biotechjobs.at/candidates/login.php?aid=69022&fav=0"><img src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" style="width: 40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+          </div>
+
+         </div>
+       
+    </li><li><div class="row-job-side aid" onclick="reload(this.id)" id="69104" name="Scientific-Researcher---Research-Engineer-(f-m-d)" style="border-left: 4px solid #64a930">
+        <a>
+            <div class="column-middle">
+            <h4 style="color: #3B6C3D">Scientific Researcher / Research Engineer (f/m/d)</h4>
+              <h5>CBmed GmbH</h5>
+              <h6 class="funktion" style="color: #64a930; letter-spacing: 0;">Wissenschaftliche Arbeiten</h6>
+              <h6></h6>
+              <p class="job-info" style="color: #64a930; letter-spacing: 0;">Steiermark</p>
+            </div>
+          </a>
+          <div class="column_top-job">
+          <a>
+            <div class="center">
+              <img src="https://www.biotechjobs.at/files/61530685_logo48.png" width="120%">
+            </div>
+            </a>
+            <h6 class="aid" style="display: none;">69104</h6>
+            <div class="rate-job-d-w">
+            <br><span class="rate-r" style="width: 20px; bottom: 0; right: 30px; top: 14px; text-transform:uppercase;" title="Sprache des Inserat-Text">en</span><a href="https://www.biotechjobs.at/candidates/login.php?aid=69104&fav=0"><img src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" style="width: 40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+          </div>
+
+         </div>
+       
+    </li><li><div class="row-job-side aid" onclick="reload(this.id)" id="69218" name="Scientist--Technical-Assistant-Biomedical-Mass-Spectrometry-(m-w-d)">
+        <a>
+            <div class="column-middle">
+            <h4 style="color: #3B6C3D">Scientist /Technical Assistant Biomedical Mass ...</h4>
+              <h5>IMC Krems</h5>
+              <h6 class="funktion" style="color: #64a930; letter-spacing: 0;">Wissenschaftliche Arbeiten</h6>
+              <h6></h6>
+              <p class="job-info" style="color: #64a930; letter-spacing: 0;">Nieder&ouml;sterreich</p>
+            </div>
+          </a>
+          <div class="column_top-job">
+          <a>
+            <div class="center">
+              <img src="https://www.biotechjobs.at/files/121_logo13.png" width="120%">
+            </div>
+            </a>
+            <h6 class="aid" style="display: none;">69218</h6>
+            <div class="rate-job-d-w">
+            <br><span class="rate-r" style="width: 20px; bottom: 0; right: 30px; top: 14px; text-transform:uppercase;" title="Sprache des Inserat-Text">de</span><a href="https://www.biotechjobs.at/candidates/login.php?aid=69218&fav=0"><img src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" style="width: 40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+          </div>
+
+         </div>
+       
+    </li><li><div class="row-job-side aid" onclick="reload(this.id)" id="69230" name="Postdoctoral-Fellow-or-Bioinformatics-Scientist,-Nomburg-Lab-(all-genders)">
+        <a>
+            <div class="column-middle">
+            <h4 style="color: #3B6C3D">Postdoctoral Fellow or Bioinformatics Scientist, ...</h4>
+              <h5>AITHYRA GmbH</h5>
+              <h6 class="funktion" style="color: #64a930; letter-spacing: 0;">Wissenschaftliche Arbeiten</h6>
+              <h6></h6>
+              <p class="job-info" style="color: #64a930; letter-spacing: 0;">Wien</p>
+            </div>
+          </a>
+          <div class="column_top-job">
+          <a>
+            <div class="center">
+              <img src="https://www.biotechjobs.at/files/61530734_logo65.png" width="120%">
+            </div>
+            </a>
+            <h6 class="aid" style="display: none;">69230</h6>
+            <div class="rate-job-d-w">
+            <br><span class="rate-r" style="width: 20px; bottom: 0; right: 30px; top: 14px; text-transform:uppercase;" title="Sprache des Inserat-Text">en</span><a href="https://www.biotechjobs.at/candidates/login.php?aid=69230&fav=0"><img src="https://www.biotechjobs.at/EF-ICONS/herz-passive-biotech.svg" style="width: 40px" title="als Favorit markieren"></a><img id="top-quer" src="https://www.biotechjobs.at/JM-Website-LOGOS-ICONS/JM-Cards-Icons/JM-Klammer-quer-not-visible.svg"></div>
+          </div>
+
+         </div>
+       
+    </li><a href="https://www.biotechjobs.at/search.php?search_term=*|**|*0&a=1"><button class="orange-btn-large" style="background-color:#fb5c62">Weitere Jobs</button></a></ul>
+<!-- <a href="search.php?a=1&search_term=*|**|*0"><button class="orange-btn-large" style="background-color:#64a930">Mehr</button></a> -->
+
+
+
+</div>
+<div class="col-1 menu desktop">
+
+    </div>
+</div>
+
+  </div>
+
+
+</div>
+
+
+       <!-- Footer --> 
+    <div class="footer footer-stemjobs" style="background-color:#64a930; background-image:linear-gradient(to bottom, #72b53f , #358716);">
+    
+            <div class="row" style="background-color: transparent;  text-align: left; padding-bottom: 0;">
+            <div style="border-bottom: 1px solid #fff; padding-bottom: 8px;">
+                <span style="text-transform: uppercase; color: #fff; padding-bottom: 10px; font-size: 12px; vertical-align: middle;">Folgen Sie uns:</span> <a href="https://www.facebook.com/Biotechjobs.at" target="_blank" ><img src="https://www.biotechjobs.at/images/facebook-icon_white.png" width="25px" style="display: inline"></a>&nbsp;&nbsp;<a href="https://www.instagram.com/biotechjobsat/" target="_blank"><img src="https://www.biotechjobs.at/images/instagram-icon_white.png" width="25px" style="display: inline"></a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.linkedin.com/company/biotechjobs-at/" target="_blank"><img src="https://www.biotechjobs.at/images/linkedin-icon_white.png" width="25px" style="display: inline"></a>
+            </div>
+        </div>
+    
+      <div class="row" style="background-color: transparent;">
+        
+        <div class="column">
+            <ul>
+              <li><img src="https://www.biotechjobs.at/EF-ICONS/biotech-logo-white.png" width="250px"></li>
+              <!-- <li id="search-bar-bottom" style="background-color:#64a930">
+                <form action="https://www.biotechjobs.at/search.php" method="post">
+
+                <input class="search_company" style="color: #64a930" onkeyup="searchFor(this.value);" autocomplete="off" id="search_company" type="text" placeholder="Stichwort, Beruf, Unternehmen" name="search_company">
+              <br>
+              <select name="search_city" id="search_city" class="dtl-search" style="color:#64a930">
+              <option value="alle..."><font color="#c5c5c5">Region w&auml;hlen...</font></option>
+              <option value="alle..."><font color="#c5c5c5">alle...</font></option>
+                  		    </select> 
+            
+                  <input name="quan" id="quan" type="hidden" value="1000">
+                  <br>
+                  <button id="search-btn" class="orange-btn-large" style="background-color:#fb5c62;  padding-right: 85px;">Suche</button>
+
+                </form>
+              </li> -->
+            </ul>
+          </div>
+                    <div class="column" style='width:25%'>
+            <ul>
+              <li><b>JobPlattform</b></li>
+              <a href="https://www.biotechjobs.at/vision.php"><li>Vision</li></a>
+              <a href="https://www.biotechjobs.at/bildung.php"><li>Bildung</li></a>
+                          </ul>
+          </div>
+          <div class="column" style='width:25%'>  
+            <ul>
+              <li><b>Arbeitgeber</b></li>
+              <a href="https://www.biotechjobs.at/company_info.php"><li>Möglichkeiten Arbeitgeber</li></a>
+              <a href="https://www.biotechjobs.at/unternehmen_views.php"><li>Partner</li></a>
+              <a href="https://www.biotechjobs.at/company_info.php#kontakt"><li>Kontakt</li></a>
+              <a class="openModalFtr"><li>Registrierung</li></a>
+            </ul>
+          </div>
+          <div class="column" style='width:25%'>  
+            <ul>
+              <li><b>Weitere Plattformen</b></li>
+              <a href="https://www.stemjobs.at" target="_blank"><li>stemjobs.at</li></a>
+              <a href="https://www.it-career.at" target="_blank"><li>IT-Career.at</li></a>
+              <a href="https://www.businessjobs.at" target="_blank"><li>Businessjobs.at</li></a>
+              <a href="https://www.biotechjobs.at" target="_blank"><li>biotechjobs.at</li></a>
+              <a href="https://www.biotechjobs24.de" target="_blank"><li>biotechjobs24.de</li></a>
+            </ul>
+          </div>
+          <div class="column" style='width:25%'>  
+            <ul>
+              <li class="desktop"><img src="https://www.biotechjobs.at/EF-ICONS/biotech-logo-white.png" width="120px"></li>
+              <li><b>Betreiber</b></li>
+              <a href="https://www.epiframe.com/" target="_blank"><li>&copy; Epiframe.com</li></a>
+              <a href="https://www.biotechjobs.at/impressum.php" target="_blank"><li>Impressum</li></a>
+              <a href="https://www.biotechjobs.at/datenschutz.php" target="_blank"><li>Datenschutz</li></a>
+              <a href ="javascript:dr_revokeChoice();" ><li>Cookie Einstellungen</li><a>
+            </ul>
+          </div>
+      </div>
+    </div>
+
+    <script language="javascript">
+      function MM_openBrWindow(theURL,winName,features) {
+        event.preventDefault()
+        window.open(theURL,winName,features);
+      }
+      </script>
+    
+
+
+  </body>
+</html>
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if(0 == 1){
+      const element = document.getElementById("m-side-search");
+      element.scrollIntoView();
+    }
+
+    //ShareMenü Btn mobile
+    const data = {
+          title: 'Job auf biotechjobs.at',
+          text: 'Hi, habe folgenden Job auf biotechjobs.at gefunden und dabei an dich gedacht! Vielleicht ist er Interesant für dich: Scientific Researcher / Research Engineer (f/m/d)',
+          url: window.location,
+    }
+
+     //const btn = document.getElementById('share-link');
+    var btns = document.getElementsByClassName('tooltip_down');
+    var i;
+
+    for (i = 0; i < btns.length; i++) {
+      
+        if(navigator.share && navigator.canShare && navigator.canShare(data)){
+          btns[i].addEventListener('click',() => {
+          navigator.share(data);
+          });
+        }else{
+          //btn.remove();
+        }
+      
+    }
+    //ShareMenü Btn mobile END
+
+    var actual_aid = 69104;
+    var aids = document.getElementsByClassName("aid");
+    $.ajax({
+        url      : 'https://www.biotechjobs.at/get_job.php',
+        data     : { aid: actual_aid, one: "" },
+        dataType : 'json',
+        method   : 'post',
+        success  : function(job_result) {
+           
+            loadFb();
+            //console.log(job_result);
+            //scrollToElem('foodsearch');
+        },
+        error    : function(message) {
+            console.log(message);
+        }
+    }); 
+    
+    for(let i = 0; i < aids.length; i++) {
+      if(actual_aid != aids[i].id){
+        aids[i].style.borderLeft = "none";
+        //console.log('-- color: NONE at '+aids[i].id);
+      }
+      else{
+        aids[i].style.borderLeft = "4px solid #64a930";
+        //console.log(aids[i].id);
+      }
+    }
+    let stateObj = { id: "100" };
+    
+    var title = 'Scientific-Researcher---Research-Engineer-(f-m-d)';
+    console.log(title);
+    
+    window.history.pushState(stateObj,
+              "neu geladen", "/"+actual_aid+"/0/"+title);      
+    var link_start = document.getElementById("ll");
+    var link_left = document.getElementById("l");
+    var link_right = document.getElementById("r");
+    var link_end = document.getElementById("rr");
+
+    if(-1 > -1){
+    /*link_start.href="https://www.biotechjobs.at/"+actual_aid+"/0/"+title;
+    link_left.href="https://www.biotechjobs.at/"+actual_aid+"/-1/"+title;*/
+    link_start.href="https://www.biotechjobs.at/job.php?aid="+actual_aid+"&num_page=0&next_page=1";
+    link_left.href="https://www.biotechjobs.at/job.php?aid="+actual_aid+"&num_page=-1&next_page=1";
+    }
+    if(10 == 10 && 23 > 0+1){
+    /*link_right.href="https://www.biotechjobs.at/"+actual_aid+"/1/"+title;
+    link_end.href="https://www.biotechjobs.at/"+actual_aid+"/22/"+title;*/
+    link_right.href="https://www.biotechjobs.at/job.php?aid="+actual_aid+"&num_page=1&next_page=1";
+    link_end.href="https://www.biotechjobs.at/job.php?aid="+actual_aid+"&num_page=22&next_page=1";
+    }
+});
+    
+    
+  function myFunction() {
+    var x = document.getElementById("myLinks");
+    if (x.style.display === "block") {
+      x.style.display = "none";
+    }else{
+      x.style.display = "block";
+    }
+  }
+  function blend() {
+    var fader = document.querySelector('.col-7');
+    fader.animate([{
+        opacity: '0'
+    }, {
+        opacity: '0.8'
+    }
+    ], {
+        duration: 800,
+    });
+  }
+
+function reload(clicked_id) {	
+    var actual_aid = document.getElementById(clicked_id);
+    var aids = document.getElementsByClassName("aid");
+    $.ajax({
+        url      : 'https://www.biotechjobs.at/get_job.php',
+        data     : { aid: clicked_id },
+        dataType : 'json',
+        method   : 'post',
+        success  : function(job_result) {
+          
+            blend();
+            showAll(job_result);
+            loadFb();
+            //console.log(job_result);
+            //scrollToElem('col-7');
+            clearTimeout(myTimeout);
+            first = 1;
+            block = false;
+          
+
+        },
+        error    : function(message) {
+          window.location.assign('job.php?aid='+clicked_id);
+            console.log(message);
+        }
+    }); 
+
+      //console.log(clicked_id);
+    var actual_aid = document.getElementById(clicked_id);
+    var aids = document.getElementsByClassName("aid");
+    //console.log(aids);
+    //parent.iframe_job.location.href="https://www.biotechjobs.at/job_main.php?aid="+clicked_id;
+    
+    for(let i = 0; i < aids.length; i++) {
+      if(clicked_id !== aids[i].id){
+        aids[i].style.borderLeft = "none";
+        //console.log('-- color: NONE at '+aids[i].id);
+      }
+      else{
+        //console.log('-- color: #64a930 at '+clicked_id);
+        aids[i].style.borderLeft = "4px solid #64a930";
+        //console.log(aids[i].id);
+      }
+    }
+    let stateObj = { id: "100" };
+    
+    var title = actual_aid.getAttribute("name");
+    console.log(title);
+    
+    window.history.pushState(stateObj,
+              "neu geladen", "/"+clicked_id+"/0/"+title);      
+    var link_start = document.getElementById("ll");
+    var link_left = document.getElementById("l");
+    var link_right = document.getElementById("r");
+    var link_end = document.getElementById("rr");
+
+
+    if(-1 > -1){
+    /*link_start.href="https://www.biotechjobs.at/"+clicked_id+"/0/"+title;
+    link_left.href="https://www.biotechjobs.at/"+clicked_id+"/-1/"+title;*/
+    link_start.href="https://www.biotechjobs.at/job.php?aid="+clicked_id+"&num_page=0&next_page=1";
+    link_left.href="https://www.biotechjobs.at/job.php?aid="+clicked_id+"&num_page=-1&next_page=1";
+    }
+    if(10 == 10 && 23 > 0+1){
+    /*link_right.href="https://www.biotechjobs.at/"+clicked_id+"/1/"+title;
+    link_end.href="https://www.biotechjobs.at/"+clicked_id+"/22/"+title;*/
+    link_right.href="https://www.biotechjobs.at/job.php?aid="+clicked_id+"&num_page=1&next_page=1";
+    link_end.href="https://www.biotechjobs.at/job.php?aid="+clicked_id+"&num_page=22&next_page=1";
+    }
+}
+function showAll(job_result) {
+
+job = job_result;
+//head
+/*var job_head = $('#head');
+job_head.empty();
+job_head.append(job['meta']);
+job_head.append(job['links']);
+job_head.append(job['google_jobs']);
+job_head.append(job['page_titel']);
+job_head.append(job['canon_link']);
+job_head.append(job['fb_meta']);*/
+
+//Logo
+var job_div_logo_m = $('.job-logo-center-mobil');
+job_div_logo_m.empty();
+job_div_logo_m.append(job['logo_link']+'<img src="'+job['logo']+'" width="100%" style="position: absolute; left: 48px; top: 55px; transform: translate(-50%, -50%);">'+job['logo_link_ende']);
+var job_div_logo = $('.job-logo-center');
+job_div_logo.empty();
+job_div_logo.append(job['logo_link']+'<img src="'+job['logo']+'" width="100%" style="position: absolute; left: 54.5px; top: 55px; transform: translate(-50%, -50%);">'+job['logo_link_ende']);
+//title and name
+var job_div_m = $('.job-col-middle-mobil');
+job_div_m.empty();
+job_div_m.append('<h1>'+job['titel']+'</h1>');
+job_div_m.append('<h3 style="padding-right: 30px;">'+job['name']+'</h3>');
+job_div_m.append(job['id_status_m']);
+job_div_m.append(job['ort_m']);
+job_div_m.append('<div class="icons-job-mobil"></div>');
+var job_div_icons_m = $('.icons-job-mobil');
+job_div_icons_m.append('<div class="icons-left-mobile"></div>');
+var job_div_icons_left_m = $('.icons-left-mobile');
+//Icon Left mobile
+job_div_icons_left_m.append(job['firmenlink']);
+//Icon Right mobile
+job_div_icons_m.append('<div class="icons-right-mobil"></div>');
+var job_div_icons_right_m = $('.icons-right-mobil');
+job_div_icons_right_m.append('<div class="icons-functions-mobil"></div>');
+var job_div_icons_right_m_f = $('.icons-functions-mobil');
+job_div_icons_right_m_f.append(job['fav_link']);
+job_div_icons_right_m_f.append(job['fb_share']);
+job_div_icons_right_m_f.append(job['print_btn']);
+job_div_icons_right_m.append('<button class="orange-btn-large" id="bewerben" style="background-color: #7ac1eb"><a href="https://www.biotechjobs.at/application.php?aid='+job['id']+'" target="_blank">Bewerben</a></button>');
+
+var job_div = $('.job-col-middle');
+job_div.empty();
+job_div.append('<h1>'+job['titel']+'</h1>');
+job_div.append(job['id_status']);
+job_div.append('<h3>'+job['name']+'</h3>');
+job_div.append(job['ort']);
+job_div.append('<div class="icons-job"></div>');
+var job_div_icons = $('.icons-job');
+job_div_icons.append('<div class="icons-left"></div>');
+var job_div_icons_left = $('.icons-left');
+//Icon Left
+job_div_icons_left.append(job['firmenlink']);
+//Icon Right
+job_div_icons.append('<div class="icons-right"></div>');
+var job_div_icons_right = $('.icons-right');
+job_div_icons_right.append(job['fav_link']);
+job_div_icons_right.append(job['fb_share']);
+job_div_icons_right.append(job['mail_btn']);
+
+
+job_div_icons_right.append(job['print_btn']);
+job_div_icons_right.append('<button class="orange-btn-large" id="bewerben" style="background-color: #7ac1eb"><a href="https://www.biotechjobs.at/application.php?aid='+job['id']+'" target="_blank">Bewerben</a></button>');
+//Header Bild
+var job_header_bild = $('.header_bild');
+job_header_bild.empty();
+job_header_bild.append(job['header_bild']);
+//Text
+var job_text = $('#mobile_inserat');
+job_text.empty();
+job_text.append(job['text']);
+job_text.append(job['video']);
+//Bewerben
+var job_bewerben = $('.bewerben');
+job_bewerben.empty();
+job_bewerben.append(job['bewerben']);
+//pagetitle
+newDocTitle = job['titel']+' bei '+job['name']+' | '+'BIOTECHJOBS.AT';
+document.querySelector('title').textContent = newDocTitle;
+//Alle Jobs von ... Sidbar
+var job_alle_jobs_side = $('.all_jobs_side');
+job_alle_jobs_side.empty();
+job_alle_jobs_side.append(job['link_alle_jobs']);
+job_alle_jobs_side.append(job['link_firmenprofil']);
+//Scroll to Top
+$(window).scrollTop(0);
+FB.XFBML.parse();
+
+
+}      
+</script>
+ <script>
+        function open_direct_link(url,aid) {
+            const newWindow = window.open('', '_blank');
+
+            if (newWindow) {
+                save_directlink(url,aid);
+                newWindow.opener = null; // Sicherheit
+                newWindow.location = url;
+            } else {
+                alert('Popup wurde blockiert!');
+            }
+        }
+        </script>
+ <script>
+        function save_directlink(link,aid) {	
+            $.ajax({
+                url      : '/mail_process.php',
+                data     : { apply_mail: link, aid: aid, apply_typ: 'directlink' },
+                dataType : 'json',
+                method   : 'post',
+                success  : function(result) {
+                    console.log(result);
+                },
+                error    : function(message) {
+                    console.log(message);
+                }
+            }); 
+        }
+        </script>
+<style>
+  /* ASCO Engineering GmbH */
+   .fa-bars{
+    display: none;
+  }
+  body{
+    text-align: center;
+  }
+  </style>
+</body>
+
+</html>

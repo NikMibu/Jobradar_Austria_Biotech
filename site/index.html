@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Heimspiel — Jobradar</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="topbar">
+        <h1>Heimspiel</h1>
+        <span id="meta-line"></span>
+        <span id="demo-badge" hidden>Demo-Daten</span>
+      </header>
+      <div id="layout">
+        <div id="map"></div>
+        <aside id="sidebar">
+          <div id="filters">
+            <select id="f-role"><option value="">Rollenfamilie</option></select>
+            <select id="f-source"><option value="">Quelle</option></select>
+            <select id="f-contract"><option value="">Vertragsart</option></select>
+            <label>Score ≥ <input id="f-score" type="number" min="0" max="100" step="5" /></label>
+            <label>neu ≤ <input id="f-days" type="number" min="1" placeholder="Tage" /> d</label>
+            <select id="f-anchor"><option value="">Anker: alle</option></select>
+            <label>≤ <input id="f-minutes" type="number" min="0" step="15" placeholder="min" /> min</label>
+            <label class="toggle"><input id="f-initiative" type="checkbox" /> Initiativ-Kandidaten</label>
+            <label class="toggle"><input id="f-saved" type="checkbox" /> ★ Merkliste</label>
+          </div>
+          <div id="list"></div>
+        </aside>
+      </div>
+      <div id="drawer" hidden>
+        <button id="drawer-close">×</button>
+        <div id="drawer-content"></div>
+      </div>
+    </div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
