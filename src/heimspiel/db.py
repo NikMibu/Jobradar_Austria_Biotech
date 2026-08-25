@@ -131,6 +131,12 @@ MIGRATIONS: list[list[str]] = [
         # in derselben Änderung erzwingt ohnehin die Neuauflösung aller Einträge.
         "ALTER TABLE location_cache ADD COLUMN in_austria INTEGER NOT NULL DEFAULT 1",
     ],
+    [
+        # Auslands-Sites sollen auf der Karte erscheinen (Nutzer-Wunsch), aber
+        # keine Transitous-Fahrzeiten bekommen (sinnlose Routen, Policy: Last
+        # klein halten) — travel/transitous.py filtert auf in_austria=1.
+        "ALTER TABLE sites ADD COLUMN in_austria INTEGER NOT NULL DEFAULT 1",
+    ],
 ]
 
 

@@ -51,14 +51,18 @@ def sync_companies(conn: sqlite3.Connection, entries: list[dict]) -> int:
 
 def geocode_missing(conn: sqlite3.Connection) -> int:
     rows = conn.execute(
-        "SELECT id, label, address_text FROM sites WHERE lat IS NULL AND address_text IS NOT NULL"
+        "SELECT id, label, address_text, in_austria FROM sites WHERE lat IS NULL AND address_text IS NOT NULL"
     ).fetchall()
     done = 0
     for row in rows:
+        # Auslands-Sites (in_austria=0) ohne Länder-Einschränkung geokodieren
+        params = {"q": row["address_text"], "format": "json", "limit": 1}
+        if row["in_austria"]:
+            params["countrycodes"] = "at"
         try:
             resp = requests.get(
                 NOMINATIM,
-                params={"q": row["address_text"], "format": "json", "limit": 1, "countrycodes": "at"},
+                params=params,
                 headers={"User-Agent": USER_AGENT},
                 timeout=30,
             )

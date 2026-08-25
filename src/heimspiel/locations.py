@@ -20,7 +20,9 @@ from .normalize import norm_text
 # v3: in_austria-Signal — city=None war bisher zweideutig ("unklar" vs. "eindeutig
 # Ausland"); match.py braucht die Unterscheidung, um Auslands-Treffer (XING-Städte-
 # Suche zieht auch Hamburg/München/Zürich mit) hart abzulehnen statt nur zu flaggen.
-LOCATION_SCHEMA_VERSION = 3
+# v4: Auslands-Städte behalten ihren Namen (city="Hamburg", in_austria=false) statt
+# null — sie sollen auf der Karte erscheinen, nur ohne Transitous-Fahrzeiten.
+LOCATION_SCHEMA_VERSION = 4
 COMPANY_SITE_MATCH_THRESHOLD = 85
 
 _EXONYMS = {"vienna": "Wien"}
@@ -67,8 +69,8 @@ class LocationResolution(BaseModel):
     in_austria: bool = True
 
 
-SYSTEM_PROMPT = """Du bekommst einen freien Standort-Text aus einer österreichischen
-Stellenanzeige und reduzierst ihn auf eine einzelne kanonische Stadt/Gemeinde in Österreich.
+SYSTEM_PROMPT = """Du bekommst einen freien Standort-Text aus einer Stellenanzeige
+(meist Österreich, teils DACH) und reduzierst ihn auf eine einzelne kanonische Stadt.
 
 Regeln:
 - Gib den offiziellen Namen der Stadt/Gemeinde zurück, ohne PLZ (z. B. "Klosterneuburg"
@@ -81,9 +83,10 @@ Regeln:
   gib Wien zurück, wenn Wien darunter ist, sonst den zuerst genannten Ort.
 - Bei reinem Homeoffice/Remote ohne konkrete Ortsangabe gib city=null, in_austria=true zurück
   (unklar, nicht ausgeschlossen).
-- in_austria=false NUR, wenn der Ort erkennbar außerhalb Österreichs liegt — auch ohne
+- in_austria=false, wenn der Ort erkennbar außerhalb Österreichs liegt — auch ohne
   Landesangabe im Text, wenn es sich um eine bekannte Stadt in einem anderen Land handelt
-  (z. B. "Hamburg", "München", "Berlin", "Zürich", "Frankfurt am Main"). city dabei null.
+  (z. B. "Hamburg", "München", "Berlin", "Zürich", "Visp", "Frankfurt am Main").
+  Die Stadt trotzdem in city zurückgeben (für die Karte), z. B. city="Hamburg".
 - Bei leerem, generischem ("Österreich", "diverse Standorte") oder sonst nicht auflösbarem
   Text: city=null, in_austria=true (im Zweifel nicht ausschließen).
 - Erfinde nichts."""
@@ -153,9 +156,8 @@ def _resolve(conn: sqlite3.Connection, location_text: str) -> tuple[str | None, 
         return city, True
     result = llm.parse_structured(SYSTEM_PROMPT, location_text, LocationResolution, max_tokens=100)
     city = _clean_city(result.city)
-    in_austria = result.in_austria if city is None else True
-    _cache_put(conn, key, location_text, city, in_austria)
-    return city, in_austria
+    _cache_put(conn, key, location_text, city, result.in_austria)
+    return city, result.in_austria
 
 
 def resolve_city(conn: sqlite3.Connection, location_text: str) -> str | None:
@@ -179,12 +181,13 @@ def _match_company_site(conn: sqlite3.Connection, company_id: int, city: str) ->
     return best_id if best_score >= COMPANY_SITE_MATCH_THRESHOLD else None
 
 
-def _get_or_create_generic_site(conn: sqlite3.Connection, city: str) -> int:
+def _get_or_create_generic_site(conn: sqlite3.Connection, city: str, in_austria: bool = True) -> int:
+    # Auslands-Sites ohne ", Österreich"-Suffix, sonst geokodiert Nominatim ins Leere
     conn.execute(
-        """INSERT INTO sites (company_id, label, address_text, is_hq)
-           VALUES (NULL, ?, ?, 0)
+        """INSERT INTO sites (company_id, label, address_text, is_hq, in_austria)
+           VALUES (NULL, ?, ?, 0, ?)
            ON CONFLICT(label) WHERE company_id IS NULL DO NOTHING""",
-        (city, f"{city}, Österreich"),
+        (city, f"{city}, Österreich" if in_austria else city, int(in_austria)),
     )
     conn.commit()
     row = conn.execute(
@@ -203,14 +206,14 @@ def resolve_locations(conn: sqlite3.Connection, limit: int | None = None) -> int
     done = 0
     for row in rows:
         ex = Extraction.model_validate_json(row["extracted_json"])
-        city = resolve_city(conn, ex.location_text)
+        city, in_austria = _resolve(conn, ex.location_text)
         if not city:
             continue
         site_id = (
             _match_company_site(conn, row["company_id"], city) if row["company_id"] else None
         )
         if site_id is None:
-            site_id = _get_or_create_generic_site(conn, city)
+            site_id = _get_or_create_generic_site(conn, city, in_austria)
         conn.execute("UPDATE postings SET site_id=? WHERE id=?", (site_id, row["id"]))
         conn.commit()
         done += 1

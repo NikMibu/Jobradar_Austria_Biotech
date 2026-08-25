@@ -94,7 +94,7 @@ def test_resolve_city_treats_literal_null_string_as_none(conn, monkeypatch):
 def test_resolve_locations_leaves_unresolvable_without_site(conn, monkeypatch):
     conn.execute("INSERT INTO companies (id, name) VALUES (1, 'ACME GmbH')")
     _seed_posting(conn, 1, location_text="Homeoffice")
-    monkeypatch.setattr(loc, "resolve_city", lambda conn, text: None)
+    monkeypatch.setattr(loc, "_resolve", lambda conn, text: (None, True))
 
     assert loc.resolve_locations(conn) == 0
     row = conn.execute("SELECT site_id FROM postings WHERE id=1").fetchone()
@@ -104,7 +104,7 @@ def test_resolve_locations_leaves_unresolvable_without_site(conn, monkeypatch):
 
 def test_resolve_locations_creates_generic_site_without_company(conn, monkeypatch):
     _seed_posting(conn, 1, company_id=None, location_text="Wien")
-    monkeypatch.setattr(loc, "resolve_city", lambda conn, text: "Wien")
+    monkeypatch.setattr(loc, "_resolve", lambda conn, text: ("Wien", True))
 
     assert loc.resolve_locations(conn) == 1
     site = conn.execute("SELECT * FROM sites").fetchone()
@@ -115,6 +115,19 @@ def test_resolve_locations_creates_generic_site_without_company(conn, monkeypatc
     assert row["site_id"] == site["id"]
 
 
+def test_resolve_locations_creates_foreign_site_without_at_suffix(conn, monkeypatch):
+    # Auslands-Städte sollen auf der Karte erscheinen, aber ohne ", Österreich"-Suffix
+    # (sonst geokodiert Nominatim ins Leere) und ohne spätere Transitous-Fahrzeiten.
+    _seed_posting(conn, 1, company_id=None, location_text="Hamburg")
+    monkeypatch.setattr(loc, "_resolve", lambda conn, text: ("Hamburg", False))
+
+    assert loc.resolve_locations(conn) == 1
+    site = conn.execute("SELECT * FROM sites").fetchone()
+    assert site["label"] == "Hamburg"
+    assert site["address_text"] == "Hamburg"
+    assert site["in_austria"] == 0
+
+
 def test_resolve_locations_prefers_company_site_over_generic(conn, monkeypatch):
     conn.execute("INSERT INTO companies (id, name) VALUES (1, 'ACME GmbH')")
     conn.execute(
@@ -122,7 +135,7 @@ def test_resolve_locations_prefers_company_site_over_generic(conn, monkeypatch):
     )
     conn.commit()
     _seed_posting(conn, 1, company_id=1, location_text="Wien")
-    monkeypatch.setattr(loc, "resolve_city", lambda conn, text: "Wien")
+    monkeypatch.setattr(loc, "_resolve", lambda conn, text: ("Wien", True))
 
     assert loc.resolve_locations(conn) == 1
     row = conn.execute("SELECT site_id FROM postings WHERE id=1").fetchone()
@@ -135,7 +148,7 @@ def test_resolve_locations_dedupes_generic_site_across_postings(conn, monkeypatc
     conn.execute("INSERT INTO companies (id, name) VALUES (1, 'ACME GmbH'), (2, 'Beta AG')")
     _seed_posting(conn, 1, company_id=1, location_text="Linz")
     _seed_posting(conn, 2, company_id=2, location_text="Linz")
-    monkeypatch.setattr(loc, "resolve_city", lambda conn, text: "Linz")
+    monkeypatch.setattr(loc, "_resolve", lambda conn, text: ("Linz", True))
 
     assert loc.resolve_locations(conn) == 2
     assert conn.execute("SELECT COUNT(*) c FROM sites").fetchone()["c"] == 1
