@@ -16,8 +16,10 @@ import requests
 from pydantic import BaseModel
 
 BACKEND = os.environ.get("HEIMSPIEL_LLM", "anthropic")
+# qwen3:8b: 9/11 auf den Verdachtsfällen im eval-roles-Vergleich (qwen2.5:7b 7/11,
+# gpt-oss:20b liefert mit format=JSON-Schema nur leere Antworten)
 EXTRACT_MODEL = os.environ.get(
-    "HEIMSPIEL_MODEL", "claude-haiku-4-5" if BACKEND == "anthropic" else "qwen2.5:7b"
+    "HEIMSPIEL_MODEL", "claude-haiku-4-5" if BACKEND == "anthropic" else "qwen3:8b"
 )
 OLLAMA_URL = os.environ.get("HEIMSPIEL_OLLAMA_URL", "http://localhost:11434")
 
