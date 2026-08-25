@@ -60,9 +60,25 @@ Danach liegt der Tagesreport in `data/report-<datum>.md` und die Site-Daten in `
 - **Anker = Bahnhöfe, nicht Adressen:** besseres Routing, nichts Privates im Repo. `profile.local.yaml` und `data/` sind gitignored.
 - **Extraktions-Cache über `content_hash + schema_version`:** ein Inserat wird genau einmal extrahiert; Backfills > 500 laufen über die Batch-API (halber Preis).
 
+## Null-Kosten-Variante: Ollama statt Haiku
+
+Extraktion und Score laufen wahlweise über ein lokales Modell (Ollama, Structured
+Outputs via JSON-Schema — kein Proxy nötig):
+
+```bash
+ollama pull qwen2.5:7b
+export HEIMSPIEL_LLM=ollama              # Backend umschalten
+export HEIMSPIEL_MODEL=qwen2.5:7b        # optional, das ist der Default bei ollama
+export HEIMSPIEL_OLLAMA_URL=http://localhost:11434   # optional, Default
+uv run heimspiel daily
+```
+
+Der Extraktions-Cache ist backend-unabhängig — bereits extrahierte Inserate werden
+nicht neu bezahlt/gerechnet. Die Batch-API greift nur beim Anthropic-Backend.
+
 ## Eval
 
-`docs/EVAL.md` — Feld-Accuracy der Extraktion auf 50 handgelabelten Inseraten (geplant: Haiku vs. lokales Modell via Ollama; `HEIMSPIEL_MODEL` + `ANTHROPIC_BASE_URL` schalten das Backend um).
+`docs/EVAL.md` — Feld-Accuracy der Extraktion auf 50 handgelabelten Inseraten (geplant: Haiku vs. lokales Modell via Ollama, umschaltbar über `HEIMSPIEL_LLM`/`HEIMSPIEL_MODEL`).
 
 ## Lizenz
 

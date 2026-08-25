@@ -28,6 +28,8 @@
 
 ## Modell-Switch
 
-`HEIMSPIEL_MODEL` und `ANTHROPIC_BASE_URL` schalten das Backend um
-(z. B. Ollama hinter einem Anthropic-kompatiblen Proxy / LiteLLM) — damit
-läuft dasselbe Eval-Set gegen Haiku und das lokale Modell.
+`HEIMSPIEL_LLM=ollama` (+ optional `HEIMSPIEL_MODEL`, `HEIMSPIEL_OLLAMA_URL`)
+schaltet auf ein lokales Ollama-Modell um — damit läuft dasselbe Eval-Set
+gegen Haiku und das lokale Modell. Achtung: der Extraktions-Cache unterscheidet
+nicht nach Modell; für einen sauberen Vergleich `HEIMSPIEL_DB` auf eine
+separate Datei zeigen lassen.

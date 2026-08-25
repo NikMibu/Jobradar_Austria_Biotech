@@ -58,24 +58,29 @@ def _fetch_text(session: requests.Session, url: str) -> str | None:
 
 
 def fetch() -> list[RawPosting]:
+    import typer
+
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
     resp = session.get(URL, timeout=30)
     resp.raise_for_status()
     postings = []
-    for j in parse_positions(resp.text):
-        time.sleep(REQUEST_DELAY_S)
-        text = _fetch_text(session, j["url"])
-        source_id = hashlib.sha256(f"{j['url']}|{j['title']}".encode()).hexdigest()[:16]
-        postings.append(
-            RawPosting(
-                source="vbc",
-                source_id=source_id,
-                url=j["url"],
-                title=j["title"],
-                company=j["organisation"],
-                location="Wien, Vienna BioCenter",
-                text=text,
+    with typer.progressbar(
+        parse_positions(resp.text), label="  Positionen", show_pos=True
+    ) as bar:
+        for j in bar:
+            time.sleep(REQUEST_DELAY_S)
+            text = _fetch_text(session, j["url"])
+            source_id = hashlib.sha256(f"{j['url']}|{j['title']}".encode()).hexdigest()[:16]
+            postings.append(
+                RawPosting(
+                    source="vbc",
+                    source_id=source_id,
+                    url=j["url"],
+                    title=j["title"],
+                    company=j["organisation"],
+                    location="Wien, Vienna BioCenter",
+                    text=text,
+                )
             )
-        )
     return postings

@@ -102,20 +102,9 @@ def score_system_prompt(profile: Profile) -> str:
 
 
 def score_one(ex: Extraction, profile: Profile) -> ScoreResult:
-    response = llm.client().messages.parse(
-        model=llm.EXTRACT_MODEL,
-        max_tokens=1500,
-        system=[
-            {
-                "type": "text",
-                "text": score_system_prompt(profile),
-                "cache_control": {"type": "ephemeral"},
-            }
-        ],
-        messages=[{"role": "user", "content": ex.model_dump_json(indent=2)}],
-        output_format=ScoreResult,
+    return llm.parse_structured(
+        score_system_prompt(profile), ex.model_dump_json(indent=2), ScoreResult, max_tokens=1500
     )
-    return response.parsed_output
 
 
 def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None = None) -> int:
@@ -131,36 +120,39 @@ def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None 
         rows = rows[:limit]
     now = datetime.now(UTC).isoformat(timespec="seconds")
     done = 0
-    for row in rows:
-        ex = Extraction.model_validate_json(row["extracted_json"])
-        hard = hard_filter(ex, profile, site_travel_ok(conn, row["site_id"], profile))
-        fit: ScoreResult | None = None
-        if hard.passed:
-            try:
-                fit = score_one(ex, profile)
-            except Exception as e:  # noqa: BLE001
-                print(f"  Score fehlgeschlagen für posting {row['posting_id']}: {e}")
-                continue
-        conn.execute(
-            """INSERT OR REPLACE INTO scores
-               (posting_id, profile_version, hard_pass, hard_reasons,
-                fit_score, fit_reasons, gaps, angle, model, scored_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?)""",
-            (
-                row["posting_id"],
-                profile.profile_version,
-                int(hard.passed),
-                json.dumps({"reasons": hard.reasons, "flags": hard.flags}, ensure_ascii=False),
-                fit.fit_score if fit else None,
-                json.dumps(fit.fit_reasons, ensure_ascii=False) if fit else None,
-                json.dumps(fit.gaps, ensure_ascii=False) if fit else None,
-                fit.angle if fit else None,
-                llm.EXTRACT_MODEL if fit else None,
-                now,
-            ),
-        )
-        conn.commit()
-        done += 1
+    import typer
+
+    with typer.progressbar(rows, label="  Score", show_pos=True) as bar:
+        for row in bar:
+            ex = Extraction.model_validate_json(row["extracted_json"])
+            hard = hard_filter(ex, profile, site_travel_ok(conn, row["site_id"], profile))
+            fit: ScoreResult | None = None
+            if hard.passed:
+                try:
+                    fit = score_one(ex, profile)
+                except Exception as e:  # noqa: BLE001
+                    print(f"\n  Score fehlgeschlagen für posting {row['posting_id']}: {e}")
+                    continue
+            conn.execute(
+                """INSERT OR REPLACE INTO scores
+                   (posting_id, profile_version, hard_pass, hard_reasons,
+                    fit_score, fit_reasons, gaps, angle, model, scored_at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    row["posting_id"],
+                    profile.profile_version,
+                    int(hard.passed),
+                    json.dumps({"reasons": hard.reasons, "flags": hard.flags}, ensure_ascii=False),
+                    fit.fit_score if fit else None,
+                    json.dumps(fit.fit_reasons, ensure_ascii=False) if fit else None,
+                    json.dumps(fit.gaps, ensure_ascii=False) if fit else None,
+                    fit.angle if fit else None,
+                    llm.EXTRACT_MODEL if fit else None,
+                    now,
+                ),
+            )
+            conn.commit()
+            done += 1
     return done
 
 

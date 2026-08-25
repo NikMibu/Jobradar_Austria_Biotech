@@ -77,22 +77,25 @@ def compute_missing(conn: sqlite3.Connection, profile: Profile) -> int:
     when = next_tuesday_7am()
     now = datetime.now(UTC).isoformat(timespec="seconds")
     done = 0
-    for p in pairs:
-        best = plan_minutes(p["alat"], p["alon"], p["slat"], p["slon"], when)
-        conn.execute(
-            "INSERT OR REPLACE INTO travel_times (site_id, anchor_id, minutes, transfers, engine, computed_at) VALUES (?,?,?,?,?,?)",
-            (
-                p["site_id"],
-                p["anchor_id"],
-                best[0] if best else None,
-                best[1] if best else None,
-                ENGINE,
-                now,
-            ),
-        )
-        conn.commit()
-        done += 1
-        time.sleep(REQUEST_DELAY_S)
+    import typer
+
+    with typer.progressbar(pairs, label="  Fahrzeiten", show_pos=True) as bar:
+        for p in bar:
+            best = plan_minutes(p["alat"], p["alon"], p["slat"], p["slon"], when)
+            conn.execute(
+                "INSERT OR REPLACE INTO travel_times (site_id, anchor_id, minutes, transfers, engine, computed_at) VALUES (?,?,?,?,?,?)",
+                (
+                    p["site_id"],
+                    p["anchor_id"],
+                    best[0] if best else None,
+                    best[1] if best else None,
+                    ENGINE,
+                    now,
+                ),
+            )
+            conn.commit()
+            done += 1
+            time.sleep(REQUEST_DELAY_S)
     return done
 
 

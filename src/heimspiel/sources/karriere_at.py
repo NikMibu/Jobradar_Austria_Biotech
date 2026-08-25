@@ -79,7 +79,8 @@ def fetch(terms: list[str], locations: list[str], max_pages: int = 2) -> list[Ra
     session.headers.update(_HEADERS)
     postings: list[RawPosting] = []
     seen: set[str] = set()
-    for term in terms:
+    for i, term in enumerate(terms):
+        print(f"  [{i + 1}/{len(terms)}] {term} … ({len(postings)} bisher)", flush=True)
         for loc in locations:
             for page in range(1, max_pages + 1):
                 url = f"{BASE}/jobs/{_slug(term)}/{_slug(loc)}"

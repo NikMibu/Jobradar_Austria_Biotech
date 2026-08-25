@@ -54,14 +54,7 @@ def fetch_page_text(url: str) -> str | None:
 
 
 def extract_positions(page_text: str) -> list[Position]:
-    response = llm.client().messages.parse(
-        model=llm.EXTRACT_MODEL,
-        max_tokens=4000,
-        system=[{"type": "text", "text": _SYSTEM, "cache_control": {"type": "ephemeral"}}],
-        messages=[{"role": "user", "content": page_text[:40000]}],
-        output_format=PositionList,
-    )
-    return response.parsed_output.positions
+    return llm.parse_structured(_SYSTEM, page_text[:40000], PositionList, max_tokens=4000).positions
 
 
 def diff_positions(old: list[dict], new: list[Position]) -> tuple[list[dict], list[dict]]:

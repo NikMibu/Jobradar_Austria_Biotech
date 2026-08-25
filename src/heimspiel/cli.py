@@ -25,32 +25,46 @@ def fetch(
     search = cfg.load_search()
     from .sources.base import store_postings
 
+    def run_source(label: str, fn) -> int:
+        # Eine abstürzende Quelle darf die anderen nicht mitreißen (SPEC §13)
+        typer.echo(f"{label} …")
+        try:
+            n = store_postings(conn, fn())
+            typer.echo(f"  → {n} neu")
+            return n
+        except Exception as e:  # noqa: BLE001
+            typer.secho(f"  → {label} fehlgeschlagen: {e}", fg=typer.colors.RED)
+            return 0
+
     total = 0
     if biotech:
         from .sources import biotechjobs
 
-        typer.echo("biotechjobs.at …")
-        total += store_postings(conn, biotechjobs.fetch())
+        total += run_source("biotechjobs.at", biotechjobs.fetch)
     if vbc:
         from .sources import vbc as vbc_src
 
-        typer.echo("Vienna BioCenter …")
-        total += store_postings(conn, vbc_src.fetch())
+        total += run_source("Vienna BioCenter", vbc_src.fetch)
     if karriere:
         from .sources import karriere_at
 
-        typer.echo("karriere.at …")
-        total += store_postings(conn, karriere_at.fetch(search.terms, search.locations))
+        total += run_source(
+            "karriere.at", lambda: karriere_at.fetch(search.terms, search.locations)
+        )
     if jobspy:
         from .sources import jobspy_src
 
-        typer.echo("JobSpy (Indeed/LinkedIn/Google) …")
-        total += store_postings(conn, jobspy_src.fetch(search.terms))
+        total += run_source(
+            "JobSpy (Indeed/LinkedIn/Google)", lambda: jobspy_src.fetch(search.terms)
+        )
     if career_pages:
         from .sources import career_pages as cp
 
         typer.echo("Firmen-Karriereseiten …")
-        total += cp.watch_all(conn)
+        try:
+            total += cp.watch_all(conn)
+        except Exception as e:  # noqa: BLE001
+            typer.secho(f"  → Karriereseiten fehlgeschlagen: {e}", fg=typer.colors.RED)
 
     marked = normalize.dedup(conn)
     typer.echo(f"{total} neue Inserate, {marked} Duplikate markiert.")

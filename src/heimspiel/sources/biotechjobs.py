@@ -85,30 +85,33 @@ def parse_employer_directory(html: str) -> list[dict]:
 
 
 def fetch() -> list[RawPosting]:
+    import typer
+
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
     resp = session.get(SEARCH_URL, timeout=30)
     resp.raise_for_status()
     jobs = parse_search(resp.text)
     postings = []
-    for j in jobs:
-        time.sleep(REQUEST_DELAY_S)
-        detail: dict = {}
-        try:
-            d = session.get(j["url"], timeout=30)
-            d.raise_for_status()
-            detail = parse_detail(d.text)
-        except requests.RequestException:
-            pass
-        postings.append(
-            RawPosting(
-                source="biotechjobs",
-                source_id=j["id"],
-                url=j["url"],
-                title=j["title"],
-                company=j["company"] or detail.get("company"),
-                location=j["location"] or detail.get("location"),
-                text=detail.get("description"),
+    with typer.progressbar(jobs, label="  Detailseiten", show_pos=True) as bar:
+        for j in bar:
+            time.sleep(REQUEST_DELAY_S)
+            detail: dict = {}
+            try:
+                d = session.get(j["url"], timeout=30)
+                d.raise_for_status()
+                detail = parse_detail(d.text)
+            except requests.RequestException:
+                pass
+            postings.append(
+                RawPosting(
+                    source="biotechjobs",
+                    source_id=j["id"],
+                    url=j["url"],
+                    title=j["title"],
+                    company=j["company"] or detail.get("company"),
+                    location=j["location"] or detail.get("location"),
+                    text=detail.get("description"),
+                )
             )
-        )
     return postings

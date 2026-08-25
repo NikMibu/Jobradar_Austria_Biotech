@@ -21,7 +21,8 @@ _LEGAL_RE = re.compile(
 
 
 def norm_text(s: str | None) -> str:
-    if not s:
+    # Adapter liefern gelegentlich Nicht-Strings (z. B. NaN aus pandas) — nie crashen
+    if not s or not isinstance(s, str):
         return ""
     s = unicodedata.normalize("NFKC", s).lower()
     s = _GENDER_RE.sub(" ", s)

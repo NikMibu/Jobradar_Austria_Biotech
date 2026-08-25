@@ -107,31 +107,27 @@ def _store(conn: sqlite3.Connection, raw: sqlite3.Row, ex: Extraction) -> None:
 
 
 def extract_one(raw: sqlite3.Row) -> Extraction:
-    response = llm.client().messages.parse(
-        model=llm.EXTRACT_MODEL,
-        max_tokens=2500,
-        system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
-        messages=[{"role": "user", "content": _posting_content(raw)}],
-        output_format=Extraction,
-    )
-    return response.parsed_output
+    return llm.parse_structured(SYSTEM_PROMPT, _posting_content(raw), Extraction, max_tokens=2500)
 
 
 def extract_pending(conn: sqlite3.Connection, limit: int | None = None) -> int:
+    import typer
+
     rows = pending_raws(conn)
     if limit:
         rows = rows[:limit]
-    if len(rows) > BATCH_THRESHOLD:
+    if len(rows) > BATCH_THRESHOLD and llm.BACKEND == "anthropic":
         return _extract_via_batch(conn, rows)
     done = 0
-    for raw in rows:
-        try:
-            ex = extract_one(raw)
-        except Exception as e:  # noqa: BLE001 — ein kaputtes Inserat stoppt nicht den Lauf
-            print(f"  Extraktion fehlgeschlagen für raw_id={raw['id']}: {e}")
-            continue
-        _store(conn, raw, ex)
-        done += 1
+    with typer.progressbar(rows, label="  Extraktion", show_pos=True) as bar:
+        for raw in bar:
+            try:
+                ex = extract_one(raw)
+            except Exception as e:  # noqa: BLE001 — ein kaputtes Inserat stoppt nicht den Lauf
+                print(f"\n  Extraktion fehlgeschlagen für raw_id={raw['id']}: {e}")
+                continue
+            _store(conn, raw, ex)
+            done += 1
     return done
 
 
