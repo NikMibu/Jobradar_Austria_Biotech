@@ -105,6 +105,7 @@ def _store(conn: sqlite3.Connection, raw: sqlite3.Row, ex: Extraction) -> None:
         """INSERT INTO postings (raw_id, company_id, site_id, extracted_json, schema_version, model, extracted_at)
            VALUES (?,?,NULL,?,?,?,?)
            ON CONFLICT(raw_id) DO UPDATE SET
+             company_id=excluded.company_id, site_id=excluded.site_id,
              extracted_json=excluded.extracted_json, schema_version=excluded.schema_version,
              model=excluded.model, extracted_at=excluded.extracted_at""",
         (

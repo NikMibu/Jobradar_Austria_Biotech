@@ -71,3 +71,22 @@ def test_pending_skips_extracted_and_duplicates(conn, monkeypatch):
     row = conn.execute("SELECT extracted_json, schema_version FROM postings LIMIT 1").fetchone()
     assert row["schema_version"] == ex.SCHEMA_VERSION
     assert json.loads(row["extracted_json"])["title_norm"] == "Bioinformatiker NGS"
+
+
+def test_restore_resets_stale_site_id(conn, monkeypatch):
+    # Regression: eine Re-Extraktion (Schema-/Modell-Wechsel) muss eine zuvor
+    # zugeordnete site_id verwerfen, sonst zeigt die Karte den alten Standort
+    # weiter an, obwohl die neue Extraktion einen anderen location_text liefert
+    # (beobachtet: "SA, AT" von einer alten Extraktion blieb an einer Stelle
+    # hängen, deren Neu-Extraktion "Salzburg" ergab — Karte zeigte Wien).
+    store_postings(conn, [RawPosting("indeed", "1", None, "A", "F", "Wien", "t")])
+    raw = conn.execute("SELECT * FROM postings_raw WHERE source_id='1'").fetchone()
+    ex._store(conn, raw, Extraction.model_validate(SAMPLE))
+    conn.execute(
+        "UPDATE postings SET site_id=999 WHERE raw_id=?", (raw["id"],)
+    )  # simuliert bereits aufgelösten Standort
+    conn.commit()
+
+    ex._store(conn, raw, Extraction.model_validate({**SAMPLE, "location_text": "Salzburg"}))
+    row = conn.execute("SELECT site_id FROM postings WHERE raw_id=?", (raw["id"],)).fetchone()
+    assert row["site_id"] is None
