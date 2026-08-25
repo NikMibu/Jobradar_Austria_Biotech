@@ -106,6 +106,9 @@ def fetch(
                 except requests.RequestException:
                     break
                 time.sleep(REQUEST_DELAY_S)
+                # xing.com liefert UTF-8 ohne Charset im Content-Type-Header — requests
+                # rät sonst Latin-1 und erzeugt Mojibake ("für" -> "fÃ¼r").
+                resp.encoding = "utf-8"
                 batch = [j for j in parse_search(resp.text) if j["id"] not in found]
                 for j in batch:
                     found[j["id"]] = j
@@ -127,6 +130,7 @@ def fetch(
             try:
                 d = session.get(j["url"], timeout=30)
                 d.raise_for_status()
+                d.encoding = "utf-8"
                 detail = parse_detail(d.text)
             except requests.RequestException:
                 pass
