@@ -157,8 +157,9 @@ buried in a design doc.
 
 ## The frontend
 
-A single-page MapLibre app with no backend: clustered map markers (colored by
-fit score or commute time), a filterable/sortable list, and a detail drawer
+A single-page MapLibre app with no backend: jobs at the same coordinates are
+combined into stable location markers that remain visible at every zoom level (colored by fit score or commute
+time), alongside a filterable/sortable list and a lazily loaded detail drawer
 with the full extraction, score reasoning, and links back to the original
 posting. Filters and sort persist in the URL, so a filtered view is a
 shareable link; saved postings and manual role corrections persist in

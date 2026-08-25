@@ -4,114 +4,120 @@
     "title": "Bioinformatiker NGS-Pipelines",
     "company": "Alpenpharm GmbH (Demo)",
     "source": "karriere_at",
-    "url": "https://example.com/job/1",
-    "alt_urls": ["https://example.com/indeed/1"],
     "first_seen": "2026-08-24T06:30:00+00:00",
-    "last_seen": "2026-08-25T06:30:00+00:00",
     "location_text": "Wien 22., Donaustadt",
-    "lat": 48.24, "lon": 16.41, "site_label": "Wien Werk",
-    "extraction": {
-      "title_norm": "Bioinformatiker NGS-Pipelines",
-      "role_family": "bioinformatics", "seniority": "junior", "education_min": "msc",
-      "phd_required": false, "years_experience_min": 1,
-      "must_skills": ["Python", "Nextflow", "Linux"], "nice_skills": ["AWS"],
-      "domain_keywords": ["NGS", "RNA-Seq"], "german_required": false,
-      "salary_min_eur_month": 3600, "salary_basis": "monthly_14x",
-      "location_text": "Wien 22., Donaustadt", "workplace_mode": "hybrid",
-      "contract_type": "permanent",
-      "summary_2_lines": "NGS-Auswertungspipelines für die klinische Diagnostik bauen und betreiben. Python, Nextflow und Linux verlangt, Cloud von Vorteil."
+    "lat": 48.24,
+    "lon": 16.41,
+    "site_label": "Wien Werk",
+    "hard_pass": true,
+    "hard_reasons": {
+      "reasons": [],
+      "flags": []
     },
-    "hard_pass": true, "hard_reasons": {"reasons": [], "flags": []},
     "fit_score": 86,
-    "fit_reasons": ["Alle drei must_skills durch Profil belegt", "Direkter Bezug zu Data Science + Medizin", "Junior-Level passt exakt zum Abschluss"],
-    "gaps": ["AWS bisher nur Grundlagen"],
-    "angle": "Ich bringe genau den Pipeline-Stack mit, den ihr betreibt, und will ihn in Richtung validierter klinischer Workflows weiterentwickeln.",
-    "travel": {"wien": {"minutes": 38, "transfers": 1}, "home": {"minutes": 71, "transfers": 2}}
+    "travel": {
+      "wien": {
+        "minutes": 38,
+        "transfers": 1
+      },
+      "home": {
+        "minutes": 71,
+        "transfers": 2
+      }
+    },
+    "role_family": "bioinformatics",
+    "workplace_mode": "hybrid",
+    "contract_type": "permanent",
+    "salary_min_eur_month": 3600,
+    "application_deadline": null
   },
   {
     "id": 2,
     "title": "CSV Engineer GMP",
     "company": "Donau Diagnostics (Demo)",
     "source": "jobspy_indeed",
-    "url": "https://example.com/job/2",
-    "alt_urls": [],
     "first_seen": "2026-08-25T06:30:00+00:00",
-    "last_seen": "2026-08-25T06:30:00+00:00",
     "location_text": "Krems an der Donau",
-    "lat": 48.41, "lon": 15.6, "site_label": "Krems",
-    "extraction": {
-      "title_norm": "CSV Engineer GMP",
-      "role_family": "csv_qa_validation", "seniority": "entry", "education_min": "bsc",
-      "phd_required": false, "years_experience_min": null,
-      "must_skills": ["GMP-Grundlagen", "Dokumentation"], "nice_skills": ["GAMP 5"],
-      "domain_keywords": ["Computer System Validation"], "german_required": true,
-      "salary_min_eur_month": 3200, "salary_basis": "monthly_14x",
-      "location_text": "Krems an der Donau", "workplace_mode": "onsite",
-      "contract_type": "permanent",
-      "summary_2_lines": "Computer System Validation im GMP-Labor, Einstieg möglich. Deutsch und saubere Dokumentation verlangt."
+    "lat": 48.41,
+    "lon": 15.6,
+    "site_label": "Krems",
+    "hard_pass": true,
+    "hard_reasons": {
+      "reasons": [],
+      "flags": []
     },
-    "hard_pass": true, "hard_reasons": {"reasons": [], "flags": []},
     "fit_score": 72,
-    "fit_reasons": ["Einstiegsrolle ohne Erfahrungshürde", "GMP-Interesse deckt sich mit AI/ML-Validierungs-Ziel", "Deutsch als Muttersprache erfüllt"],
-    "gaps": ["GAMP 5 noch nicht praktisch angewandt", "Kein Laborvalidierungs-Track-Record"],
-    "angle": "Ich positioniere mich als Bioinformatiker, der Validierung nicht als Papierkram, sondern als Datenproblem versteht.",
-    "travel": {"home": {"minutes": 52, "transfers": 1}, "wien": {"minutes": 68, "transfers": 1}}
+    "travel": {
+      "home": {
+        "minutes": 52,
+        "transfers": 1
+      },
+      "wien": {
+        "minutes": 68,
+        "transfers": 1
+      }
+    },
+    "role_family": "csv_qa_validation",
+    "workplace_mode": "onsite",
+    "contract_type": "permanent",
+    "salary_min_eur_month": 3200,
+    "application_deadline": null
   },
   {
     "id": 3,
     "title": "Mass Spec Data Analyst",
     "company": "Salzach Proteomics (Demo)",
     "source": "vbc",
-    "url": "https://example.com/job/3",
-    "alt_urls": [],
     "first_seen": "2026-08-23T06:30:00+00:00",
-    "last_seen": "2026-08-25T06:30:00+00:00",
     "location_text": "Salzburg",
-    "lat": 47.81, "lon": 13.04, "site_label": "Salzburg",
-    "extraction": {
-      "title_norm": "Mass Spec Data Analyst",
-      "role_family": "mass_spec", "seniority": "junior", "education_min": "msc",
-      "phd_required": false, "years_experience_min": 2,
-      "must_skills": ["Proteomics", "R", "Statistik"], "nice_skills": ["MaxQuant"],
-      "domain_keywords": ["LC-MS/MS"], "german_required": false,
-      "salary_min_eur_month": null, "salary_basis": null,
-      "location_text": "Salzburg", "workplace_mode": "onsite",
-      "contract_type": "fixed_term", "contract_end": "2027-03-31",
-      "summary_2_lines": "Auswertung von LC-MS/MS-Proteomikdaten in einem Forschungsprojekt. R und Statistik verlangt, Befristung bis März 2027."
-    },
+    "lat": 47.81,
+    "lon": 13.04,
+    "site_label": "Salzburg",
     "hard_pass": true,
-    "hard_reasons": {"reasons": [], "flags": ["Befristung endet 2027-03-31", "Standort/Fahrzeit unbekannt"]},
+    "hard_reasons": {
+      "reasons": [],
+      "flags": [
+        "Befristung endet 2027-03-31",
+        "Standort/Fahrzeit unbekannt"
+      ]
+    },
     "fit_score": 58,
-    "fit_reasons": ["Massenspektrometrie ist erklärtes Lernziel", "R-Kenntnisse vorhanden", "2 Jahre Erfahrung gefordert — grenzwertig"],
-    "gaps": ["Keine praktische Proteomics-Erfahrung", "Befristung < 12 Monate", "Pendelzeit Salzburg unklar"],
-    "angle": "Ich verkaufe die NGS-Statistik-Erfahrung als direkt übertragbar auf MS-Quantifizierung und die Stelle als bezahltes MS-Bootcamp.",
-    "travel": {}
+    "travel": {},
+    "role_family": "mass_spec",
+    "workplace_mode": "onsite",
+    "contract_type": "fixed_term",
+    "salary_min_eur_month": null,
+    "application_deadline": null
   },
   {
     "id": 4,
     "title": "Senior Principal Scientist Computational Chemistry",
     "company": "Alpenpharm GmbH (Demo)",
     "source": "jobspy_linkedin",
-    "url": "https://example.com/job/4",
-    "alt_urls": [],
     "first_seen": "2026-08-25T06:30:00+00:00",
-    "last_seen": "2026-08-25T06:30:00+00:00",
     "location_text": "Wien",
-    "lat": 48.24, "lon": 16.41, "site_label": "Wien Werk",
-    "extraction": {
-      "title_norm": "Senior Principal Scientist Computational Chemistry",
-      "role_family": "scientific_software", "seniority": "senior", "education_min": "phd",
-      "phd_required": true, "years_experience_min": 8,
-      "must_skills": ["Molecular Dynamics", "10+ Jahre Industrie"], "nice_skills": [],
-      "domain_keywords": ["Drug Design"], "german_required": false,
-      "salary_min_eur_month": 8000, "salary_basis": "monthly_14x",
-      "location_text": "Wien", "workplace_mode": "hybrid",
-      "contract_type": "permanent",
-      "summary_2_lines": "Leitende Rolle im computergestützten Wirkstoffdesign. PhD und 8+ Jahre Erfahrung zwingend."
-    },
+    "lat": 48.24,
+    "lon": 16.41,
+    "site_label": "Wien Werk",
     "hard_pass": false,
-    "hard_reasons": {"reasons": ["PhD erforderlich", "Seniorität: senior, 8 Jahre"], "flags": []},
-    "fit_score": null, "fit_reasons": null, "gaps": null, "angle": null,
-    "travel": {"wien": {"minutes": 38, "transfers": 1}}
+    "hard_reasons": {
+      "reasons": [
+        "PhD erforderlich",
+        "Seniorität: senior, 8 Jahre"
+      ],
+      "flags": []
+    },
+    "fit_score": null,
+    "travel": {
+      "wien": {
+        "minutes": 38,
+        "transfers": 1
+      }
+    },
+    "role_family": "scientific_software",
+    "workplace_mode": "hybrid",
+    "contract_type": "permanent",
+    "salary_min_eur_month": 8000,
+    "application_deadline": null
   }
 ]

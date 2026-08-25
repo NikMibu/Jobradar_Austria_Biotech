@@ -191,7 +191,7 @@ Optional Auto: OpenRouteService-Isochronen (Free-API-Key), falls Auto je relevan
 ## 8. Frontend (GitHub Pages)
 
 - Vite + TypeScript + MapLibre GL JS, Tiles von OpenFreeMap (kostenlos), kein Backend
-- Daten: `data/jobs.json`, `data/companies.json`, `data/isochrones/<anchor>.geojson`, `data/meta.json` (Laufzeit, Zählungen)
+- Daten: `data/jobs.json` (kompakte Startdaten), `data/job-details.json` (lazy Drawer-Daten), `data/companies.json`, `data/isochrones/<anchor>.geojson`, `data/meta.json` (Schema-Version, Laufzeit, Zählungen)
 - Layout: Karte links (Standorte farbig nach Score oder Fahrzeit, Hex-Layer pro Anker umschaltbar), Liste rechts, Detail-Drawer (Extraktion, Score-Begründung, Lücken, Angle, Links zu allen Quellen)
 - Filter: Rollenfamilie, Score ≥, max. Minuten je Anker, Quelle, `first_seen` ≤ N Tage, Vertragsart, Toggle "Initiativ-Kandidaten"
 - Zustand in URL-Parametern (teilbar), Merkliste in `localStorage`

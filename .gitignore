@@ -19,6 +19,8 @@ dist/
 # Site
 site/node_modules/
 site/dist/
+site/playwright-report/
+site/test-results/
 
 # OS/Editor
 .DS_Store

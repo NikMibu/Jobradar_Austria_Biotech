@@ -1,9 +1,12 @@
 # TODO
 
-## Frontend
+Keine offenen Punkte.
 
-- Kartendarstellung ist nach dem Cluster-Farb-Fix (2026-08-25) nur noch "semi gut" —
-  Cluster/Marker rendern laut Nutzer-Feedback immer noch nicht durchgehend zuverlässig.
-  Root Cause nicht abschließend geklärt (Cluster-Farb-Aggregation via `clusterProperties`
-  wurde gefixt, das war aber offenbar nicht die ganze Geschichte). Braucht gezielte
-  Frontend-Debug-Session (z. B. Playwright-Screenshot + Console-Log beim Pannen/Zoomen).
+## Erledigt am 2026-08-25
+
+- Map-Rendering stabilisiert. Ursachen waren hunderte exakt überlagerte Jobpunkte, doppelte
+  Full-Renders und ein Race beim sehr schnellen Laden des Kartenstils. Die geografischen
+  Cluster wurden nach Nutzerfeedback entfernt: gruppierte Standortmarker bleiben in jeder
+  Zoomstufe sichtbar. Ein inkompatibler dynamischer Zahlen-`symbol`-Layer, der sämtliche
+  GeoJSON-Tiles auf `errored` setzte, wurde ebenfalls entfernt. Getrennte UI-/Map-Updates
+  sowie Vitest- und Playwright-Regressionstests sichern nun echte gerenderte Features ab.

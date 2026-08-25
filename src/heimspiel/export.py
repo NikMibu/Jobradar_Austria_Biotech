@@ -9,6 +9,53 @@ from . import paths
 from .config import Profile
 from .match import initiative_scores
 
+DATA_SCHEMA_VERSION = 2
+
+
+def _split_job(job: dict) -> tuple[dict, dict]:
+    """Split a full export row into startup data and drawer-only details."""
+    ex = job["extraction"]
+    summary = {
+        key: job[key]
+        for key in (
+            "id",
+            "title",
+            "company",
+            "source",
+            "first_seen",
+            "location_text",
+            "lat",
+            "lon",
+            "site_label",
+            "hard_pass",
+            "hard_reasons",
+            "fit_score",
+            "travel",
+        )
+    }
+    summary.update(
+        {
+            "role_family": ex.get("role_family"),
+            "workplace_mode": ex.get("workplace_mode"),
+            "contract_type": ex.get("contract_type"),
+            "salary_min_eur_month": ex.get("salary_min_eur_month"),
+            "application_deadline": ex.get("application_deadline"),
+        }
+    )
+    details = {
+        key: job[key]
+        for key in (
+            "url",
+            "alt_urls",
+            "last_seen",
+            "extraction",
+            "fit_reasons",
+            "gaps",
+            "angle",
+        )
+    }
+    return summary, details
+
 
 def _job_rows(conn: sqlite3.Connection, profile: Profile) -> list[dict]:
     rows = conn.execute(
@@ -77,7 +124,13 @@ def export_all(conn: sqlite3.Connection, profile: Profile, out_dir: Path | None 
     out = out_dir or paths.site_data_dir()
     out.mkdir(parents=True, exist_ok=True)
 
-    jobs = _job_rows(conn, profile)
+    full_jobs = _job_rows(conn, profile)
+    jobs: list[dict] = []
+    job_details: dict[str, dict] = {}
+    for full_job in full_jobs:
+        summary, details = _split_job(full_job)
+        jobs.append(summary)
+        job_details[str(full_job["id"])] = details
     companies = initiative_scores(conn, profile)
     for c in companies:
         c["sites"] = [
@@ -88,6 +141,7 @@ def export_all(conn: sqlite3.Connection, profile: Profile, out_dir: Path | None 
             ).fetchall()
         ]
     meta = {
+        "data_schema_version": DATA_SCHEMA_VERSION,
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "profile_version": profile.profile_version,
         "anchors": [
@@ -99,7 +153,13 @@ def export_all(conn: sqlite3.Connection, profile: Profile, out_dir: Path | None 
             "companies_initiative": len(companies),
         },
     }
-    for name, data in [("jobs.json", jobs), ("companies.json", companies), ("meta.json", meta)]:
+    outputs = [
+        ("jobs.json", jobs),
+        ("job-details.json", job_details),
+        ("companies.json", companies),
+        ("meta.json", meta),
+    ]
+    for name, data in outputs:
         (out / name).write_text(
             json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8"
         )

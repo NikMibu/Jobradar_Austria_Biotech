@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Heimspiel — Jobradar</title>
-    <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
     <div id="app">
@@ -14,7 +13,10 @@
         <span id="demo-badge" hidden>Demo-Daten</span>
       </header>
       <div id="layout">
-        <div id="map"></div>
+        <div id="map-shell">
+          <div id="map"></div>
+          <div id="map-status" role="status">Karte wird vorbereitet …</div>
+        </div>
         <aside id="sidebar">
           <div id="filters">
             <select id="f-segment">

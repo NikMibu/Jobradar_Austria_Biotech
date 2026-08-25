@@ -27,15 +27,20 @@ def _seed(conn, fit_score=80):
     conn.commit()
 
 
-def test_export_writes_three_files(conn, tmp_path):
+def test_export_writes_summary_and_lazy_details(conn, tmp_path):
     _seed(conn)
     meta = exp.export_all(conn, make_profile(), out_dir=tmp_path)
     assert meta["counts"]["jobs"] == 1
     jobs = json.loads((tmp_path / "jobs.json").read_text())
     assert jobs[0]["fit_score"] == 80
     assert jobs[0]["company"] == "ACME GmbH"
+    assert jobs[0]["role_family"] == SAMPLE["role_family"]
+    assert "extraction" not in jobs[0]
+    details = json.loads((tmp_path / "job-details.json").read_text())
+    assert details["1"]["extraction"] == SAMPLE
     assert (tmp_path / "companies.json").exists()
     assert (tmp_path / "meta.json").exists()
+    assert meta["data_schema_version"] == 2
 
 
 def test_report_contains_top_and_angle(conn):
