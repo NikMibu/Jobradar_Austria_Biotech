@@ -85,6 +85,9 @@ def test_best_effort_foreign_city_handles_parens_and_noise():
     # Mehrdeutig (zwei echte Ortsteile übrig) -> lieber nichts als geraten
     assert loc._best_effort_foreign_city("Karlsruhe, Heidelberg, Mannheim") is None
     assert loc._best_effort_foreign_city("Deutschland (Helmholtz-Assoziation)") is None
+    # Land/Kontinent ohne Stadt -> kein Fake-Pin auf Kontinent-Zentroid
+    assert loc._best_effort_foreign_city("Europa (Baustelle Ausland)") is None
+    assert loc._best_effort_foreign_city("Australia") is None
 
 
 def test_is_in_austria_true_for_ambiguous_case(conn, monkeypatch):

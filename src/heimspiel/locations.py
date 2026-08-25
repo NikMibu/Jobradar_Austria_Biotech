@@ -45,6 +45,8 @@ _PAREN_RE = re.compile(r"\([^)]*\)")
 _FOREIGN_NOISE = {
     "deutschland", "germany", "d", "de", "schweiz", "switzerland", "ch",
     "hybrid", "remote", "on-site", "onsite", "vor ort",
+    "europa", "europe", "ausland", "weltweit", "international",
+    "australien", "australia",
 }
 
 
