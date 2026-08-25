@@ -23,3 +23,6 @@ site/dist/
 # OS/Editor
 .DS_Store
 *:Zone.Identifier
+
+# Personal
+applications
