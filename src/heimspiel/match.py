@@ -2,19 +2,24 @@
 Initiativ-Score pro Firma (kein LLM)."""
 
 import json
+import re
 import sqlite3
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, Field
+from rapidfuzz import fuzz
 
 from . import llm, locations
 from .config import Profile
-from .extract import Extraction
+from .extract import SCHEMA_VERSION as EXTRACTION_SCHEMA_VERSION
+from .extract import Extraction, Requirement
+from .normalize import norm_text
 
-MAX_YEARS_EXPERIENCE = 3
 SHORT_CONTRACT_MONTHS = 12
+SCORE_VERSION = 2
 
 
 @dataclass
@@ -45,14 +50,14 @@ def hard_filter(
 ) -> HardResult:
     """Die Regeln aus SPEC §6, in Reihenfolge."""
     res = HardResult(passed=True)
+    # Formale Hürden bleiben sichtbar, verhindern aber keinen Fachscore mehr.
     if ex.phd_required and not profile.phd_wanted:
-        res.passed = False
-        res.reasons.append("PhD erforderlich")
-    if ex.seniority == "senior" or (
-        ex.years_experience_min is not None and ex.years_experience_min > MAX_YEARS_EXPERIENCE
+        res.flags.append("PhD erforderlich")
+    if ex.seniority not in profile.seniority_allowed or (
+        ex.years_experience_min is not None
+        and ex.years_experience_min > profile.max_years_experience
     ):
-        res.passed = False
-        res.reasons.append(f"Seniorität: {ex.seniority}, {ex.years_experience_min or '?'} Jahre")
+        res.flags.append(f"Seniorität: {ex.seniority}, {ex.years_experience_min or '?'} Jahre")
     if ex.role_family not in profile.role_families_allowed:
         res.passed = False
         res.reasons.append(f"Rollenfamilie {ex.role_family} nicht erlaubt")
@@ -79,27 +84,54 @@ def hard_filter(
     return res
 
 
-class ScoreResult(BaseModel):
-    fit_score: int = Field(ge=0, le=100)
-    fit_reasons: list[str] = Field(min_length=1, max_length=3)
-    gaps: list[str] = Field(max_length=3)
+MatchLevel = Literal["direct", "transferable", "missing", "unknown"]
+FitLevel = Literal["strong", "moderate", "weak", "none", "unknown"]
+TrafficStatus = Literal["green", "yellow", "red"]
+
+
+class SkillAssessment(BaseModel):
+    requirement: str
+    match: MatchLevel
+    profile_evidence: str | None = None
+
+
+class HardNoHit(BaseModel):
+    rule: str
+    evidence: str
+
+
+class ScoreAssessment(BaseModel):
+    skills: list[SkillAssessment] = Field(default_factory=list)
+    domain_fit: FitLevel = "unknown"
+    domain_evidence: str = ""
+    interest_fit: FitLevel = "unknown"
+    interest_evidence: str = ""
+    hard_no_hits: list[HardNoHit] = Field(default_factory=list)
+    gaps: list[str] = Field(default_factory=list, max_length=3)
     angle: str
 
 
-_SCORE_SYSTEM_TEMPLATE = """Du bewertest, wie gut eine Stelle zu diesem Profil passt.
+_SCORE_SYSTEM_TEMPLATE = """Du erstellst ein evidenzbasiertes fachliches Assessment.
 
 ## Profil
 {profile_yaml}
 
-## Rubrik (fit_score 0-100)
-- Skill-Fit: Welcher Anteil der must_skills ist durch das Profil belegt?
-- Interessen-Fit: Bezug der Stelle zu den interests des Profils.
-- Realismus: Passen Ausbildung und geforderte Erfahrungsjahre? Eine Stelle, die formal erreichbar UND inhaltlich spannend ist, scort hoch.
-
-## Output
-- fit_reasons: genau 3 kurze Bullets, warum der Score so ausfällt.
-- gaps: maximal 3 konkrete Lücken gegenüber den Anforderungen.
-- angle: EIN Satz aus der Ich-Perspektive des Bewerbers: "so würde ich mich hier positionieren"."""
+## Regeln
+- Vergib KEINE Punktzahl. Python berechnet den Score deterministisch.
+- Bewerte jede übergebene Anforderung genau einmal als direct, transferable,
+  missing oder unknown. direct/transferable nur mit einem kurzen WÖRTLICHEN
+  Beleg aus dem Profil; ohne Beleg ist der Wert unknown.
+- direct bedeutet dieselbe nachgewiesene Methode, Technologie oder Erfahrung;
+  bloß verwandte Themen und Interessen sind höchstens transferable. Ein Interesse
+  ist niemals Beleg für praktische Erfahrung. Bei Zweifel unknown.
+- domain_fit bewertet die fachliche Nähe der Tätigkeit zum belegten Profil;
+  domain_evidence ist ein kurzes WÖRTLICHES Zitat aus der Stelle.
+- interest_fit bewertet den Bezug zu den ausdrücklich genannten Interessen;
+  interest_evidence ist ein kurzes WÖRTLICHES Zitat aus dem Profil.
+- hard_no_hits nur für eine Regel aus hard_no und mit einem konkreten WÖRTLICHEN
+  Beleg aus der Stelle; nichts hineininterpretieren.
+- gaps: maximal drei konkrete Lücken. angle: ein Satz aus Ich-Perspektive.
+- Fehlende Angaben bleiben unknown. Nichts erfinden."""
 
 
 def score_system_prompt(profile: Profile) -> str:
@@ -109,23 +141,306 @@ def score_system_prompt(profile: Profile) -> str:
     )
 
 
-def score_one(ex: Extraction, profile: Profile) -> ScoreResult:
+def _requirements(ex: Extraction) -> list[Requirement]:
+    if ex.requirements:
+        return ex.requirements
+    return [
+        Requirement(name=name, importance=importance, evidence="")
+        for importance, names in (("must", ex.must_skills), ("nice", ex.nice_skills))
+        for name in names
+    ]
+
+
+def _assessment_call(
+    ex: Extraction,
+    profile: Profile,
+    model: str,
+    *,
+    think: bool,
+    seed: int | None = None,
+) -> ScoreAssessment:
     return llm.parse_structured(
-        score_system_prompt(profile), ex.model_dump_json(indent=2), ScoreResult, max_tokens=1500
+        score_system_prompt(profile),
+        ex.model_dump_json(indent=2),
+        ScoreAssessment,
+        max_tokens=3000,
+        model=model,
+        think=think,
+        temperature=0.15 if think else 0,
+        seed=seed,
     )
 
 
+def score_one(ex: Extraction, profile: Profile) -> tuple[ScoreAssessment, str | None]:
+    """Reasoning ist primär; Instruct ist der protokollierte Sicherheitsfallback."""
+    for attempt in range(2):
+        try:
+            return (
+                _assessment_call(
+                    ex,
+                    profile,
+                    llm.SCORE_MODEL,
+                    think=True,
+                    seed=llm.OLLAMA_SEED + attempt,
+                ),
+                None,
+            )
+        except Exception:  # noqa: BLE001 — ein zweiter strukturierter Versuch ist Absicht
+            pass
+    return _assessment_call(ex, profile, llm.EXTRACT_MODEL, think=False), llm.EXTRACT_MODEL
+
+
+_SKILL_FACTORS: dict[MatchLevel, float] = {
+    "direct": 1.0,
+    "transferable": 0.6,
+    "unknown": 0.25,
+    "missing": 0.0,
+}
+_DOMAIN_POINTS: dict[FitLevel, int] = {
+    "strong": 25,
+    "moderate": 18,
+    "weak": 10,
+    "none": 0,
+    "unknown": 12,
+}
+_INTEREST_POINTS: dict[FitLevel, int] = {
+    "strong": 15,
+    "moderate": 10,
+    "weak": 5,
+    "none": 0,
+    "unknown": 7,
+}
+
+_SHORT_SKILL_TOKENS = {"r", "c", "go", "ai", "ml", "qa"}
+
+
+def _skill_tokens(value: str) -> set[str]:
+    normalized = value.lower().replace("c++", "cpp").replace("c#", "csharp")
+    return {
+        token
+        for token in re.findall(r"[a-z0-9äöüß]+", normalized)
+        if len(token) >= 3 or token in _SHORT_SKILL_TOKENS
+    }
+
+
+@dataclass
+class ComputedScore:
+    fit_score: int
+    breakdown: dict[str, int]
+    confidence: int
+    reasons: list[str]
+    gaps: list[str]
+    angle: str
+    evidence: dict
+
+
+def _find_skill_assessment(
+    requirement: Requirement, assessments: list[SkillAssessment]
+) -> SkillAssessment | None:
+    target = norm_text(requirement.name)
+    exact = next((a for a in assessments if norm_text(a.requirement) == target), None)
+    if exact:
+        return exact
+    candidates = [
+        (fuzz.token_set_ratio(target, norm_text(a.requirement)), a) for a in assessments
+    ]
+    if not candidates:
+        return None
+    score, candidate = max(candidates, key=lambda item: item[0])
+    return candidate if score >= 85 else None
+
+
+def compute_score(ex: Extraction, profile: Profile, assessment: ScoreAssessment) -> ComputedScore:
+    requirements = _requirements(ex)
+    safe_profile = {key: value for key, value in profile.raw.items() if key != "anchors"}
+    profile_text = yaml.safe_dump(safe_profile, allow_unicode=True, sort_keys=True)
+    cleaned: list[dict] = []
+    evidence_ok = 0
+    for requirement in requirements:
+        found = _find_skill_assessment(requirement, assessment.skills)
+        level: MatchLevel = found.match if found else "unknown"
+        profile_evidence = found.profile_evidence if found else None
+        if level in {"direct", "transferable"} and not (
+            profile_evidence and norm_text(profile_evidence) in norm_text(profile_text)
+        ):
+            level = "unknown"
+        if level == "direct" and profile_evidence:
+            requirement_tokens = _skill_tokens(requirement.name)
+            evidence_tokens = _skill_tokens(profile_evidence)
+            if requirement_tokens.isdisjoint(evidence_tokens):
+                level = "unknown"
+        job_evidence_ok = bool(requirement.evidence)
+        profile_evidence_ok = level not in {"direct", "transferable"} or bool(profile_evidence)
+        evidence_ok += int(job_evidence_ok and profile_evidence_ok)
+        cleaned.append(
+            {
+                "requirement": requirement.name,
+                "importance": requirement.importance,
+                "match": level,
+                "job_evidence": requirement.evidence,
+                "profile_evidence": profile_evidence,
+            }
+        )
+
+    def requirement_points(importance: str, maximum: int) -> int:
+        values = [
+            _SKILL_FACTORS[item["match"]]
+            for item in cleaned
+            if item["importance"] == importance
+        ]
+        return round(maximum * sum(values) / len(values)) if values else maximum // 2
+
+    must_points = requirement_points("must", 50)
+    nice_points = requirement_points("nice", 10)
+    skills_points = must_points + nice_points
+    extraction_text = norm_text(ex.model_dump_json())
+    profile_text_normalized = norm_text(profile_text)
+    domain_fit = assessment.domain_fit
+    if domain_fit in {"strong", "moderate", "weak"} and not (
+        norm_text(assessment.domain_evidence)
+        and norm_text(assessment.domain_evidence) in extraction_text
+    ):
+        domain_fit = "unknown"
+    interest_fit = assessment.interest_fit
+    if interest_fit in {"strong", "moderate", "weak"} and not (
+        norm_text(assessment.interest_evidence)
+        and norm_text(assessment.interest_evidence) in profile_text_normalized
+    ):
+        interest_fit = "unknown"
+
+    domain_points = _DOMAIN_POINTS[domain_fit]
+    interest_points = _INTEREST_POINTS[interest_fit]
+    fit_score = skills_points + domain_points + interest_points
+
+    confidence = 100
+    if not any(item["importance"] == "must" for item in cleaned):
+        confidence -= 40
+    if cleaned:
+        confidence -= round(40 * (1 - evidence_ok / len(cleaned)))
+    else:
+        confidence -= 40
+    if domain_fit == "unknown":
+        confidence -= 10
+    if interest_fit == "unknown":
+        confidence -= 10
+    confidence = max(0, min(100, confidence))
+
+    counts = {level: sum(item["match"] == level for item in cleaned) for level in _SKILL_FACTORS}
+    reasons = [
+        f"Skills {skills_points}/60: {counts['direct']} direkt, "
+        f"{counts['transferable']} übertragbar, {counts['missing']} fehlen",
+        f"Domänenfit {domain_points}/25 ({domain_fit}): {assessment.domain_evidence}",
+        f"Interessenfit {interest_points}/15 ({interest_fit}): "
+        f"{assessment.interest_evidence}",
+    ]
+    missing = [item["requirement"] for item in cleaned if item["match"] == "missing"]
+    gaps = list(dict.fromkeys([*assessment.gaps, *missing]))[:3]
+    return ComputedScore(
+        fit_score=fit_score,
+        breakdown={
+            "skills": skills_points,
+            "must_skills": must_points,
+            "nice_skills": nice_points,
+            "domain": domain_points,
+            "interests": interest_points,
+        },
+        confidence=confidence,
+        reasons=reasons,
+        gaps=gaps,
+        angle=assessment.angle,
+        evidence={
+            "skills": cleaned,
+            "domain": {"fit": domain_fit, "quote": assessment.domain_evidence},
+            "interests": {"fit": interest_fit, "quote": assessment.interest_evidence},
+            "hard_no_hits": [hit.model_dump() for hit in assessment.hard_no_hits],
+        },
+    )
+
+
+def formal_status(
+    ex: Extraction, profile: Profile, assessment: ScoreAssessment | None = None
+) -> tuple[TrafficStatus, list[str]]:
+    red: list[str] = []
+    yellow: list[str] = []
+    levels = {"none": 0, "bsc": 1, "msc": 2, "phd": 3}
+    education = (profile.education or "").lower().split("_")[0]
+    if ex.education_min != "none" and education not in levels:
+        yellow.append("Eigene Ausbildung nicht eindeutig einordenbar")
+    elif ex.education_min != "none" and levels.get(education, -1) < levels[ex.education_min]:
+        red.append(f"Ausbildung: {ex.education_min} verlangt")
+    if ex.phd_required and not profile.phd_wanted:
+        red.append("PhD ausdrücklich erforderlich")
+    if ex.seniority not in profile.seniority_allowed:
+        red.append(f"Seniorität {ex.seniority} nicht im Zielprofil")
+    if (
+        ex.years_experience_min is not None
+        and ex.years_experience_min > profile.max_years_experience
+    ):
+        red.append(
+            f"{ex.years_experience_min} Jahre verlangt, Profilgrenze {profile.max_years_experience}"
+        )
+    if assessment:
+        source = norm_text(ex.model_dump_json())
+        hard_no_rules = [norm_text(rule) for rule in profile.hard_no]
+        red.extend(
+            f"Hard-no: {hit.rule}"
+            for hit in assessment.hard_no_hits
+            if norm_text(hit.evidence)
+            and norm_text(hit.evidence) in source
+            and any(
+                norm_text(hit.rule) in rule
+                or rule in norm_text(hit.rule)
+                or fuzz.token_set_ratio(norm_text(hit.rule), rule) >= 85
+                for rule in hard_no_rules
+            )
+        )
+    return ("red", red) if red else (("yellow", yellow) if yellow else ("green", []))
+
+
+def practical_status(
+    ex: Extraction, travel_ok: bool | None, in_austria: bool
+) -> tuple[TrafficStatus, list[str]]:
+    red: list[str] = []
+    yellow: list[str] = []
+    if ex.workplace_mode != "remote":
+        if not in_austria:
+            red.append("Vor-Ort-/Hybridstandort außerhalb Österreichs")
+        elif travel_ok is False:
+            red.append("Alle bekannten Anker über dem Fahrzeitlimit")
+        elif travel_ok is None:
+            yellow.append("Standort oder Fahrzeit unbekannt")
+    if ex.contract_end:
+        try:
+            if date.fromisoformat(ex.contract_end) < date.today() + timedelta(
+                days=SHORT_CONTRACT_MONTHS * 30
+            ):
+                yellow.append(f"Befristung endet {ex.contract_end}")
+        except ValueError:
+            yellow.append("Befristungsdatum unklar")
+    return ("red", red) if red else (("yellow", yellow) if yellow else ("green", []))
+
+
 def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None = None) -> int:
-    """Scort alle Postings ohne Score für die aktuelle profile_version."""
+    """Scort alle Postings ohne aktuelles Profil-/Formel-/Modell-Ergebnis."""
     rows = conn.execute(
         """SELECT p.id AS posting_id, p.extracted_json, p.site_id
            FROM postings p
            LEFT JOIN scores s ON s.posting_id = p.id AND s.profile_version = ?
-           WHERE s.posting_id IS NULL ORDER BY p.id""",
-        (profile.profile_version,),
+             AND s.score_version = ? AND s.model = ?
+           WHERE s.posting_id IS NULL AND p.schema_version = ? AND p.model = ?
+           ORDER BY p.id""",
+        (
+            profile.profile_version,
+            SCORE_VERSION,
+            llm.SCORE_MODEL,
+            EXTRACTION_SCHEMA_VERSION,
+            llm.EXTRACT_MODEL,
+        ),
     ).fetchall()
     if limit:
         rows = rows[:limit]
+    if rows:
+        llm.ensure_available([llm.SCORE_MODEL, llm.EXTRACT_MODEL])
     now = datetime.now(UTC).isoformat(timespec="seconds")
     done = 0
     import typer
@@ -133,35 +448,54 @@ def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None 
     with typer.progressbar(rows, label="  Score", show_pos=True) as bar:
         for row in bar:
             ex = Extraction.model_validate_json(row["extracted_json"])
+            travel_ok = site_travel_ok(conn, row["site_id"], profile)
+            in_austria = locations.is_in_austria(conn, ex.location_text)
             hard = hard_filter(
                 ex,
                 profile,
-                site_travel_ok(conn, row["site_id"], profile),
-                locations.is_in_austria(conn, ex.location_text),
+                travel_ok,
+                in_austria,
             )
-            fit: ScoreResult | None = None
+            assessment: ScoreAssessment | None = None
+            fit: ComputedScore | None = None
+            fallback_model: str | None = None
             if hard.passed:
                 try:
-                    fit = score_one(ex, profile)
+                    assessment, fallback_model = score_one(ex, profile)
+                    fit = compute_score(ex, profile, assessment)
                 except Exception as e:  # noqa: BLE001
                     print(f"\n  Score fehlgeschlagen für posting {row['posting_id']}: {e}")
                     continue
+            formal, formal_reasons = formal_status(ex, profile, assessment)
+            practical, practical_reasons = practical_status(ex, travel_ok, in_austria)
             conn.execute(
                 """INSERT OR REPLACE INTO scores
                    (posting_id, profile_version, hard_pass, hard_reasons,
-                    fit_score, fit_reasons, gaps, angle, model, scored_at)
-                   VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                    fit_score, fit_reasons, gaps, angle, model, scored_at,
+                    score_version, score_breakdown, score_confidence, score_evidence,
+                    formal_status, formal_reasons, practical_status, practical_reasons,
+                    fallback_model)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
                     row["posting_id"],
                     profile.profile_version,
                     int(hard.passed),
                     json.dumps({"reasons": hard.reasons, "flags": hard.flags}, ensure_ascii=False),
                     fit.fit_score if fit else None,
-                    json.dumps(fit.fit_reasons, ensure_ascii=False) if fit else None,
+                    json.dumps(fit.reasons, ensure_ascii=False) if fit else None,
                     json.dumps(fit.gaps, ensure_ascii=False) if fit else None,
                     fit.angle if fit else None,
-                    llm.EXTRACT_MODEL if fit else None,
+                    llm.SCORE_MODEL,
                     now,
+                    SCORE_VERSION,
+                    json.dumps(fit.breakdown, ensure_ascii=False) if fit else None,
+                    fit.confidence if fit else None,
+                    json.dumps(fit.evidence, ensure_ascii=False) if fit else None,
+                    formal,
+                    json.dumps(formal_reasons, ensure_ascii=False),
+                    practical,
+                    json.dumps(practical_reasons, ensure_ascii=False),
+                    fallback_model,
                 ),
             )
             conn.commit()

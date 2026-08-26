@@ -137,6 +137,42 @@ MIGRATIONS: list[list[str]] = [
         # klein halten) — travel/transitous.py filtert auf in_austria=1.
         "ALTER TABLE sites ADD COLUMN in_austria INTEGER NOT NULL DEFAULT 1",
     ],
+    [
+        # Evidenzbasiertes Ranking v2. Der alte Primärschlüssel
+        # (posting_id, profile_version) konnte entgegen der Cache-Konvention nur
+        # ein Modell/eine Formel je Profil halten. Der Rebuild erhält v1-Scores
+        # und macht Formel + Modell zu echten Teilen des Cache-Keys.
+        """CREATE TABLE scores_new(
+            posting_id INTEGER NOT NULL REFERENCES postings(id),
+            profile_version INTEGER NOT NULL,
+            hard_pass INTEGER NOT NULL,
+            hard_reasons TEXT,
+            fit_score INTEGER,
+            fit_reasons TEXT,
+            gaps TEXT,
+            angle TEXT,
+            model TEXT NOT NULL,
+            scored_at TEXT NOT NULL,
+            score_version INTEGER NOT NULL DEFAULT 1,
+            score_breakdown TEXT,
+            score_confidence INTEGER,
+            score_evidence TEXT,
+            formal_status TEXT,
+            formal_reasons TEXT,
+            practical_status TEXT,
+            practical_reasons TEXT,
+            fallback_model TEXT,
+            PRIMARY KEY (posting_id, profile_version, score_version, model)
+        )""",
+        """INSERT INTO scores_new(
+               posting_id, profile_version, hard_pass, hard_reasons, fit_score,
+               fit_reasons, gaps, angle, model, scored_at, score_version)
+           SELECT posting_id, profile_version, hard_pass, hard_reasons, fit_score,
+                  fit_reasons, gaps, angle, COALESCE(model, 'unknown'), scored_at, 1
+           FROM scores""",
+        "DROP TABLE scores",
+        "ALTER TABLE scores_new RENAME TO scores",
+    ],
 ]
 
 

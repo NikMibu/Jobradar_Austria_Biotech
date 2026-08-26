@@ -1,3 +1,6 @@
+export type TrafficStatus = "green" | "yellow" | "red";
+export type RankingLabel = "yes" | "maybe" | "no";
+
 export interface JobSummary {
   id: number;
   title: string;
@@ -11,6 +14,9 @@ export interface JobSummary {
   hard_pass: boolean | null;
   hard_reasons: { reasons: string[]; flags: string[] } | null;
   fit_score: number | null;
+  score_confidence?: number | null;
+  formal_status?: TrafficStatus | null;
+  practical_status?: TrafficStatus | null;
   travel: Record<string, { minutes: number | null; transfers: number | null }>;
   role_family: string | null;
   workplace_mode: string | null;
@@ -26,6 +32,11 @@ export interface JobSummary {
   fit_reasons?: string[] | null;
   gaps?: string[] | null;
   angle?: string | null;
+  score_breakdown?: Record<string, number> | null;
+  score_evidence?: Record<string, unknown> | null;
+  formal_reasons?: string[];
+  practical_reasons?: string[];
+  fallback_model?: string | null;
 }
 
 export interface JobDetail {
@@ -36,6 +47,11 @@ export interface JobDetail {
   fit_reasons: string[] | null;
   gaps: string[] | null;
   angle: string | null;
+  score_breakdown: Record<string, number> | null;
+  score_evidence: Record<string, unknown> | null;
+  formal_reasons: string[];
+  practical_reasons: string[];
+  fallback_model: string | null;
 }
 
 export interface Company {
@@ -49,6 +65,10 @@ export interface Company {
 
 export interface Meta {
   data_schema_version?: number;
+  profile_version?: number;
+  score_version?: number;
+  extraction_model?: string;
+  scoring_model?: string;
   generated_at: string;
   anchors: { id: string; label: string; max_minutes: number }[];
   counts: Record<string, number>;
@@ -77,6 +97,7 @@ export interface Filters {
 export interface StoredState {
   saved: Set<number>;
   overrides: Record<string, string>;
+  labels: Record<string, RankingLabel>;
 }
 
 export interface LocationGroup {

@@ -36,8 +36,8 @@ flowchart LR
   Sources --> B[postings_raw<br/>SQLite]
   B --> C[Dedup<br/>fuzzy title match]
   C --> D[LLM extraction<br/>fixed JSON schema, cached]
-  D --> E[Hard filters<br/>PhD · seniority · role · commute]
-  E --> F[LLM score<br/>only for survivors]
+  D --> E[Relevant role filter]
+  E --> F[Ministral assessment<br/>deterministic fach-fit score]
   G[Transit times<br/>Transitous API] --> F
   F --> H[JSON export]
   H --> I[Static site<br/>MapLibre + clustering]
@@ -49,18 +49,18 @@ Every morning (or on demand), `heimspiel daily` runs the full chain:
    independently, so a broken source never blocks the rest of the run.
 2. **Dedup** — cross-source duplicates are merged by fuzzy title match within
    a 60-day window per company; the longest description wins.
-3. **Extract** — an LLM turns free-text postings into a fixed schema (role
+3. **Extract** — Ministral Instruct turns free-text postings into an evidence-backed schema (role
    family, seniority, must/nice-to-have skills, salary, workplace mode,
-   location, contract terms, a two-line summary). Cached on content hash, so
-   a posting is only ever processed once.
+   location, contract terms, original-text evidence, a two-line summary).
+   Cached on content hash, schema version, and model.
 4. **Locate** — free-text locations get normalized to a canonical Austrian
    city (a deterministic pass handles the obvious cases — `"Graz, Styria,
    Austria"` → `Graz` — before falling back to the LLM for ambiguous ones),
    and explicitly foreign locations are flagged rather than dropped.
-5. **Score** — cheap, deterministic hard filters (PhD requirement, seniority,
-   role family, commute time) run first and reject ~60% of postings for
-   free. Only survivors get an LLM fit score with reasons, gaps, and a
-   one-sentence application angle.
+5. **Score** — Ministral Reasoning classifies direct, transferable, missing,
+   and unknown matches. Python computes a reproducible 0–100 fach-fit score;
+   formal eligibility and practical commute/contract constraints are separate
+   traffic lights instead of hidden penalties.
 6. **Commute** — real public-transit travel times from up to three home
    stations to every employer site, via the [Transitous](https://transitous.org)
    open-data routing API.
@@ -94,6 +94,7 @@ git clone https://github.com/NikMibu/heimspiel_jobradar && cd heimspiel_jobradar
 uv sync --extra scrape
 cp config/profile.example.yaml config/profile.local.yaml   # fill in your own profile
 export ANTHROPIC_API_KEY=sk-ant-...
+export HEIMSPIEL_LLM=anthropic
 uv run heimspiel daily
 ```
 
@@ -105,22 +106,21 @@ out of the box.
 
 ### Zero-cost mode: Ollama instead of the Anthropic API
 
-Both extraction and scoring can run against a local model instead — same
-structured-output contract, same cache, no API key needed:
+Extraction and scoring use task-specific local Ministral variants:
 
 ```bash
-ollama pull qwen3.5:9b
-export HEIMSPIEL_LLM=ollama              # switch backend
-export HEIMSPIEL_MODEL=qwen3.5:9b        # optional — this is already the default for ollama
+ollama pull ministral-3:14b
+ollama run hf.co/mistralai/Ministral-3-14B-Reasoning-2512-GGUF:Q4_K_M
+export HEIMSPIEL_LLM=ollama
+export HEIMSPIEL_EXTRACT_MODEL=ministral-3:14b
+export HEIMSPIEL_SCORE_MODEL=hf.co/mistralai/Ministral-3-14B-Reasoning-2512-GGUF:Q4_K_M
 export HEIMSPIEL_OLLAMA_URL=http://localhost:11434   # optional, default shown
 uv run heimspiel daily
 ```
 
-The extraction cache is backend-agnostic, so switching backends never
-reprocesses postings you've already paid for (in money or GPU time). Model
-choice was picked by measurement, not vibes: `heimspiel eval-roles` runs a
-handful of local candidates against a labeled slice of real postings and
-prints a comparison table.
+`HEIMSPIEL_MODEL` remains a backwards-compatible override for both tasks.
+Model changes intentionally invalidate the respective cache, so results from
+different extraction or ranking models are never mixed.
 
 ## Data sources
 
@@ -149,21 +149,24 @@ buried in a design doc.
 | `heimspiel locations` | Resolve free-text locations to a canonical Austrian city/site |
 | `heimspiel companies [--geocode]` | Sync curated employer sites; optionally propose coordinates via Nominatim |
 | `heimspiel travel [--rebuild]` | Public-transit minutes, anchor × site, via Transitous |
-| `heimspiel score` | Free hard filters, then LLM score for survivors |
+| `heimspiel score` | Evidence assessment, deterministic fach-fit, formal/practical traffic lights |
 | `heimspiel export` | Write JSON for the static site |
 | `heimspiel report` | Markdown digest: funnel stats, top matches, borderline cases |
 | `heimspiel daily` | The full chain above, in order |
 | `heimspiel eval-roles` | Compare candidate LLMs on role classification against labeled postings |
+| `heimspiel eval-extraction --labels FILE` | Compare extraction fields against hand-labeled postings |
+| `heimspiel eval-ranking --labels FILE` | Compare ranking models against UI-exported personal labels |
 
 ## The frontend
 
 A single-page MapLibre app with no backend: jobs at the same coordinates are
 combined into stable location markers that remain visible at every zoom level (colored by fit score or commute
 time), alongside a filterable/sortable list and a lazily loaded detail drawer
-with the full extraction, score reasoning, and links back to the original
+with the full extraction, score breakdown, confidence, traffic lights, and links back to the original
 posting. Filters and sort persist in the URL, so a filtered view is a
 shareable link; saved postings and manual role corrections persist in
-`localStorage`. Postings resolved to a location outside Austria are flagged
+`localStorage`. `Passt`/`Vielleicht`/`Nein` ranking labels are also stored
+locally and export as JSONL for `eval-ranking`. Postings resolved to a location outside Austria are flagged
 rather than hidden — there's a one-click toggle to hide them if you'd rather
 not see them at all.
 
@@ -174,25 +177,22 @@ not see them at all.
 - **Static site, not a backend** — the pipeline runs locally and commits
   JSON; GitHub Pages serves it. Zero hosting cost, nothing to patch, nothing
   to get hacked.
-- **Hard filters before any LLM call** — PhD requirement, seniority, role
-  family, and commute time are deterministic and free. Only the ~30-40% of
-  postings that survive cost an LLM score call.
+- **Fach-fit is not practicality** — senior or distant jobs retain their
+  fach-fit score; formal eligibility and commute/contract practicality are
+  explicit traffic lights. Only disallowed role families are not scored.
 - **Anchors are train stations, not addresses** — better routing, and
   nothing personal ends up in the repo. `config/profile.local.yaml` and
   `data/` are both gitignored.
-- **Caching on `content_hash + schema_version`** — a posting is extracted
-  exactly once; bumping the schema version is the only way to force
-  re-extraction. Backfills over 500 postings go through the Anthropic Batch
-  API automatically (half price).
+- **Versioned, model-aware caching** — extraction uses content/schema/model;
+  ranking uses profile/formula/model. Partial reprocessing never mixes old
+  results into the current export.
 
 ## Evaluation
 
-`heimspiel eval-roles` measures role-classification accuracy of candidate
-local models against a labeled slice of real postings — this is how the
-current Ollama default was picked, not guessed. `docs/EVAL.md` sketches a
-broader field-level evaluation (salary, PhD requirement, and other
-LLM-extracted fields against 50 hand-labeled postings) — scaffolded, not yet
-filled in.
+`eval-roles` is the fast heuristic smoke test. `eval-extraction` measures
+field accuracy and skill precision/recall against curated JSONL labels.
+The UI exports personal ranking labels consumed directly by `eval-ranking`,
+which reports errors, per-label means, Spearman correlation, and Precision@10/20.
 
 ## License
 

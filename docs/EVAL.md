@@ -1,35 +1,53 @@
-# Eval — Extraktions-Qualität
+# Evaluation
 
-> Status: Gerüst (M6). Das Eval-Set schützt vor den zwei teuersten LLM-Fehlern
-> aus SPEC §13: erfundenes Gehalt und erfundene PhD-Pflicht. Das Standortfeld
-> wird gesondert geprüft (Werk ≠ Firmensitz).
+Heimspiel trennt drei Messungen, weil Rollenklassifikation, vollständige
+Extraktion und persönliche Rangfolge unterschiedliche Wahrheiten haben.
 
-## Vorgehen
+## 1. Schneller Rollen-Smoke-Test
 
-1. **50 Inserate handlabeln:** `data/eval/labels.jsonl`, eine Zeile pro Inserat:
-   `{"raw_id": 123, "expected": {<Extraction-Felder>}}`. Quelle: echte Inserate
-   aus `postings_raw`, quer über alle Quellen und Rollenfamilien.
-2. **Extraktion laufen lassen** (normaler Cache-Pfad) und pro Feld vergleichen.
-3. **Metriken pro Feld:** Accuracy für Enums/Bools, Precision/Recall für Listen
-   (must_skills etc.), exakte Übereinstimmung für Zahlen/Daten mit null-Toleranz.
+```bash
+HEIMSPIEL_LLM=ollama uv run heimspiel eval-roles \
+  --models qwen3.5:9b,ministral-3:14b --n-random 20
+```
 
-## Ergebnis-Tabelle (auszufüllen)
+Die Keyword-Referenz ist bewusst nur ein Smoke-Test. Allgemeine Begriffe wie
+„Validation“ können fachlich außerhalb CSV/GMP liegen und deshalb irreführende
+Sollwerte erzeugen.
 
-| Feld | Accuracy / P/R | Haiku 4.5 | Lokal (Qwen 2.5 7B) |
-|---|---|---|---|
-| role_family | Acc | – | – |
-| seniority | Acc | – | – |
-| phd_required | Acc | – | – |
-| salary_min_eur_month | Acc (±0) | – | – |
-| german_required | Acc | – | – |
-| location_text | Acc (manuell) | – | – |
-| must_skills | P / R | – | – |
-| contract_type | Acc | – | – |
+## 2. Extraktionsfelder
 
-## Modell-Switch
+`data/eval/extraction-labels.jsonl` enthält 50 handgeprüfte Inserate aus allen
+Quellen und Rollenfamilien. Eine Zeile kann alle oder nur ausgewählte Felder
+prüfen:
 
-`HEIMSPIEL_LLM=ollama` (+ optional `HEIMSPIEL_MODEL`, `HEIMSPIEL_OLLAMA_URL`)
-schaltet auf ein lokales Ollama-Modell um — damit läuft dasselbe Eval-Set
-gegen Haiku und das lokale Modell. Achtung: der Extraktions-Cache unterscheidet
-nicht nach Modell; für einen sauberen Vergleich `HEIMSPIEL_DB` auf eine
-separate Datei zeigen lassen.
+```json
+{"raw_id":123,"expected":{"role_family":"bioinformatics","phd_required":false,"years_experience_min":2,"salary_min_eur_month":4200,"must_skills":["Python","Nextflow"]}}
+```
+
+```bash
+HEIMSPIEL_LLM=ollama uv run heimspiel eval-extraction \
+  --labels data/eval/extraction-labels.jsonl \
+  --models qwen3.5:9b,ministral-3:14b
+```
+
+Enums, Booleans, Zahlen und Daten werden exakt verglichen. Skilllisten melden
+Precision und Recall. Zielwerte für Ministral Instruct sind mindestens 98 %
+valide Erstantworten, 90 % Rollen-Accuracy, 95 % für kritische Bool-/Enum-Felder
+und 85/75 % Skill-Precision/Recall. Eine neue Prompt-/Schema-Version wird erst
+nach diesem Vergleich als Standard gesetzt.
+
+## 3. Persönliches Ranking
+
+Im Job-Drawer werden Stellen mit `Passt`, `Vielleicht` oder `Nein` markiert.
+`Labels exportieren` erzeugt JSONL inklusive Posting-ID und Profilversion.
+
+```bash
+HEIMSPIEL_LLM=ollama uv run heimspiel eval-ranking \
+  --labels ~/Downloads/heimspiel-ranking-labels-2026-08-26.jsonl \
+  --models hf.co/mistralai/Ministral-3-14B-Reasoning-2512-GGUF:Q4_K_M,ministral-3:14b
+```
+
+Das Eval verändert keine produktiven Scores. Es meldet Modellfehler,
+Durchschnittsscores je Label, Spearman-Rangkorrelation und Precision@10/20.
+Labels einer anderen Profilversion werden abgelehnt, statt unbemerkt mit einem
+geänderten Profil verglichen zu werden.

@@ -5,7 +5,9 @@ import {
   isForeign, readFilters, scoreColor,
 } from "./state";
 import type { MapView } from "./map-view";
-import type { Company, Filters, JobDetail, JobSummary, Meta, StoredState } from "./types";
+import type {
+  Company, Filters, JobDetail, JobSummary, Meta, RankingLabel, StoredState, TrafficStatus,
+} from "./types";
 
 const ROLE_FAMILIES = [
   "bioinformatics", "data_science", "csv_qa_validation", "lab_analytics",
@@ -14,6 +16,7 @@ const ROLE_FAMILIES = [
 ];
 const SAVED_KEY = "heimspiel.saved";
 const OVERRIDE_KEY = "heimspiel.roleOverrides";
+const LABEL_KEY = "heimspiel.rankingLabels.v1";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const esc = (value: string): string => value.replace(/[&<>"']/g, (char) =>
@@ -40,6 +43,7 @@ function loadStoredState(): StoredState {
   return {
     saved: new Set(parseStorage<number[]>(SAVED_KEY, [])),
     overrides: parseStorage<Record<string, string>>(OVERRIDE_KEY, {}),
+    labels: parseStorage<Record<string, RankingLabel>>(LABEL_KEY, {}),
   };
 }
 
@@ -47,6 +51,7 @@ function persistStoredState(state: StoredState) {
   try {
     localStorage.setItem(SAVED_KEY, JSON.stringify([...state.saved]));
     localStorage.setItem(OVERRIDE_KEY, JSON.stringify(state.overrides));
+    localStorage.setItem(LABEL_KEY, JSON.stringify(state.labels));
   } catch { /* private mode */ }
 }
 
@@ -59,6 +64,9 @@ function normalizeJob(raw: Record<string, unknown>): JobSummary {
     contract_type: (raw.contract_type ?? extraction.contract_type ?? null) as string | null,
     salary_min_eur_month: (raw.salary_min_eur_month ?? extraction.salary_min_eur_month ?? null) as number | null,
     application_deadline: (raw.application_deadline ?? extraction.application_deadline ?? null) as string | null,
+    score_confidence: (raw.score_confidence ?? null) as number | null,
+    formal_status: (raw.formal_status ?? null) as TrafficStatus | null,
+    practical_status: (raw.practical_status ?? null) as TrafficStatus | null,
   };
 }
 
@@ -87,6 +95,20 @@ function legacyDetail(job: JobSummary): JobDetail | null {
     url: job.url ?? null, alt_urls: job.alt_urls ?? [], last_seen: job.last_seen,
     extraction: job.extraction, fit_reasons: job.fit_reasons ?? null,
     gaps: job.gaps ?? null, angle: job.angle ?? null,
+    score_breakdown: job.score_breakdown ?? null, score_evidence: job.score_evidence ?? null,
+    formal_reasons: job.formal_reasons ?? [], practical_reasons: job.practical_reasons ?? [],
+    fallback_model: job.fallback_model ?? null,
+  };
+}
+
+function normalizeDetail(raw: Partial<JobDetail>): JobDetail {
+  return {
+    url: raw.url ?? null, alt_urls: raw.alt_urls ?? [], last_seen: raw.last_seen ?? "",
+    extraction: raw.extraction ?? {}, fit_reasons: raw.fit_reasons ?? null,
+    gaps: raw.gaps ?? null, angle: raw.angle ?? null,
+    score_breakdown: raw.score_breakdown ?? null, score_evidence: raw.score_evidence ?? null,
+    formal_reasons: raw.formal_reasons ?? [], practical_reasons: raw.practical_reasons ?? [],
+    fallback_model: raw.fallback_model ?? null,
   };
 }
 
@@ -106,6 +128,20 @@ async function main() {
   let listDirty = true;
   let mapDirty = true;
   let inputTimer = 0;
+
+  const statusBadge = (label: string, status: TrafficStatus | null | undefined): string => {
+    if (!status) return "";
+    const icon = status === "green" ? "●" : status === "yellow" ? "●" : "●";
+    return `<span class="chip status-${status}" title="${esc(label)}">${icon} ${esc(label)}</span>`;
+  };
+
+  const updateLabelsButton = () => {
+    const count = Object.keys(stored.labels).length;
+    const button = $<HTMLButtonElement>("labels-export");
+    button.hidden = count === 0;
+    button.textContent = `Labels exportieren (${count})`;
+  };
+  updateLabelsButton();
 
   const fillSelect = (id: string, values: (string | null)[]) => {
     const select = $<HTMLSelectElement>(id);
@@ -181,6 +217,8 @@ async function main() {
     if (job.contract_type && !["permanent", "unknown"].includes(job.contract_type))
       badges.push(`<span class="chip chip-warn">${esc(job.contract_type)}</span>`);
     if (job.application_deadline) badges.push(`<span class="chip chip-warn">bis ${esc(job.application_deadline)}</span>`);
+    badges.push(statusBadge("formal", job.formal_status));
+    badges.push(statusBadge("praktisch", job.practical_status));
     const open = daysSince(job.first_seen);
     if (open) badges.push(`<span class="chip chip-dim">${open} d offen</span>`);
     return badges.join("");
@@ -287,7 +325,7 @@ async function main() {
     });
     const detail = (await detailsPromise)[String(job.id)];
     if (!detail) throw new Error("Für diesen Job fehlen Detaildaten.");
-    return detail;
+    return normalizeDetail(detail);
   };
 
   const showDrawer = async (jobId: number) => {
@@ -318,12 +356,28 @@ async function main() {
         return value != null && value !== "" && !(Array.isArray(value) && !value.length);
       }).map((key) => `<tr><td>${key}</td><td>${esc(fmt(extraction[key]))}</td></tr>`).join("");
       const hard = job.hard_reasons;
+      const breakdown = detail.score_breakdown;
+      const breakdownRows = breakdown ? [
+        ["Skills", `${breakdown.skills ?? 0}/60`],
+        ["Domäne", `${breakdown.domain ?? 0}/25`],
+        ["Interessen", `${breakdown.interests ?? 0}/15`],
+      ].map(([name, value]) => `<tr><td>${name}</td><td>${value}</td></tr>`).join("") : "";
+      const currentLabel = stored.labels[String(job.id)];
       $("drawer-content").innerHTML = `<h2>${esc(job.title)}</h2>
         <p class="card-sub">${esc(job.company ?? "?")} · ${esc(job.location_text ?? "?")} · seit ${daysSince(job.first_seen)} d · zuletzt gesehen ${new Date(detail.last_seen).toLocaleDateString("de-AT")}</p>
         <p>${esc(String(extraction.summary_2_lines ?? ""))}</p>${travel ? `<p>🚆 ${esc(travel)}</p>` : ""}
-        ${job.fit_score != null ? `<h3>Score: ${job.fit_score}/100</h3><ul>${(detail.fit_reasons ?? []).map((reason) => `<li>${esc(reason)}</li>`).join("")}</ul>` : ""}
+        ${job.fit_score != null ? `<h3>Fachfit: ${job.fit_score}/100</h3>
+          ${breakdownRows ? `<table class="score-breakdown">${breakdownRows}</table>` : ""}
+          <p class="confidence">Datenbasis: ${job.score_confidence ?? "?"}/100</p>
+          <ul>${(detail.fit_reasons ?? []).map((reason) => `<li>${esc(reason)}</li>`).join("")}</ul>` : ""}
+        <h3>Einordnung</h3><p>${statusBadge("formal", job.formal_status)} ${statusBadge("praktisch", job.practical_status)}</p>
+        ${detail.formal_reasons.length ? `<ul>${detail.formal_reasons.map((reason) => `<li>Formal: ${esc(reason)}</li>`).join("")}</ul>` : ""}
+        ${detail.practical_reasons.length ? `<ul>${detail.practical_reasons.map((reason) => `<li>Praktisch: ${esc(reason)}</li>`).join("")}</ul>` : ""}
         ${detail.gaps?.length ? `<h3>Lücken</h3><ul>${detail.gaps.map((gap) => `<li>${esc(gap)}</li>`).join("")}</ul>` : ""}
         ${detail.angle ? `<h3>Angle</h3><p><em>${esc(detail.angle)}</em></p>` : ""}
+        <h3>Meine Bewertung</h3><div class="ranking-labels">
+          ${([['yes', 'Passt'], ['maybe', 'Vielleicht'], ['no', 'Nein']] as [RankingLabel, string][]).map(([value, label]) => `<button data-action="label" data-label="${value}" class="label-button${currentLabel === value ? " on" : ""}">${label}</button>`).join("")}
+        </div>
         ${hard && (hard.reasons.length || hard.flags.length) ? `<h3>Filter</h3><ul>${[...hard.reasons.map((reason) => `❌ ${reason}`), ...hard.flags.map((flag) => `⚠️ ${flag}`)].map((value) => `<li>${esc(value)}</li>`).join("")}</ul>` : ""}
         <h3>Extraktion</h3><table class="ex-table">${rows}</table><p>${links}</p>`;
     } catch (error) {
@@ -393,6 +447,36 @@ async function main() {
     } else element.addEventListener("change", handle);
   });
   $("drawer-close").addEventListener("click", closeDrawer);
+
+  $("drawer-content").addEventListener("click", (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-action="label"]');
+    if (!button || !filters.job) return;
+    const label = button.dataset.label as RankingLabel;
+    const existing = stored.labels[filters.job];
+    if (existing === label) delete stored.labels[filters.job];
+    else stored.labels[filters.job] = label;
+    persistStoredState(stored);
+    button.parentElement?.querySelectorAll(".label-button").forEach((element) => element.classList.remove("on"));
+    if (existing !== label) button.classList.add("on");
+    updateLabelsButton();
+  });
+
+  $("labels-export").addEventListener("click", () => {
+    const timestamp = new Date().toISOString();
+    const lines = Object.entries(stored.labels).flatMap(([id, label]) => {
+      const job = jobById.get(Number(id));
+      return job ? [JSON.stringify({
+        posting_id: job.id, label, profile_version: meta.profile_version ?? null,
+        title: job.title, company: job.company, timestamp,
+      })] : [];
+    });
+    const blob = new Blob([`${lines.join("\n")}\n`], { type: "application/x-ndjson" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `heimspiel-ranking-labels-${new Date().toISOString().slice(0, 10)}.jsonl`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  });
   document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeDrawer(); });
 
   render();

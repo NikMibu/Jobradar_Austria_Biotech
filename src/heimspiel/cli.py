@@ -110,6 +110,8 @@ def extract(limit: int | None = typer.Option(None, help="max. Anzahl")) -> None:
     conn = db.connect()
     pending = len(ex.pending_raws(conn))
     typer.echo(f"{pending} Postings zu extrahieren …")
+    if pending:
+        ex.llm.ensure_available([ex.llm.EXTRACT_MODEL])
     done = ex.extract_pending(conn, limit=limit)
     typer.echo(f"{done} extrahiert.")
 
@@ -126,14 +128,53 @@ def locations(limit: int | None = typer.Option(None, help="max. Anzahl")) -> Non
 
 @app.command("eval-roles")
 def eval_roles(
-    models: str = typer.Option("qwen2.5:7b,qwen3:8b,gpt-oss:20b", help="Kommagetrennte Modellliste"),
+    models: str = typer.Option(
+        "qwen3.5:9b,ministral-3:14b", help="Kommagetrennte Modellliste"
+    ),
     n_random: int = typer.Option(20, help="Zufalls-Postings zusätzlich zu den Verdachtsfällen"),
 ) -> None:
     """role_family-Klassifikation mehrerer Modelle auf ~30 DB-Postings vergleichen."""
     from . import eval_roles as er
+    from . import llm
 
     conn = db.connect()
-    er.run(conn, [m.strip() for m in models.split(",") if m.strip()], n_random=n_random)
+    selected = [m.strip() for m in models.split(",") if m.strip()]
+    llm.ensure_available(selected)
+    er.run(conn, selected, n_random=n_random)
+
+
+@app.command("eval-ranking")
+def eval_ranking(
+    labels: Path = typer.Option(..., exists=True, readable=True, help="JSONL aus dem UI"),
+    models: str | None = typer.Option(None, help="Kommagetrennte Scoringmodelle"),
+) -> None:
+    """Scoringmodelle read-only gegen persönliche Passt/Vielleicht/Nein-Labels vergleichen."""
+    from . import eval_ranking as ranking
+    from . import llm
+
+    conn = db.connect()
+    profile = cfg.load_profile()
+    selected = models or llm.SCORE_MODEL
+    selected_models = [m.strip() for m in selected.split(",") if m.strip()]
+    llm.ensure_available(selected_models)
+    ranking.run(conn, profile, labels, selected_models)
+
+
+@app.command("eval-extraction")
+def eval_extraction(
+    labels: Path = typer.Option(..., exists=True, readable=True, help="Feldlabels als JSONL"),
+    models: str = typer.Option(
+        "qwen3.5:9b,ministral-3:14b", help="Kommagetrennte Extraktionsmodelle"
+    ),
+) -> None:
+    """Extraktionsmodelle read-only gegen handgelabelte Inseratsfelder vergleichen."""
+    from . import eval_extraction as extraction_eval
+    from . import llm
+
+    conn = db.connect()
+    selected = [model.strip() for model in models.split(",") if model.strip()]
+    llm.ensure_available(selected)
+    extraction_eval.run(conn, labels, selected)
 
 
 @app.command()
@@ -144,7 +185,10 @@ def score(limit: int | None = typer.Option(None)) -> None:
     conn = db.connect()
     profile = cfg.load_profile()
     done = match.score_pending(conn, profile, limit=limit)
-    typer.echo(f"{done} Postings gescort (profile_version={profile.profile_version}).")
+    typer.echo(
+        f"{done} Postings gescort (profile_version={profile.profile_version}, "
+        f"score_version={match.SCORE_VERSION}, model={match.llm.SCORE_MODEL})."
+    )
 
 
 @app.command()

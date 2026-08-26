@@ -4,8 +4,8 @@ from test_extract import SAMPLE
 from test_match import make_profile
 
 from heimspiel import export as exp
-from heimspiel import report
-from heimspiel.match import initiative_scores
+from heimspiel import llm, report
+from heimspiel.match import SCORE_VERSION, initiative_scores
 
 
 def _seed(conn, fit_score=80):
@@ -20,9 +20,9 @@ def _seed(conn, fit_score=80):
         (json.dumps(SAMPLE),),
     )
     conn.execute(
-        "INSERT INTO scores (posting_id, profile_version, hard_pass, hard_reasons, fit_score, fit_reasons, gaps, angle, model, scored_at) "
-        "VALUES (1, 1, 1, '{}', ?, '[\"passt\"]', '[]', 'mein Angle', 'test', datetime('now'))",
-        (fit_score,),
+        "INSERT INTO scores (posting_id, profile_version, hard_pass, hard_reasons, fit_score, fit_reasons, gaps, angle, model, scored_at, score_version, score_breakdown, score_confidence, formal_status, formal_reasons, practical_status, practical_reasons) "
+        "VALUES (1, 1, 1, '{}', ?, '[\"passt\"]', '[]', 'mein Angle', ?, datetime('now'), ?, '{\"skills\": 50, \"domain\": 20, \"interests\": 10}', 90, 'green', '[]', 'yellow', '[\"Fahrzeit unbekannt\"]')",
+        (fit_score, llm.SCORE_MODEL, SCORE_VERSION),
     )
     conn.commit()
 
@@ -33,6 +33,8 @@ def test_export_writes_summary_and_lazy_details(conn, tmp_path):
     assert meta["counts"]["jobs"] == 1
     jobs = json.loads((tmp_path / "jobs.json").read_text())
     assert jobs[0]["fit_score"] == 80
+    assert jobs[0]["score_confidence"] == 90
+    assert jobs[0]["formal_status"] == "green"
     assert jobs[0]["company"] == "ACME GmbH"
     assert jobs[0]["role_family"] == SAMPLE["role_family"]
     assert "extraction" not in jobs[0]
@@ -40,7 +42,7 @@ def test_export_writes_summary_and_lazy_details(conn, tmp_path):
     assert details["1"]["extraction"] == SAMPLE
     assert (tmp_path / "companies.json").exists()
     assert (tmp_path / "meta.json").exists()
-    assert meta["data_schema_version"] == 2
+    assert meta["data_schema_version"] == 3
 
 
 def test_report_contains_top_and_angle(conn):

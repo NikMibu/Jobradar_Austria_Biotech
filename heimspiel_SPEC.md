@@ -36,9 +36,9 @@ flowchart LR
   end
   A1 & A2 & A3 & A4 & A5 --> B[postings_raw<br/>SQLite]
   B --> C[Normalisieren + Dedup<br/>rapidfuzz]
-  C --> D[LLM-Extraktion<br/>Haiku 4.5, JSON-Schema, gecacht]
+  C --> D[LLM-Extraktion<br/>Ministral Instruct, Evidenz + JSON-Schema]
   D --> E[Harte Filter<br/>profile.local.yaml]
-  E --> F[LLM-Score<br/>nur für hard_pass]
+  E --> F[Ministral Reasoning Assessment<br/>Python-Fachscore + Ampeln]
   G[Fahrzeiten<br/>Transitous / MOTIS lokal] --> H
   F --> H[Export JSON + GeoJSON]
   H --> I[Static Site<br/>MapLibre, GitHub Pages]
@@ -102,7 +102,7 @@ Dedup: `content_hash` über (normalisierter Titel, Firma, Ort) + `rapidfuzz.toke
 
 ---
 
-## 5. Extraktionsschema (Haiku 4.5, Structured Output / Tool Use)
+## 5. Extraktionsschema (Ministral 3 14B Instruct, Structured Output)
 
 ```json
 {
@@ -131,7 +131,10 @@ Dedup: `content_hash` über (normalisierter Titel, Firma, Ort) + `rapidfuzz.toke
 
 Regeln für den Prompt: Gehalt nur übernehmen, wenn im Text eine Zahl steht (österreichische Inserate müssen das Mindestgehalt nennen). `phd_required = true` nur bei explizitem "PhD/Doktorat erforderlich", nicht bei "von Vorteil". Nichts erfinden, `null` ist erlaubt. Cache-Key = `content_hash + schema_version`.
 
-Modell: `claude-haiku-4-5-20251001`. System-Prompt mit Prompt-Caching. Für einen Backfill (> 500 Inserate) Batch-API nutzen (halber Preis).
+Lokales Standardmodell: `ministral-3:14b`. Anforderungen werden als
+`requirements[{name, importance, evidence}]` mit wörtlichem Inseratsbeleg
+extrahiert; kritische Felder besitzen ebenfalls Quellenbelege. Cache-Key ist
+`content_hash + schema_version + model`. Haiku bleibt ein optionales API-Backend.
 
 ---
 
@@ -156,15 +159,16 @@ anchors:
 travel_policy: any_anchor   # Standort ok, wenn EIN Anker im Limit ist
 ```
 
-**Harte Filter (kein LLM, kostenlos)**
-1. `phd_required` → raus
-2. `seniority == senior` oder `years_experience_min > 3` → raus
-3. `role_family` nicht in `role_families_allowed` → raus
-4. Kein Anker im Fahrzeit-Limit → raus (Standort unbekannt → durchlassen, markieren)
-5. `contract_end` < 12 Monate → markieren, nicht raus
-
-**LLM-Score (nur `hard_pass == true`)**
-Rubrik 0–100: Skill-Fit (Anteil der must_skills, die das Profil belegt), Interessen-Fit (Bezug zu `interests`), Realismus (Ausbildung, Erfahrungsjahre). Output: `fit_score`, `fit_reasons` (3 Bullets), `gaps` (max. 3), `angle` (ein Satz: "so würde ich mich hier positionieren"). Der `angle` ist der Übergabepunkt an `motivationsschreiben`.
+**Filter und Ranking**
+- Nur nicht erlaubte Rollenfamilien erhalten keinen Fachscore. PhD, Seniorität,
+  Erfahrungsjahre, Fahrzeit, Ausland und Vertrag bleiben sichtbar.
+- Ministral Reasoning klassifiziert Skills als `direct`, `transferable`,
+  `missing` oder `unknown`; Python berechnet reproduzierbar: Anforderungen 60,
+  Domänenfit 25, Interessenfit 15.
+- Formale Bewerbungschance und Praktikabilität erscheinen als getrennte
+  Grün/Gelb/Rot-Ampeln und verändern den Fachscore nicht.
+- Zusätzlich: `score_confidence`, Breakdown, Evidenz, maximal drei Lücken und
+  ein Bewerbungs-Angle. Ranking-Cache: Profilversion + Scoreversion + Modell.
 
 **Initiativ-Score (pro Firma, kein LLM)**
 `relevant_postings_12m × 1.0 + relevant_postings_24m × 0.5 − aktuell offene passende Inserate`, nur Firmen mit Standort im Fahrzeit-Limit. Ausgabe: "hat in 18 Monaten 4× Downstream/Analytik gesucht, aktuell nichts offen → Initiativbewerbung". Historie wächst mit jedem Tag Laufzeit; Seed aus 24 Monaten JobSpy-Suche pro Firmenname, wo möglich.
@@ -262,11 +266,12 @@ Werk ≠ Firmensitz ist der häufigste Fehler in Inseraten → Standorte hier h�
 | Scraping (JobSpy, requests, Playwright) | 0 € |
 | Transitous / MOTIS lokal / GTFS / OSM | 0 € |
 | GitHub Pages, Actions, OpenFreeMap-Tiles | 0 € |
-| Haiku 4.5 Extraktion: ~40–60 relevante Inserate/Tag × ~2.500 Token ≈ 0,003 $/Inserat | ~3–6 $/Monat |
-| Haiku 4.5 Score: nur hard_pass (~20 %) | ~1–2 $/Monat |
-| **Gesamt** | **< 10 $/Monat** |
+| Ministral 3 14B Instruct + Reasoning via Ollama | 0 € |
+| Optionaler Haiku-API-Fallback | nutzungsabhängig, standardmäßig 0 € |
+| **Gesamt im lokalen Standardbetrieb** | **0 €** |
 
-Null-Kosten-Variante: Extraktion über Ollama (z. B. Qwen 2.5 7B) mit `instructor`/LiteLLM als Switch, Qualität mit dem Eval-Set vergleichen. Das ist zugleich ein Portfolio-Punkt (lokale AI).
+Beide Ministral-Varianten laufen quantisiert lokal über Ollama. Qwen bleibt als
+Vergleichsmodell in den read-only Eval-Kommandos verfügbar.
 
 ---
 

@@ -5,7 +5,7 @@ import json
 import pytest
 
 from heimspiel import extract as ex
-from heimspiel.extract import Extraction
+from heimspiel.extract import Extraction, FieldEvidence, Requirement
 from heimspiel.sources.base import RawPosting, store_postings
 
 SAMPLE = {
@@ -90,3 +90,102 @@ def test_restore_resets_stale_site_id(conn, monkeypatch):
     ex._store(conn, raw, Extraction.model_validate({**SAMPLE, "location_text": "Salzburg"}))
     row = conn.execute("SELECT site_id FROM postings WHERE raw_id=?", (raw["id"],)).fetchone()
     assert row["site_id"] is None
+
+
+def test_cache_is_bound_to_extraction_model(conn, monkeypatch):
+    store_postings(conn, [RawPosting("indeed", "1", None, "A", "F", "Wien", "Text")])
+    raw = conn.execute("SELECT * FROM postings_raw").fetchone()
+    ex._store(conn, raw, Extraction.model_validate(SAMPLE))
+    assert ex.pending_raws(conn) == []
+    monkeypatch.setattr(ex.llm, "EXTRACT_MODEL", "anderes-modell")
+    assert [row["id"] for row in ex.pending_raws(conn)] == [raw["id"]]
+
+
+def test_sanitizer_rejects_unsubstantiated_fields_and_requirements(conn):
+    store_postings(
+        conn,
+        [
+            RawPosting(
+                "indeed",
+                "1",
+                None,
+                "Bioinformatiker NGS",
+                "F",
+                "Wien",
+                "Python ist erforderlich. Das Mindestgehalt beträgt EUR 3.500 monatlich.",
+            )
+        ],
+    )
+    raw = conn.execute("SELECT * FROM postings_raw").fetchone()
+    candidate = Extraction.model_validate(
+        {
+            **SAMPLE,
+            "title_norm": "Drilling",
+            "years_experience_min": 5,
+            "salary_min_eur_month": 3500,
+            "requirements": [
+                Requirement(name="Python", importance="must", evidence="Python ist erforderlich."),
+                Requirement(name="Nextflow", importance="nice", evidence="Nextflow von Vorteil"),
+            ],
+            "field_evidence": FieldEvidence(
+                years_experience_min="mindestens fünf Jahre",
+                salary_min_eur_month="EUR 3.500 monatlich",
+            ),
+            "validation_warnings": ["vom Modell erfunden"],
+        }
+    )
+    cleaned = ex._sanitize_extraction(raw, candidate)
+    assert cleaned.title_norm == "Bioinformatiker NGS"
+    assert cleaned.years_experience_min is None
+    assert cleaned.salary_min_eur_month == 3500
+    assert cleaned.must_skills == ["Python"]
+    assert cleaned.nice_skills == []
+    assert cleaned.validation_warnings
+    assert "vom Modell erfunden" not in cleaned.validation_warnings
+
+
+def test_sanitizer_accepts_annual_salary_converted_to_fourteen_payments(conn):
+    store_postings(
+        conn,
+        [
+            RawPosting(
+                "indeed",
+                "salary",
+                None,
+                "Data Scientist",
+                "F",
+                "Wien",
+                "Das Jahresbruttogehalt beträgt mindestens EUR 49.000,0.",
+            )
+        ],
+    )
+    raw = conn.execute("SELECT * FROM postings_raw").fetchone()
+    candidate = Extraction.model_validate(
+        {
+            **SAMPLE,
+            # Lokale Modelle teilen Jahresgehälter häufig durch 12. Python
+            # normalisiert anhand des belegten Jahreswerts deterministisch auf 14.
+            "salary_min_eur_month": 4083.33,
+            "salary_basis": "yearly",
+            "field_evidence": FieldEvidence(
+                salary_min_eur_month="Jahresbruttogehalt beträgt mindestens EUR 49.000,0"
+            ),
+        }
+    )
+    cleaned = ex._sanitize_extraction(raw, candidate)
+    assert cleaned.salary_min_eur_month == 3500
+    assert cleaned.salary_basis == "yearly"
+
+
+def test_sanitizer_clears_basis_when_salary_is_unsubstantiated(conn):
+    store_postings(
+        conn,
+        [RawPosting("indeed", "salary", None, "Data Scientist", "F", "Wien", "Kein Gehalt")],
+    )
+    raw = conn.execute("SELECT * FROM postings_raw").fetchone()
+    candidate = Extraction.model_validate(
+        {**SAMPLE, "salary_basis": "yearly", "field_evidence": FieldEvidence()}
+    )
+    cleaned = ex._sanitize_extraction(raw, candidate)
+    assert cleaned.salary_min_eur_month is None
+    assert cleaned.salary_basis is None

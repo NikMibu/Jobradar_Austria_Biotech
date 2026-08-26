@@ -5,7 +5,7 @@ import {
 } from "./state";
 import type { JobSummary, StoredState } from "./types";
 
-const stored = (): StoredState => ({ saved: new Set(), overrides: {} });
+const stored = (): StoredState => ({ saved: new Set(), overrides: {}, labels: {} });
 
 function job(overrides: Partial<JobSummary> = {}): JobSummary {
   return {

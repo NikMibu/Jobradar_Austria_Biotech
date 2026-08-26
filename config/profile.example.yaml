@@ -10,6 +10,7 @@ role_families_allowed:
   [bioinformatics, data_science, csv_qa_validation, lab_analytics,
    downstream_process, mass_spec, data_steward, scientific_software, wet_lab_rnd]
 seniority_allowed: [entry, junior, mid]
+max_years_experience: 3
 interests:
   - Computational Biology / Bioinformatik-Pipelines
   - Data Science im Life-Science-Umfeld

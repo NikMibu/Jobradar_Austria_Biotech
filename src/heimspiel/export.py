@@ -5,11 +5,11 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import paths
+from . import llm, paths
 from .config import Profile
-from .match import initiative_scores
+from .match import SCORE_VERSION, initiative_scores
 
-DATA_SCHEMA_VERSION = 2
+DATA_SCHEMA_VERSION = 3
 
 
 def _split_job(job: dict) -> tuple[dict, dict]:
@@ -30,6 +30,9 @@ def _split_job(job: dict) -> tuple[dict, dict]:
             "hard_pass",
             "hard_reasons",
             "fit_score",
+            "score_confidence",
+            "formal_status",
+            "practical_status",
             "travel",
         )
     }
@@ -52,6 +55,11 @@ def _split_job(job: dict) -> tuple[dict, dict]:
             "fit_reasons",
             "gaps",
             "angle",
+            "score_breakdown",
+            "score_evidence",
+            "formal_reasons",
+            "practical_reasons",
+            "fallback_model",
         )
     }
     return summary, details
@@ -63,15 +71,19 @@ def _job_rows(conn: sqlite3.Connection, profile: Profile) -> list[dict]:
                   r.source, r.url, r.first_seen, r.last_seen,
                   r.raw_title, r.raw_company, r.raw_location,
                   s.hard_pass, s.hard_reasons, s.fit_score, s.fit_reasons, s.gaps, s.angle,
+                  s.score_breakdown, s.score_confidence, s.score_evidence,
+                  s.formal_status, s.formal_reasons, s.practical_status,
+                  s.practical_reasons, s.fallback_model,
                   c.name AS company_name,
                   st.lat, st.lon, st.label AS site_label
            FROM postings p
            JOIN postings_raw r ON r.id = p.raw_id
            LEFT JOIN scores s ON s.posting_id = p.id AND s.profile_version = ?
+             AND s.score_version = ? AND s.model = ?
            LEFT JOIN companies c ON c.id = p.company_id
            LEFT JOIN sites st ON st.id = p.site_id
            ORDER BY r.first_seen DESC""",
-        (profile.profile_version,),
+        (profile.profile_version, SCORE_VERSION, llm.SCORE_MODEL),
     ).fetchall()
 
     jobs = []
@@ -111,9 +123,25 @@ def _job_rows(conn: sqlite3.Connection, profile: Profile) -> list[dict]:
                 "hard_pass": bool(row["hard_pass"]) if row["hard_pass"] is not None else None,
                 "hard_reasons": json.loads(row["hard_reasons"]) if row["hard_reasons"] else None,
                 "fit_score": row["fit_score"],
+                "score_confidence": row["score_confidence"],
+                "score_breakdown": (
+                    json.loads(row["score_breakdown"]) if row["score_breakdown"] else None
+                ),
+                "score_evidence": (
+                    json.loads(row["score_evidence"]) if row["score_evidence"] else None
+                ),
                 "fit_reasons": json.loads(row["fit_reasons"]) if row["fit_reasons"] else None,
                 "gaps": json.loads(row["gaps"]) if row["gaps"] else None,
                 "angle": row["angle"],
+                "formal_status": row["formal_status"],
+                "formal_reasons": (
+                    json.loads(row["formal_reasons"]) if row["formal_reasons"] else []
+                ),
+                "practical_status": row["practical_status"],
+                "practical_reasons": (
+                    json.loads(row["practical_reasons"]) if row["practical_reasons"] else []
+                ),
+                "fallback_model": row["fallback_model"],
                 "travel": travel,
             }
         )
@@ -144,6 +172,9 @@ def export_all(conn: sqlite3.Connection, profile: Profile, out_dir: Path | None 
         "data_schema_version": DATA_SCHEMA_VERSION,
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "profile_version": profile.profile_version,
+        "extraction_model": llm.EXTRACT_MODEL,
+        "scoring_model": llm.SCORE_MODEL,
+        "score_version": SCORE_VERSION,
         "anchors": [
             {"id": a.id, "label": a.label, "max_minutes": a.max_minutes} for a in profile.anchors
         ],

@@ -5,8 +5,9 @@ import sqlite3
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 
+from . import llm
 from .config import Profile
-from .match import initiative_scores
+from .match import SCORE_VERSION, initiative_scores
 
 BORDERLINE_MIN_SCORE = 50
 
@@ -25,8 +26,9 @@ def _funnel_stats(conn: sqlite3.Connection, profile: Profile, cutoff: str) -> di
         """SELECT s.hard_reasons FROM scores s
            JOIN postings p ON p.id = s.posting_id
            JOIN postings_raw r ON r.id = p.raw_id
-           WHERE s.profile_version = ? AND s.hard_pass = 0 AND r.first_seen >= ?""",
-        (profile.profile_version, cutoff),
+           WHERE s.profile_version = ? AND s.score_version = ? AND s.model = ?
+             AND s.hard_pass = 0 AND r.first_seen >= ?""",
+        (profile.profile_version, SCORE_VERSION, llm.SCORE_MODEL, cutoff),
     ).fetchall()
     reasons: Counter[str] = Counter()
     for row in rejected:
@@ -39,8 +41,9 @@ def _funnel_stats(conn: sqlite3.Connection, profile: Profile, cutoff: str) -> di
         """SELECT COUNT(*) FROM scores s
            JOIN postings p ON p.id = s.posting_id
            JOIN postings_raw r ON r.id = p.raw_id
-           WHERE s.profile_version = ? AND s.hard_pass = 1 AND r.first_seen >= ?""",
-        (profile.profile_version, cutoff),
+           WHERE s.profile_version = ? AND s.score_version = ? AND s.model = ?
+             AND s.hard_pass = 1 AND r.first_seen >= ?""",
+        (profile.profile_version, SCORE_VERSION, llm.SCORE_MODEL, cutoff),
     ).fetchone()[0]
     return {
         "new": new,
@@ -82,9 +85,10 @@ def daily_report(conn: sqlite3.Connection, profile: Profile, days: int = 1) -> s
            FROM postings p
            JOIN postings_raw r ON r.id = p.raw_id
            JOIN scores s ON s.posting_id = p.id AND s.profile_version = ?
+             AND s.score_version = ? AND s.model = ?
            WHERE s.hard_pass = 1 AND r.first_seen >= ?
            ORDER BY s.fit_score DESC NULLS LAST""",
-        (profile.profile_version, cutoff),
+        (profile.profile_version, SCORE_VERSION, llm.SCORE_MODEL, cutoff),
     ).fetchall()
     top = rows[:10]
     borderline = [

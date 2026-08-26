@@ -116,8 +116,9 @@ Regeln:
 def _cache_get(conn: sqlite3.Connection, key: str) -> tuple[bool, str | None, bool]:
     """(hit, city, in_austria). hit=False: noch nicht (in aktueller Version) aufgelöst."""
     row = conn.execute(
-        "SELECT city, in_austria FROM location_cache WHERE location_key=? AND schema_version=?",
-        (key, LOCATION_SCHEMA_VERSION),
+        """SELECT city, in_austria FROM location_cache
+           WHERE location_key=? AND schema_version=? AND model IN ('static', ?)""",
+        (key, LOCATION_SCHEMA_VERSION, llm.EXTRACT_MODEL),
     ).fetchone()
     return (True, row["city"], bool(row["in_austria"])) if row else (False, None, True)
 
@@ -163,8 +164,8 @@ def _resolve(conn: sqlite3.Connection, location_text: str) -> tuple[str | None, 
     """(city, in_austria), gecacht über den normalisierten Text.
 
     in_austria=False heißt: erkennbar Ausland (z. B. XING-Stadtsuche zieht auch
-    deutsche/schweizer Städte mit) — match.py nutzt das für einen harten Ausschluss,
-    statt nur zu flaggen. city=None + in_austria=True heißt: unklar/unaufgelöst."""
+    deutsche/schweizer Städte mit) — Match/UI zeigen dafür eine Praktikabilitätswarnung.
+    city=None + in_austria=True heißt: unklar/unaufgelöst."""
     key = norm_text(location_text)
     if not key:
         return None, True
@@ -189,7 +190,7 @@ def resolve_city(conn: sqlite3.Connection, location_text: str) -> str | None:
 
 
 def is_in_austria(conn: sqlite3.Connection, location_text: str) -> bool:
-    """False nur bei erkanntem Auslandsstandort — match.py's harter Ausschlussgrund."""
+    """False nur bei erkanntem Auslandsstandort."""
     return _resolve(conn, location_text)[1]
 
 
