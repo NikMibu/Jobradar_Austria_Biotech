@@ -381,7 +381,17 @@ def formal_status(
         )
     if assessment:
         source = norm_text(ex.model_dump_json())
-        hard_no_rules = [norm_text(rule) for rule in profile.hard_no]
+        # Standort-hard_no ("Umzug ins Ausland") wird über das in_austria-Signal
+        # entschieden (hard_filter / practical_status), nicht über frei
+        # assoziierte LLM-hard_no_hits: qwen interpretiert bei jeder Österreich-
+        # Stelle "wäre für Auswärtige ein Umzug" hinein und zitiert als Beleg den
+        # Ortsnamen, der zwangsläufig im Extraktions-JSON steht — so kippten 72
+        # Wien-/Innsbruck-Stellen fälschlich auf formal=rot.
+        hard_no_rules = [
+            norm_text(rule)
+            for rule in profile.hard_no
+            if "ausland" not in norm_text(rule) and "umzug" not in norm_text(rule)
+        ]
         red.extend(
             f"Hard-no: {hit.rule}"
             for hit in assessment.hard_no_hits
@@ -500,6 +510,51 @@ def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None 
             )
             conn.commit()
             done += 1
+    return done
+
+
+def recompute_statuses(conn: sqlite3.Connection, profile: Profile) -> int:
+    """Formal-/Practical-Ampeln aus dem gespeicherten Assessment neu berechnen —
+    ohne LLM. Für Formeländerungen in formal_status/practical_status, die keinen
+    neuen score_breakdown brauchen (fit_score bleibt unverändert)."""
+    rows = conn.execute(
+        """SELECT s.posting_id, s.score_evidence, p.extracted_json, p.site_id
+           FROM scores s JOIN postings p ON p.id = s.posting_id
+           WHERE s.profile_version = ? AND s.score_version = ? AND s.model = ?""",
+        (profile.profile_version, SCORE_VERSION, llm.SCORE_MODEL),
+    ).fetchall()
+    done = 0
+    for row in rows:
+        ex = Extraction.model_validate_json(row["extracted_json"])
+        evidence = json.loads(row["score_evidence"]) if row["score_evidence"] else {}
+        assessment: ScoreAssessment | None = None
+        if row["score_evidence"] is not None:
+            assessment = ScoreAssessment(
+                angle="",
+                hard_no_hits=[HardNoHit(**hit) for hit in evidence.get("hard_no_hits", [])],
+            )
+        travel_ok = site_travel_ok(conn, row["site_id"], profile)
+        in_austria = locations.is_in_austria(conn, ex.location_text)
+        formal, formal_reasons = formal_status(ex, profile, assessment)
+        practical, practical_reasons = practical_status(ex, travel_ok, in_austria)
+        conn.execute(
+            """UPDATE scores SET formal_status = ?, formal_reasons = ?,
+                   practical_status = ?, practical_reasons = ?
+               WHERE posting_id = ? AND profile_version = ? AND score_version = ?
+                 AND model = ?""",
+            (
+                formal,
+                json.dumps(formal_reasons, ensure_ascii=False),
+                practical,
+                json.dumps(practical_reasons, ensure_ascii=False),
+                row["posting_id"],
+                profile.profile_version,
+                SCORE_VERSION,
+                llm.SCORE_MODEL,
+            ),
+        )
+        done += 1
+    conn.commit()
     return done
 
 

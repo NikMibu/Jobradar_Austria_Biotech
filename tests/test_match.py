@@ -227,6 +227,19 @@ def test_hard_no_requires_a_profile_rule_and_job_evidence():
     assert reasons == ["Hard-no: Vertrieb"]
 
 
+def test_location_hard_no_is_not_llm_adjudicated():
+    # qwen hängt "Umzug ins Ausland" an jede Österreich-Stelle und belegt es mit
+    # dem Ortsnamen (steht im Extraktions-JSON) — der Standort entscheidet, nicht
+    # das LLM. Siehe formal_status().
+    ex = make_extraction(location_text="Wien")
+    profile = make_profile(hard_no=["Vertrieb", "Umzug ins Ausland"])
+    hit = ScoreAssessment(
+        angle="Test",
+        hard_no_hits=[HardNoHit(rule="Umzug ins Ausland", evidence="Wien")],
+    )
+    assert formal_status(ex, profile, hit) == ("green", [])
+
+
 def test_practical_traffic_light_is_separate_from_fachscore():
     assert practical_status(make_extraction(), travel_ok=True, in_austria=True)[0] == "green"
     assert practical_status(make_extraction(), travel_ok=None, in_austria=True)[0] == "yellow"

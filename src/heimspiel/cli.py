@@ -178,12 +178,23 @@ def eval_extraction(
 
 
 @app.command()
-def score(limit: int | None = typer.Option(None)) -> None:
+def score(
+    limit: int | None = typer.Option(None),
+    recompute: bool = typer.Option(
+        False,
+        "--recompute",
+        help="Nur Formal-/Practical-Ampeln aus gespeichertem Assessment neu rechnen (kein LLM)",
+    ),
+) -> None:
     """Harte Filter + LLM-Score gegen profile.local.yaml."""
     from . import match
 
     conn = db.connect()
     profile = cfg.load_profile()
+    if recompute:
+        done = match.recompute_statuses(conn, profile)
+        typer.echo(f"{done} Ampeln neu berechnet (kein LLM).")
+        return
     done = match.score_pending(conn, profile, limit=limit)
     typer.echo(
         f"{done} Postings gescort (profile_version={profile.profile_version}, "
