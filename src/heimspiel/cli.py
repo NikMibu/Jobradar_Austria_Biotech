@@ -129,7 +129,7 @@ def locations(limit: int | None = typer.Option(None, help="max. Anzahl")) -> Non
 @app.command("eval-roles")
 def eval_roles(
     models: str = typer.Option(
-        "qwen3.5:9b,ministral-3:14b", help="Kommagetrennte Modellliste"
+        "qwen3.5:9b,qwen3.8:27b", help="Kommagetrennte Modellliste"
     ),
     n_random: int = typer.Option(20, help="Zufalls-Postings zusätzlich zu den Verdachtsfällen"),
 ) -> None:
@@ -164,7 +164,7 @@ def eval_ranking(
 def eval_extraction(
     labels: Path = typer.Option(..., exists=True, readable=True, help="Feldlabels als JSONL"),
     models: str = typer.Option(
-        "qwen3.5:9b,ministral-3:14b", help="Kommagetrennte Extraktionsmodelle"
+        "qwen3.5:9b,qwen3.8:27b", help="Kommagetrennte Extraktionsmodelle"
     ),
 ) -> None:
     """Extraktionsmodelle read-only gegen handgelabelte Inseratsfelder vergleichen."""

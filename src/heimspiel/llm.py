@@ -2,10 +2,14 @@
 
 Konfiguration über Umgebungsvariablen:
   HEIMSPIEL_LLM=anthropic|ollama   Backend (default: ollama)
-  HEIMSPIEL_EXTRACT_MODEL=<name>   Modell für strukturierte Extraktion
-  HEIMSPIEL_SCORE_MODEL=<name>     Modell für das fachliche Assessment
+  HEIMSPIEL_EXTRACT_MODEL=<name>   Modell für strukturierte Extraktion (Ollama-Default: qwen3.8:27b)
+  HEIMSPIEL_SCORE_MODEL=<name>     Modell für das fachliche Assessment (Ollama-Default: qwen3.8:27b)
   HEIMSPIEL_MODEL=<name>           kompatibler Fallback für beide Aufgaben
   HEIMSPIEL_OLLAMA_URL=<url>       Ollama-Server (default: http://localhost:11434)
+
+Der Ollama-Default ist ein einziges Modell für beide Rollen: qwen3.8:27b deckt die
+Instruct-Extraktion (think=false) und das Reasoning-Assessment (natives think, sofern
+/api/show die Capability meldet) ab.
 
 Beide Backends liefern Pydantic-validierte Structured Outputs: Anthropic über
 messages.parse (mit Prompt-Caching), Ollama über /api/chat mit format=<JSON-Schema>.
@@ -22,10 +26,8 @@ from pydantic import BaseModel
 BACKEND = os.environ.get("HEIMSPIEL_LLM", "ollama")
 _LEGACY_MODEL = os.environ.get("HEIMSPIEL_MODEL")
 _ANTHROPIC_DEFAULT = "claude-haiku-4-5"
-_OLLAMA_EXTRACT_DEFAULT = "ministral-3:14b"
-_OLLAMA_SCORE_DEFAULT = (
-    "hf.co/mistralai/Ministral-3-14B-Reasoning-2512-GGUF:Q4_K_M"
-)
+_OLLAMA_EXTRACT_DEFAULT = "qwen3.8:27b"
+_OLLAMA_SCORE_DEFAULT = "qwen3.8:27b"
 EXTRACT_MODEL = os.environ.get(
     "HEIMSPIEL_EXTRACT_MODEL",
     _LEGACY_MODEL or (_ANTHROPIC_DEFAULT if BACKEND == "anthropic" else _OLLAMA_EXTRACT_DEFAULT),

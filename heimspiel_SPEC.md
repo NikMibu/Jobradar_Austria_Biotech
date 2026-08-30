@@ -36,9 +36,9 @@ flowchart LR
   end
   A1 & A2 & A3 & A4 & A5 --> B[postings_raw<br/>SQLite]
   B --> C[Normalisieren + Dedup<br/>rapidfuzz]
-  C --> D[LLM-Extraktion<br/>Ministral Instruct, Evidenz + JSON-Schema]
+  C --> D[LLM-Extraktion<br/>lokales Instruct-Modell, Evidenz + JSON-Schema]
   D --> E[Harte Filter<br/>profile.local.yaml]
-  E --> F[Ministral Reasoning Assessment<br/>Python-Fachscore + Ampeln]
+  E --> F[LLM-Reasoning-Assessment<br/>Python-Fachscore + Ampeln]
   G[Fahrzeiten<br/>Transitous / MOTIS lokal] --> H
   F --> H[Export JSON + GeoJSON]
   H --> I[Static Site<br/>MapLibre, GitHub Pages]
@@ -102,7 +102,7 @@ Dedup: `content_hash` über (normalisierter Titel, Firma, Ort) + `rapidfuzz.toke
 
 ---
 
-## 5. Extraktionsschema (Ministral 3 14B Instruct, Structured Output)
+## 5. Extraktionsschema (lokales Instruct-Modell, Structured Output)
 
 ```json
 {
@@ -131,7 +131,7 @@ Dedup: `content_hash` über (normalisierter Titel, Firma, Ort) + `rapidfuzz.toke
 
 Regeln für den Prompt: Gehalt nur übernehmen, wenn im Text eine Zahl steht (österreichische Inserate müssen das Mindestgehalt nennen). `phd_required = true` nur bei explizitem "PhD/Doktorat erforderlich", nicht bei "von Vorteil". Nichts erfinden, `null` ist erlaubt. Cache-Key = `content_hash + schema_version`.
 
-Lokales Standardmodell: `ministral-3:14b`. Anforderungen werden als
+Lokales Standardmodell: `qwen3.8:27b` (ein Modell für Extraktion und Scoring). Anforderungen werden als
 `requirements[{name, importance, evidence}]` mit wörtlichem Inseratsbeleg
 extrahiert; kritische Felder besitzen ebenfalls Quellenbelege. Cache-Key ist
 `content_hash + schema_version + model`. Haiku bleibt ein optionales API-Backend.
@@ -162,7 +162,7 @@ travel_policy: any_anchor   # Standort ok, wenn EIN Anker im Limit ist
 **Filter und Ranking**
 - Nur nicht erlaubte Rollenfamilien erhalten keinen Fachscore. PhD, Seniorität,
   Erfahrungsjahre, Fahrzeit, Ausland und Vertrag bleiben sichtbar.
-- Ministral Reasoning klassifiziert Skills als `direct`, `transferable`,
+- Das Reasoning-Modell klassifiziert Skills als `direct`, `transferable`,
   `missing` oder `unknown`; Python berechnet reproduzierbar: Anforderungen 60,
   Domänenfit 25, Interessenfit 15.
 - Formale Bewerbungschance und Praktikabilität erscheinen als getrennte
@@ -266,12 +266,12 @@ Werk ≠ Firmensitz ist der häufigste Fehler in Inseraten → Standorte hier h�
 | Scraping (JobSpy, requests, Playwright) | 0 € |
 | Transitous / MOTIS lokal / GTFS / OSM | 0 € |
 | GitHub Pages, Actions, OpenFreeMap-Tiles | 0 € |
-| Ministral 3 14B Instruct + Reasoning via Ollama | 0 € |
+| `qwen3.8:27b` via Ollama (Extraktion + Scoring) | 0 € |
 | Optionaler Haiku-API-Fallback | nutzungsabhängig, standardmäßig 0 € |
 | **Gesamt im lokalen Standardbetrieb** | **0 €** |
 
-Beide Ministral-Varianten laufen quantisiert lokal über Ollama. Qwen bleibt als
-Vergleichsmodell in den read-only Eval-Kommandos verfügbar.
+Das Modell läuft quantisiert lokal über Ollama. Kleinere Modelle (z. B.
+`qwen3.5:9b`) bleiben als Vergleich in den read-only Eval-Kommandos verfügbar.
 
 ---
 

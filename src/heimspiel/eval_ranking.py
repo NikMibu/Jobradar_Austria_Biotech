@@ -6,9 +6,21 @@ import sqlite3
 from collections import defaultdict
 from pathlib import Path
 
+from . import llm
 from .config import Profile
 from .extract import Extraction
 from .match import _assessment_call, compute_score
+
+
+def _wants_thinking(model: str) -> bool:
+    """Wie der Produktionspfad (match.score_one): natives Thinking, wenn Ollama es
+    für das Modell meldet; sonst der Name-Heuristik-Fallback fürs Anthropic-Backend."""
+    if llm.BACKEND == "ollama":
+        try:
+            return llm._ollama_supports_thinking(model)
+        except Exception:  # noqa: BLE001 — Eval soll an einer /api/show-Panne nicht sterben
+            return "reasoning" in model.lower()
+    return "reasoning" in model.lower()
 
 LABEL_CANONICAL = {
     "yes": "yes",
@@ -105,7 +117,7 @@ def run(conn: sqlite3.Connection, profile: Profile, labels_path: Path, models: l
             ex = Extraction.model_validate_json(rows[item["posting_id"]]["extracted_json"])
             try:
                 assessment = _assessment_call(
-                    ex, profile, model, think="reasoning" in model.lower()
+                    ex, profile, model, think=_wants_thinking(model)
                 )
                 score = compute_score(ex, profile, assessment).fit_score
             except Exception as error:  # noqa: BLE001

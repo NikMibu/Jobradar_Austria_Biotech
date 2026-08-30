@@ -7,7 +7,7 @@ Extraktion und persönliche Rangfolge unterschiedliche Wahrheiten haben.
 
 ```bash
 HEIMSPIEL_LLM=ollama uv run heimspiel eval-roles \
-  --models qwen3.5:9b,ministral-3:14b --n-random 20
+  --models qwen3.5:9b,qwen3.8:27b --n-random 20
 ```
 
 Die Keyword-Referenz ist bewusst nur ein Smoke-Test. Allgemeine Begriffe wie
@@ -27,11 +27,11 @@ prüfen:
 ```bash
 HEIMSPIEL_LLM=ollama uv run heimspiel eval-extraction \
   --labels data/eval/extraction-labels.jsonl \
-  --models qwen3.5:9b,ministral-3:14b
+  --models qwen3.5:9b,qwen3.8:27b
 ```
 
 Enums, Booleans, Zahlen und Daten werden exakt verglichen. Skilllisten melden
-Precision und Recall. Zielwerte für Ministral Instruct sind mindestens 98 %
+Precision und Recall. Zielwerte für das Instruct-Modell sind mindestens 98 %
 valide Erstantworten, 90 % Rollen-Accuracy, 95 % für kritische Bool-/Enum-Felder
 und 85/75 % Skill-Precision/Recall. Eine neue Prompt-/Schema-Version wird erst
 nach diesem Vergleich als Standard gesetzt.
@@ -44,7 +44,7 @@ Im Job-Drawer werden Stellen mit `Passt`, `Vielleicht` oder `Nein` markiert.
 ```bash
 HEIMSPIEL_LLM=ollama uv run heimspiel eval-ranking \
   --labels ~/Downloads/heimspiel-ranking-labels-2026-08-26.jsonl \
-  --models hf.co/mistralai/Ministral-3-14B-Reasoning-2512-GGUF:Q4_K_M,ministral-3:14b
+  --models qwen3.8:27b,qwen3.5:9b
 ```
 
 Das Eval verändert keine produktiven Scores. Es meldet Modellfehler,

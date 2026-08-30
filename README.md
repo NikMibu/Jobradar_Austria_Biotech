@@ -37,7 +37,7 @@ flowchart LR
   B --> C[Dedup<br/>fuzzy title match]
   C --> D[LLM extraction<br/>fixed JSON schema, cached]
   D --> E[Relevant role filter]
-  E --> F[Ministral assessment<br/>deterministic fach-fit score]
+  E --> F[Local LLM assessment<br/>deterministic fach-fit score]
   G[Transit times<br/>Transitous API] --> F
   F --> H[JSON export]
   H --> I[Static site<br/>MapLibre + clustering]
@@ -49,7 +49,7 @@ Every morning (or on demand), `heimspiel daily` runs the full chain:
    independently, so a broken source never blocks the rest of the run.
 2. **Dedup** — cross-source duplicates are merged by fuzzy title match within
    a 60-day window per company; the longest description wins.
-3. **Extract** — Ministral Instruct turns free-text postings into an evidence-backed schema (role
+3. **Extract** — a local instruct model turns free-text postings into an evidence-backed schema (role
    family, seniority, must/nice-to-have skills, salary, workplace mode,
    location, contract terms, original-text evidence, a two-line summary).
    Cached on content hash, schema version, and model.
@@ -57,7 +57,7 @@ Every morning (or on demand), `heimspiel daily` runs the full chain:
    city (a deterministic pass handles the obvious cases — `"Graz, Styria,
    Austria"` → `Graz` — before falling back to the LLM for ambiguous ones),
    and explicitly foreign locations are flagged rather than dropped.
-5. **Score** — Ministral Reasoning classifies direct, transferable, missing,
+5. **Score** — a local reasoning model classifies direct, transferable, missing,
    and unknown matches. Python computes a reproducible 0–100 fach-fit score;
    formal eligibility and practical commute/contract constraints are separate
    traffic lights instead of hidden penalties.
@@ -106,19 +106,20 @@ out of the box.
 
 ### Zero-cost mode: Ollama instead of the Anthropic API
 
-Extraction and scoring use task-specific local Ministral variants:
+Extraction and scoring both default to one local model, `qwen3.8:27b` — an
+instruct pass (`think=false`) for extraction and a native-reasoning pass for the
+assessment:
 
 ```bash
-ollama pull ministral-3:14b
-ollama run hf.co/mistralai/Ministral-3-14B-Reasoning-2512-GGUF:Q4_K_M
+ollama pull qwen3.8:27b
 export HEIMSPIEL_LLM=ollama
-export HEIMSPIEL_EXTRACT_MODEL=ministral-3:14b
-export HEIMSPIEL_SCORE_MODEL=hf.co/mistralai/Ministral-3-14B-Reasoning-2512-GGUF:Q4_K_M
+export HEIMSPIEL_MODEL=qwen3.8:27b                   # optional — already the Ollama default
 export HEIMSPIEL_OLLAMA_URL=http://localhost:11434   # optional, default shown
 uv run heimspiel daily
 ```
 
-`HEIMSPIEL_MODEL` remains a backwards-compatible override for both tasks.
+Set `HEIMSPIEL_EXTRACT_MODEL` / `HEIMSPIEL_SCORE_MODEL` to split the two roles
+across different models; `HEIMSPIEL_MODEL` is a backwards-compatible override for both.
 Model changes intentionally invalidate the respective cache, so results from
 different extraction or ranking models are never mixed.
 
