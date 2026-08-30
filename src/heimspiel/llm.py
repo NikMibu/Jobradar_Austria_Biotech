@@ -12,16 +12,20 @@ Instruct-Extraktion (think=false) und das Reasoning-Assessment (natives think, s
 /api/show die Capability meldet) ab.
 
 Beide Backends liefern Pydantic-validierte Structured Outputs: Anthropic über
-messages.parse (mit Prompt-Caching), Ollama über /api/chat mit format=<JSON-Schema>.
+messages.parse (mit Prompt-Caching), Ollama über /api/chat. Das Schema trägt beim
+Ollama-Pfad zuerst nur der Prompt; Ollamas `format`-Grammar unterdrückt bei einem
+großen verschachtelten Schema optionale Arrays (z. B. `requirements` blieb leer)
+und wird deshalb nur als Fallback bei einem Parse-Fehler geschickt.
 """
 
 import json
 import os
+import re
 from collections.abc import Iterable
 from functools import lru_cache
 
 import requests
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 BACKEND = os.environ.get("HEIMSPIEL_LLM", "ollama")
 _LEGACY_MODEL = os.environ.get("HEIMSPIEL_MODEL")
@@ -99,6 +103,18 @@ def client():
     return anthropic.Anthropic()
 
 
+def _json_object(text: str) -> str:
+    """Das äußerste JSON-Objekt aus einer Modellantwort schneiden (Fences,
+    Vor-/Nachtext tolerieren) — für den Ollama-Pfad ohne `format`-Grammar."""
+    s = text.strip()
+    fence = re.search(r"```(?:json)?\s*(\{.*\})\s*```", s, re.S)
+    if fence:
+        return fence.group(1)
+    start = s.find("{")
+    end = s.rfind("}")
+    return s[start : end + 1] if start != -1 and end > start else s
+
+
 def parse_structured[T: BaseModel](
     system: str,
     user: str,
@@ -117,18 +133,19 @@ def parse_structured[T: BaseModel](
         selected_model = model or EXTRACT_MODEL
         native_think = think and _ollama_supports_thinking(selected_model)
         grounded_system = (
-            f"{system}\n\nAntworte ausschließlich entsprechend diesem JSON-Schema:\n"
+            f"{system}\n\nAntworte ausschließlich mit einem JSON-Objekt nach diesem "
+            f"Schema. Fülle jedes zutreffende Feld, auch verschachtelte Listen wie "
+            f"`requirements` und `field_evidence`:\n"
             f"{json.dumps(schema, ensure_ascii=False, separators=(',', ':'))}"
         )
-        resp = requests.post(
-            f"{OLLAMA_URL}/api/chat",
-            json={
+
+        def _chat(use_format: bool) -> str:
+            body = {
                 "model": selected_model,
                 "messages": [
                     {"role": "system", "content": grounded_system},
                     {"role": "user", "content": user},
                 ],
-                "format": schema,
                 "stream": False,
                 "think": native_think,
                 "options": {
@@ -137,11 +154,22 @@ def parse_structured[T: BaseModel](
                     "temperature": temperature,
                     "seed": OLLAMA_SEED if seed is None else seed,
                 },
-            },
-            timeout=600,
-        )
-        resp.raise_for_status()
-        return output.model_validate_json(resp.json()["message"]["content"])
+            }
+            if use_format:
+                body["format"] = schema
+            resp = requests.post(f"{OLLAMA_URL}/api/chat", json=body, timeout=600)
+            resp.raise_for_status()
+            return resp.json()["message"]["content"]
+
+        # Erst ohne `format`-Grammar (die bei großem Schema optionale Arrays
+        # verschluckt), dann mit Grammar als Sicherheitsnetz gegen Parse-Fehler.
+        for use_format in (False, True):
+            try:
+                return output.model_validate_json(_json_object(_chat(use_format)))
+            except (ValidationError, ValueError):
+                if use_format:
+                    raise
+        raise RuntimeError("unerreichbar")
 
     response = client().messages.parse(
         model=model or EXTRACT_MODEL,

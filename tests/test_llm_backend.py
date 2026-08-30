@@ -54,7 +54,8 @@ def test_parse_structured_ollama_dispatch(monkeypatch):
     assert result == Tiny(value=7)
     assert calls["url"].endswith("/api/chat")
     payload = calls["payload"]
-    assert payload["format"]["properties"]["value"]["type"] == "integer"
+    # Erstversuch geht ohne `format`-Grammar; das Schema trägt der Prompt.
+    assert "format" not in payload
     assert '"properties"' in payload["messages"][0]["content"]
     assert payload["think"] is False
     assert payload["options"]["temperature"] == 0
