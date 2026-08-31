@@ -40,6 +40,33 @@ test("loads the map without errors and avoids sort-only reclustering", async ({ 
   expect(errors).toEqual([]);
 });
 
+test("detail drawer leaves the list usable and supports arrow-key paging", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "drawer is a full-screen overlay on mobile");
+  await page.goto("/?demo=1");
+  await expect(page.locator('#map[data-status="ready"]')).toBeVisible();
+  await page.locator("#f-segment").selectOption("alle");
+  await expect(page.locator(".card")).toHaveCount(4);
+
+  await page.locator('[data-job-id="1"]').click();
+  await expect(page.locator("#drawer.open")).toBeVisible();
+  await expect(page.locator('[data-job-id="1"]')).toHaveClass(/selected/);
+
+  // The list stays visible and clickable while the drawer is open.
+  await expect(page.locator("#list")).toBeVisible();
+  await page.locator('[data-job-id="2"]').click();
+  await expect(page.locator("#drawer.open")).toBeVisible();
+  await expect(page.locator('[data-job-id="2"]')).toHaveClass(/selected/);
+  await expect(page.locator('[data-job-id="1"]')).not.toHaveClass(/selected/);
+
+  // Arrow keys page through the list in place.
+  await page.keyboard.press("ArrowUp");
+  await expect(page.locator('[data-job-id="1"]')).toHaveClass(/selected/);
+
+  await page.locator("#drawer-close").click();
+  await expect(page.locator("#drawer.open")).toHaveCount(0);
+  await expect(page.locator(".card.selected")).toHaveCount(0);
+});
+
 test("groups stacked jobs and keeps the responsive layout usable", async ({ page }) => {
   await page.goto("/?demo=1");
   await expect(page.locator('#map[data-status="ready"]')).toBeVisible();

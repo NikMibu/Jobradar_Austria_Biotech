@@ -16,6 +16,10 @@ type StatusCallback = (message: string, mode: "loading" | "ready" | "fallback") 
 export interface MapView {
   setLocations(groups: LocationGroup[]): void;
   setInitiative(companies: Company[]): void;
+  /** Smoothly move the camera to a coordinate (no-op for non-finite input). */
+  focus(lat: number, lon: number, options?: { zoom?: number }): void;
+  /** Ring the map point for this location key; pass null to clear. */
+  highlight(key: string | null): void;
   destroy(): void;
 }
 
@@ -65,6 +69,7 @@ export function createMapView(options: {
   let overlayReady = false;
   let overlayScheduled = false;
   let interactionHandlersAdded = false;
+  let highlightedKey: string | null = null;
   let latest: { kind: "jobs"; groups: LocationGroup[] } |
     { kind: "initiative"; companies: Company[] } | null = null;
 
@@ -93,6 +98,13 @@ export function createMapView(options: {
     else console.error("MapLibre:", event.error);
   });
 
+  const applyHighlight = () => {
+    if (!overlayReady || !map.getSource("jobs")) return;
+    map.removeFeatureState({ source: "jobs" });
+    if (highlightedKey != null)
+      map.setFeatureState({ source: "jobs", id: highlightedKey }, { selected: true });
+  };
+
   const applyLatest = () => {
     if (!overlayReady || !latest) return;
     const jobsSource = map.getSource("jobs") as GeoJSONSource;
@@ -108,6 +120,7 @@ export function createMapView(options: {
     jobsSource.setData(locationGeojson(latest.groups));
     map.getContainer().dataset.locationCount = String(latest.groups.length);
     map.getContainer().dataset.sourceUpdates = String(Number(map.getContainer().dataset.sourceUpdates ?? 0) + 1);
+    applyHighlight();
   };
 
   const addInteractions = () => {
@@ -168,16 +181,21 @@ export function createMapView(options: {
     const initialJobs = latest?.kind === "jobs" ? locationGeojson(latest.groups) : EMPTY_COLLECTION;
     const initialInitiative = latest?.kind === "initiative" ? initiativeGeojson(latest.companies) : EMPTY_COLLECTION;
     map.addSource("jobs", {
-      type: "geojson", data: initialJobs,
+      type: "geojson", data: initialJobs, promoteId: "location_key",
     });
     map.addSource("initiative", { type: "geojson", data: initialInitiative });
     map.addLayer({
       id: "job-points", type: "circle", source: "jobs",
       paint: {
         "circle-color": ["get", "color"],
-        "circle-radius": ["step", ["get", "job_count"], 7, 2, 9, 10, 12, 50, 15],
+        "circle-radius": [
+          "+",
+          ["step", ["get", "job_count"], 7, 2, 9, 10, 12, 50, 15],
+          ["case", ["boolean", ["feature-state", "selected"], false], 5, 0],
+        ],
         "circle-opacity": 0.85,
-        "circle-stroke-width": 1.5, "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": ["case", ["boolean", ["feature-state", "selected"], false], 3.5, 1.5],
+        "circle-stroke-color": ["case", ["boolean", ["feature-state", "selected"], false], "#2563eb", "#ffffff"],
       },
     });
     map.addLayer({
@@ -185,6 +203,7 @@ export function createMapView(options: {
       paint: { "circle-color": "#7c3aed", "circle-radius": 9, "circle-stroke-width": 1.5, "circle-stroke-color": "#ffffff" },
     });
     addInteractions();
+    applyHighlight();
     if (latest) {
       const count = latest.kind === "jobs"
         ? latest.groups.length
@@ -213,6 +232,19 @@ export function createMapView(options: {
     setInitiative(companies) {
       latest = { kind: "initiative", companies };
       applyLatest();
+    },
+    focus(lat, lon, focusOptions) {
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+      map.flyTo({
+        center: [lon, lat],
+        zoom: Math.max(map.getZoom(), focusOptions?.zoom ?? 9.5),
+        speed: 1.4, curve: 1.3, essential: true,
+      });
+    },
+    highlight(key) {
+      if (key === highlightedKey) return;
+      highlightedKey = key;
+      applyHighlight();
     },
     destroy() {
       window.clearTimeout(fallbackTimer);

@@ -1,7 +1,7 @@
 import "./style.css";
 
 import {
-  effectiveRole, effectiveSegment, filterJobs, filtersUrl, groupJobsByLocation,
+  coordinateKey, effectiveRole, effectiveSegment, filterJobs, filtersUrl, groupJobsByLocation,
   isForeign, readFilters, scoreColor,
 } from "./state";
 import type { MapView } from "./map-view";
@@ -228,11 +228,14 @@ async function main() {
     const chipbar = $("chipbar");
     chipbar.replaceChildren();
     if (locationFilter) {
-      const sample = jobs.find((job) => job.lat != null && job.lon != null && `${job.lat.toFixed(7)},${job.lon.toFixed(7)}` === locationFilter);
+      const atLocation = jobs.filter((job) =>
+        job.lat != null && job.lon != null && coordinateKey(job.lat, job.lon) === locationFilter);
+      const sample = atLocation[0];
       const chip = document.createElement("button");
-      chip.className = "chip chip-filter";
-      chip.textContent = `📍 ${sample?.site_label ?? sample?.location_text ?? "Standort"} ×`;
-      chip.onclick = () => { locationFilter = null; scheduleRender(true, true); };
+      chip.className = "chip chip-filter chip-location";
+      chip.textContent = `📍 ${sample?.site_label ?? sample?.location_text ?? "Standort"} · ${atLocation.length} ×`;
+      chip.title = "Standortfilter aufheben";
+      chip.onclick = () => { locationFilter = null; mapView?.highlight(null); scheduleRender(true, true); };
       chipbar.appendChild(chip);
     }
     const noLocation = document.createElement("button");
@@ -250,11 +253,32 @@ async function main() {
     }
   };
 
+  const markSelectedCard = (jobId: number | null) => {
+    for (const element of $("list").querySelectorAll(".card.selected")) element.classList.remove("selected");
+    if (jobId == null) return;
+    const card = $("list").querySelector<HTMLElement>(`[data-job-id="${jobId}"]`);
+    card?.classList.add("selected");
+    card?.scrollIntoView({ block: "nearest" });
+  };
+
+  const setDrawerOpen = (open: boolean) => {
+    const drawer = $("drawer");
+    if (open) {
+      drawer.hidden = false;
+      void drawer.offsetWidth; // reflow, so the slide-in transition runs from the closed state
+      drawer.classList.add("open");
+    } else {
+      drawer.classList.remove("open");
+    }
+    drawer.setAttribute("aria-hidden", String(!open));
+  };
+
   const renderList = (filtered: JobSummary[]) => {
     const fragment = document.createDocumentFragment();
     for (const job of filtered) {
       const card = document.createElement("article");
-      card.className = `card${effectiveSegment(job, stored) === "raus" ? " muted" : ""}`;
+      card.className = `card${effectiveSegment(job, stored) === "raus" ? " muted" : ""}${
+        String(job.id) === filters.job ? " selected" : ""}`;
       card.dataset.jobId = String(job.id);
       card.tabIndex = 0;
       card.innerHTML = `<div class="card-head"><span class="score" style="background:${scoreColor(job, stored)}">${job.fit_score ?? "–"}</span>
@@ -333,7 +357,12 @@ async function main() {
     if (!job) return;
     filters.job = String(job.id);
     writeUrl();
-    $("drawer").hidden = false;
+    setDrawerOpen(true);
+    markSelectedCard(job.id);
+    if (job.lat != null && job.lon != null) {
+      mapView?.highlight(coordinateKey(job.lat, job.lon));
+      mapView?.focus(job.lat, job.lon);
+    }
     $("drawer-content").innerHTML = `<h2>${esc(job.title)}</h2><p class="empty">Details werden geladen …</p>`;
     try {
       const detail = await loadDetail(job);
@@ -386,9 +415,11 @@ async function main() {
   };
 
   const closeDrawer = () => {
-    $("drawer").hidden = true;
+    setDrawerOpen(false);
     filters.job = "";
     writeUrl();
+    markSelectedCard(null);
+    mapView?.highlight(locationFilter);
   };
 
   $("list").addEventListener("click", (event) => {
@@ -477,7 +508,20 @@ async function main() {
     link.click();
     URL.revokeObjectURL(link.href);
   });
-  document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeDrawer(); });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { closeDrawer(); return; }
+    if (!$("drawer").classList.contains("open")) return;
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    const target = event.target as HTMLElement;
+    if (target.matches("input, select, textarea")) return;
+    const cards = [...$("list").querySelectorAll<HTMLElement>("[data-job-id]")];
+    const index = cards.findIndex((card) => card.dataset.jobId === filters.job);
+    const next = cards[index + (event.key === "ArrowDown" ? 1 : -1)];
+    if (index !== -1 && next) {
+      event.preventDefault();
+      void showDrawer(Number(next.dataset.jobId));
+    }
+  });
 
   render();
   performance.mark("heimspiel:list-ready");
@@ -488,8 +532,17 @@ async function main() {
       mapView = createMapView({
         container: "map", meta, dataPrefix: prefix, filtersElement: $("filters"),
         onLocation: (key, firstJobId, count) => {
-          if (count === 1) void showDrawer(firstJobId);
-          else { locationFilter = key; scheduleRender(true, true); }
+          const anchorJob = jobById.get(firstJobId);
+          if (anchorJob?.lat != null && anchorJob.lon != null)
+            mapView?.focus(anchorJob.lat, anchorJob.lon);
+          if (count === 1) {
+            void showDrawer(firstJobId);
+          } else {
+            locationFilter = key;
+            mapView?.highlight(key);
+            scheduleRender(true, true);
+            $("list").scrollTo({ top: 0, behavior: "smooth" });
+          }
         },
         onStatus: (message, mode) => {
           const status = $("map-status");
@@ -498,6 +551,10 @@ async function main() {
           $("map").dataset.status = mode;
         },
       });
+      const deepLinked = filters.job ? jobById.get(Number(filters.job)) : undefined;
+      if (deepLinked?.lat != null && deepLinked.lon != null)
+        mapView.highlight(coordinateKey(deepLinked.lat, deepLinked.lon));
+      else if (locationFilter) mapView.highlight(locationFilter);
       scheduleRender(false, true);
     }).catch(() => {
       const status = $("map-status");
