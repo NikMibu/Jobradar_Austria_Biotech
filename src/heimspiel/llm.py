@@ -7,6 +7,8 @@ Konfiguration über Umgebungsvariablen:
   HEIMSPIEL_MODEL=<name>           kompatibler Fallback für beide Aufgaben
   HEIMSPIEL_OLLAMA_URL=<url>       Ollama-Server (default: http://localhost:11434)
   HEIMSPIEL_OPENAI_REASONING=<effort>  reasoning_effort für den Score-Pfad (default: low)
+  HEIMSPIEL_OPENAI_SERVICE_TIER=fast   Fast Mode (2x Preis, nur unterstützte Modelle); leer = Standard
+  HEIMSPIEL_LLM_CONCURRENCY=<n>         parallele API-Calls (default: 8 für API-Backends, 1 für Ollama)
 
 Rollen-Defaults: Ollama qwen3.8:27b für beide Rollen, Anthropic claude-haiku-4-5,
 OpenAI gpt-5.6-luna. OPENAI_API_KEY / OPENAI_BASE_URL liest das openai-SDK selbst.
@@ -55,6 +57,10 @@ OLLAMA_URL = os.environ.get("HEIMSPIEL_OLLAMA_URL", "http://localhost:11434")
 OLLAMA_CONTEXT = int(os.environ.get("HEIMSPIEL_OLLAMA_CONTEXT", "16384"))
 OLLAMA_SEED = int(os.environ.get("HEIMSPIEL_OLLAMA_SEED", "42"))
 OPENAI_REASONING_EFFORT = os.environ.get("HEIMSPIEL_OPENAI_REASONING", "low")
+# Fast Mode: service_tier="fast" (bzw. "priority"). ~2,5x Durchsatz zum
+# doppelten Token-Preis, nur auf unterstützten Modellen (dokumentiert für
+# gpt-5.6-sol; für luna nicht garantiert). Leer/None = Standard-Tier.
+OPENAI_SERVICE_TIER = os.environ.get("HEIMSPIEL_OPENAI_SERVICE_TIER") or None
 
 # Parallele API-Calls (Extraktion/Scoring). Die Requests sind fast reine
 # Netzw-Wartezeit, Threads geben dabei den GIL frei. Lokales Ollama profitiert
@@ -240,6 +246,7 @@ def parse_structured[T: BaseModel](
         # JSON-Schema. reasoning_effort steuert die Denk-Tiefe (Extraktion: immer
         # low; Score: HEIMSPIEL_OPENAI_REASONING, default low). Reasoning-Tokens
         # zählen gegen max_completion_tokens, daher der Puffer.
+        extra = {"service_tier": OPENAI_SERVICE_TIER} if OPENAI_SERVICE_TIER else {}
         completion = _openai_client().chat.completions.parse(
             model=model or EXTRACT_MODEL,
             messages=[
@@ -250,6 +257,7 @@ def parse_structured[T: BaseModel](
             max_completion_tokens=max_tokens + 8000,
             reasoning_effort=OPENAI_REASONING_EFFORT if think else "low",
             seed=OLLAMA_SEED if seed is None else seed,
+            **extra,
         )
         message = completion.choices[0].message
         if message.refusal:

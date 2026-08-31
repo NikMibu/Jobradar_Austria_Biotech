@@ -127,12 +127,14 @@ across different models; `HEIMSPIEL_MODEL` is a backwards-compatible override fo
 export HEIMSPIEL_LLM=openai
 export OPENAI_API_KEY=sk-...          # or put it in a repo-root .env file
 export HEIMSPIEL_OPENAI_REASONING=low # reasoning_effort for the score path (default: low)
+export HEIMSPIEL_OPENAI_SERVICE_TIER=fast # Fast Mode: ~2x token price for higher throughput; empty = standard
 uv run heimspiel daily
 ```
 
 Role default is `gpt-5.6-luna`. Structured output goes through
 `chat.completions.parse` (strict JSON schema). Unlike the Anthropic backend, large
-extraction backfills run synchronously (no Batch API). A repo-root `.env` is loaded
+extraction backfills run synchronously (no Batch API). Extract/score API calls run
+in parallel (`HEIMSPIEL_LLM_CONCURRENCY`, default 8 for API backends, 1 for Ollama). A repo-root `.env` is loaded
 automatically at startup; already-set shell variables keep priority.
 Model changes intentionally invalidate the respective cache, so results from
 different extraction or ranking models are never mixed.

@@ -111,6 +111,31 @@ def test_openai_score_path_uses_configured_reasoning_effort(monkeypatch):
     assert calls["reasoning_effort"] == "medium"
 
 
+def test_openai_service_tier_passed_only_when_set(monkeypatch):
+    calls = {}
+
+    class FakeClient:
+        class chat:  # noqa: N801
+            class completions:  # noqa: N801
+                @staticmethod
+                def parse(**kwargs):
+                    calls.clear()
+                    calls.update(kwargs)
+                    msg = type("M", (), {"parsed": Tiny(value=1), "refusal": None})()
+                    return type("C", (), {"choices": [type("Ch", (), {"message": msg, "finish_reason": "stop"})()]})()
+
+    monkeypatch.setattr(llm, "BACKEND", "openai")
+    monkeypatch.setattr(llm, "_openai_client", lambda: FakeClient())
+
+    monkeypatch.setattr(llm, "OPENAI_SERVICE_TIER", None)
+    llm.parse_structured("s", "u", Tiny)
+    assert "service_tier" not in calls
+
+    monkeypatch.setattr(llm, "OPENAI_SERVICE_TIER", "fast")
+    llm.parse_structured("s", "u", Tiny)
+    assert calls["service_tier"] == "fast"
+
+
 def test_openai_refusal_raises(monkeypatch):
     class FakeClient:
         class chat:  # noqa: N801
