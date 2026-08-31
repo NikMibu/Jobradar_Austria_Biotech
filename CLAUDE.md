@@ -31,7 +31,7 @@ export HEIMSPIEL_MODEL=qwen3.8:27b   # role default for both roles; split with H
 export HEIMSPIEL_OLLAMA_URL=http://localhost:11434
 export HEIMSPIEL_OPENAI_REASONING=low   # reasoning_effort for the score path (openai only)
 export HEIMSPIEL_OPENAI_SERVICE_TIER=fast   # openai Fast Mode (~2x token price); empty = standard tier
-export HEIMSPIEL_LLM_CONCURRENCY=8   # parallel API calls for extract/score (default: 8 for openai/anthropic, 1 for ollama)
+export HEIMSPIEL_LLM_CONCURRENCY=6   # parallel API calls for extract/score (default: openai 6, anthropic 8, ollama 1)
 ```
 Role defaults: Ollama `qwen3.8:27b`, Anthropic `claude-haiku-4-5`, OpenAI `gpt-5.6-luna`. `HEIMSPIEL_MODEL` remains a compatible override for both model variables. API keys are read by the vendor SDKs (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`); `heimspiel/__init__.py` loads a repo-root `.env` first (`override=False`, so shell vars win). `HEIMSPIEL_ROOT` overrides the repo root (used by tests/foreign checkouts) and `HEIMSPIEL_DB` overrides the SQLite file path.
 

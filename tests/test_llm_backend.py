@@ -111,6 +111,21 @@ def test_openai_score_path_uses_configured_reasoning_effort(monkeypatch):
     assert calls["reasoning_effort"] == "medium"
 
 
+def test_openai_client_configures_retry_budget(monkeypatch):
+    seen = {}
+
+    class FakeOpenAI:
+        def __init__(self, **kwargs):
+            seen.update(kwargs)
+
+    fake_mod = type("openai", (), {"OpenAI": FakeOpenAI})
+    monkeypatch.setitem(__import__("sys").modules, "openai", fake_mod)
+    llm._openai_client.cache_clear()
+    llm._openai_client()
+    llm._openai_client.cache_clear()
+    assert seen["max_retries"] == 8
+
+
 def test_openai_service_tier_passed_only_when_set(monkeypatch):
     calls = {}
 

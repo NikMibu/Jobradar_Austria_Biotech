@@ -8,7 +8,7 @@ Konfiguration über Umgebungsvariablen:
   HEIMSPIEL_OLLAMA_URL=<url>       Ollama-Server (default: http://localhost:11434)
   HEIMSPIEL_OPENAI_REASONING=<effort>  reasoning_effort für den Score-Pfad (default: low)
   HEIMSPIEL_OPENAI_SERVICE_TIER=fast   Fast Mode (2x Preis, nur unterstützte Modelle); leer = Standard
-  HEIMSPIEL_LLM_CONCURRENCY=<n>         parallele API-Calls (default: 8 für API-Backends, 1 für Ollama)
+  HEIMSPIEL_LLM_CONCURRENCY=<n>         parallele API-Calls (default: openai 6, anthropic 8, ollama 1)
 
 Rollen-Defaults: Ollama qwen3.8:27b für beide Rollen, Anthropic claude-haiku-4-5,
 OpenAI gpt-5.6-luna. OPENAI_API_KEY / OPENAI_BASE_URL liest das openai-SDK selbst.
@@ -65,9 +65,13 @@ OPENAI_SERVICE_TIER = os.environ.get("HEIMSPIEL_OPENAI_SERVICE_TIER") or None
 # Parallele API-Calls (Extraktion/Scoring). Die Requests sind fast reine
 # Netzw-Wartezeit, Threads geben dabei den GIL frei. Lokales Ollama profitiert
 # nicht und würde nur das GPU-Queueing verschlechtern → dort Default 1.
+# OpenAI-Default bewusst niedriger: bei einem 200k-TPM-Org-Limit sättigen
+# schon ~6 gleichzeitige luna-Extraktionscalls die Minute; höher heißt nur
+# mehr 429-Retries (die das SDK abfängt, s. _openai_client), kein Durchsatz.
+_CONCURRENCY_DEFAULTS = {"openai": 6, "anthropic": 8}
 LLM_CONCURRENCY = int(
     os.environ.get(
-        "HEIMSPIEL_LLM_CONCURRENCY", "8" if BACKEND in ("openai", "anthropic") else "1"
+        "HEIMSPIEL_LLM_CONCURRENCY", str(_CONCURRENCY_DEFAULTS.get(BACKEND, 1))
     )
 )
 
@@ -170,7 +174,11 @@ def client():
 def _openai_client():
     import openai
 
-    return openai.OpenAI()
+    # Das SDK macht bei 429/5xx exponentiellen Backoff und respektiert den
+    # Retry-After-Header. Default sind 2 Versuche — zu wenig, wenn mehrere
+    # Worker gleichzeitig das TPM-Limit der Org sättigen (typische Wartezeit
+    # dann <1 s, aber in Serie). 8 Versuche fangen das ohne Handarbeit ab.
+    return openai.OpenAI(max_retries=8)
 
 
 def _json_object(text: str) -> str:
