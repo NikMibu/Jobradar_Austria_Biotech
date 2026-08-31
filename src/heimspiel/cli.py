@@ -258,12 +258,19 @@ def report(
 def daily(career_pages: bool | None = typer.Option(None, help="Karriereseiten erzwingen/übergehen (default: sonntags)")) -> None:
     """Kompletter Tageslauf: fetch → extract → locations → companies → travel → score → export → report."""
     with_career = career_pages if career_pages is not None else datetime.now().weekday() == 6
-    fetch(career_pages=with_career)
+    # Jede Stage wird hier als reine Funktion aufgerufen, nicht über Typer — daher
+    # MÜSSEN alle Flags explizit gesetzt werden. Ein ausgelassenes bool-Flag ist
+    # sonst das typer.Option(...)-Sentinel und damit truthy (z. B. score(recompute=…)
+    # übersprang so lautlos das komplette LLM-Scoring).
+    fetch(
+        jobspy=True, karriere=True, biotech=True, vbc=True, ats=True, xing=True,
+        career_pages=with_career,
+    )
     extract(limit=None)
     locations(limit=None)
     companies(geocode=True)
     travel(rebuild=False)
-    score(limit=None)
+    score(limit=None, recompute=False)
     export()
     report(days=1, out=None)
 

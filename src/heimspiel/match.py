@@ -19,7 +19,10 @@ from .extract import Extraction, Requirement
 from .normalize import norm_text
 
 SHORT_CONTRACT_MONTHS = 12
-SCORE_VERSION = 2
+# v3: Extraktions-Schema 5 (role_family computational_chemistry) — der Score-Cache
+# keyt nicht auf die Extraktions-Version, daher hier bumpen, um alle Postings gegen
+# die neue Taxonomie neu zu bewerten.
+SCORE_VERSION = 3
 
 
 @dataclass
