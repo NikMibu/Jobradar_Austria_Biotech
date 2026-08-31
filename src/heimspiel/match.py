@@ -455,29 +455,37 @@ def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None 
     done = 0
     import typer
 
-    with typer.progressbar(rows, label="  Score", show_pos=True) as bar:
-        for row in bar:
-            ex = Extraction.model_validate_json(row["extracted_json"])
-            travel_ok = site_travel_ok(conn, row["site_id"], profile)
-            in_austria = locations.is_in_austria(conn, ex.location_text)
-            hard = hard_filter(
-                ex,
-                profile,
-                travel_ok,
-                in_austria,
-            )
-            assessment: ScoreAssessment | None = None
-            fit: ComputedScore | None = None
-            fallback_model: str | None = None
-            if hard.passed:
-                try:
-                    assessment, fallback_model = score_one(ex, profile)
-                    fit = compute_score(ex, profile, assessment)
-                except Exception as e:  # noqa: BLE001
-                    print(f"\n  Score fehlgeschlagen für posting {row['posting_id']}: {e}")
-                    continue
-            formal, formal_reasons = formal_status(ex, profile, assessment)
-            practical, practical_reasons = practical_status(ex, travel_ok, in_austria)
+    # DB-Lesearbeit (site/location-Cache) im Haupt-Thread; danach laufen die
+    # LLM-Assessments über llm.parallel_map, die Writes wieder im Haupt-Thread.
+    prepared = []
+    for row in rows:
+        ex = Extraction.model_validate_json(row["extracted_json"])
+        travel_ok = site_travel_ok(conn, row["site_id"], profile)
+        in_austria = locations.is_in_austria(conn, ex.location_text)
+        prepared.append((row, ex, travel_ok, in_austria))
+
+    def _assess(item):
+        row, ex, travel_ok, in_austria = item
+        hard = hard_filter(ex, profile, travel_ok, in_austria)
+        assessment: ScoreAssessment | None = None
+        fit: ComputedScore | None = None
+        fallback_model: str | None = None
+        if hard.passed:
+            assessment, fallback_model = score_one(ex, profile)
+            fit = compute_score(ex, profile, assessment)
+        formal, formal_reasons = formal_status(ex, profile, assessment)
+        practical, practical_reasons = practical_status(ex, travel_ok, in_austria)
+        return (hard, fit, assessment, fallback_model, formal, formal_reasons, practical, practical_reasons)
+
+    with typer.progressbar(length=len(prepared), label="  Score", show_pos=True) as bar:
+        for item, result in llm.parallel_map(_assess, prepared):
+            bar.update(1)
+            row = item[0]
+            if isinstance(result, Exception):
+                print(f"\n  Score fehlgeschlagen für posting {row['posting_id']}: {result}")
+                continue
+            (hard, fit, assessment, fallback_model, formal, formal_reasons,
+             practical, practical_reasons) = result
             conn.execute(
                 """INSERT OR REPLACE INTO scores
                    (posting_id, profile_version, hard_pass, hard_reasons,

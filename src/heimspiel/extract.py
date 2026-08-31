@@ -307,16 +307,17 @@ def extract_pending(conn: sqlite3.Connection, limit: int | None = None) -> int:
     if len(rows) > BATCH_THRESHOLD and llm.BACKEND == "anthropic":
         return _extract_via_batch(conn, rows)
     if len(rows) > BATCH_THRESHOLD and llm.BACKEND != "ollama":
-        print(f"  {len(rows)} Inserate synchron (Batch-API nur für anthropic).")
+        note = "" if llm.LLM_CONCURRENCY <= 1 else f", {llm.LLM_CONCURRENCY} parallel"
+        print(f"  {len(rows)} Inserate synchron (Batch-API nur für anthropic{note}).")
     done = 0
-    with typer.progressbar(rows, label="  Extraktion", show_pos=True) as bar:
-        for raw in bar:
-            try:
-                ex = extract_one(raw)
-            except Exception as e:  # noqa: BLE001 — ein kaputtes Inserat stoppt nicht den Lauf
-                print(f"\n  Extraktion fehlgeschlagen für raw_id={raw['id']}: {e}")
+    # extract_one ist DB-frei; nur der _store läuft im Haupt-Thread (SQLite).
+    with typer.progressbar(length=len(rows), label="  Extraktion", show_pos=True) as bar:
+        for raw, result in llm.parallel_map(extract_one, rows):
+            bar.update(1)
+            if isinstance(result, Exception):
+                print(f"\n  Extraktion fehlgeschlagen für raw_id={raw['id']}: {result}")
                 continue
-            _store(conn, raw, ex)
+            _store(conn, raw, result)
             done += 1
     return done
 

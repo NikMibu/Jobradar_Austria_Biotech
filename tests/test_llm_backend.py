@@ -126,6 +126,20 @@ def test_openai_refusal_raises(monkeypatch):
         llm.parse_structured("sys", "user", Tiny)
 
 
+@pytest.mark.parametrize("concurrency", [1, 4])
+def test_parallel_map_returns_all_items_and_isolates_errors(monkeypatch, concurrency):
+    monkeypatch.setattr(llm, "LLM_CONCURRENCY", concurrency)
+
+    def fn(n):
+        if n == 3:
+            raise ValueError("boom")
+        return n * 10
+
+    out = dict(llm.parallel_map(fn, [1, 2, 3, 4]))
+    assert out[1] == 10 and out[2] == 20 and out[4] == 40
+    assert isinstance(out[3], ValueError)
+
+
 def test_openai_preflight_requires_key(monkeypatch):
     monkeypatch.setattr(llm, "BACKEND", "openai")
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)

@@ -22,7 +22,8 @@ Fallback bei einem Parse-Fehler geschickt.
 import json
 import os
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable, Iterator, Sequence
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 
 import requests
@@ -54,6 +55,41 @@ OLLAMA_URL = os.environ.get("HEIMSPIEL_OLLAMA_URL", "http://localhost:11434")
 OLLAMA_CONTEXT = int(os.environ.get("HEIMSPIEL_OLLAMA_CONTEXT", "16384"))
 OLLAMA_SEED = int(os.environ.get("HEIMSPIEL_OLLAMA_SEED", "42"))
 OPENAI_REASONING_EFFORT = os.environ.get("HEIMSPIEL_OPENAI_REASONING", "low")
+
+# Parallele API-Calls (Extraktion/Scoring). Die Requests sind fast reine
+# Netzw-Wartezeit, Threads geben dabei den GIL frei. Lokales Ollama profitiert
+# nicht und würde nur das GPU-Queueing verschlechtern → dort Default 1.
+LLM_CONCURRENCY = int(
+    os.environ.get(
+        "HEIMSPIEL_LLM_CONCURRENCY", "8" if BACKEND in ("openai", "anthropic") else "1"
+    )
+)
+
+
+def parallel_map[I, O](
+    fn: Callable[[I], O], items: Sequence[I]
+) -> Iterator[tuple[I, O | Exception]]:
+    """`fn` über `items` laufen lassen, bis zu LLM_CONCURRENCY gleichzeitig.
+
+    Yields `(item, ergebnis)` bzw. `(item, exception)` in Abschlussreihenfolge —
+    der Aufrufer entscheidet, wie er mit Fehlern umgeht. Bei Concurrency 1 ein
+    simpler serieller Durchlauf (kein Thread-Overhead, stabile Reihenfolge).
+    """
+    if LLM_CONCURRENCY <= 1:
+        for item in items:
+            try:
+                yield item, fn(item)
+            except Exception as error:  # noqa: BLE001 — Fehler reicht der Aufrufer weiter
+                yield item, error
+        return
+    with ThreadPoolExecutor(max_workers=LLM_CONCURRENCY) as pool:
+        futures = {pool.submit(fn, item): item for item in items}
+        for future in as_completed(futures):
+            item = futures[future]
+            try:
+                yield item, future.result()
+            except Exception as error:  # noqa: BLE001
+                yield item, error
 
 
 def _canonical_model_name(name: str) -> str:
