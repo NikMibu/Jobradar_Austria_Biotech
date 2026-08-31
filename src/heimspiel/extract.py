@@ -21,12 +21,15 @@ from .normalize import match_company, norm_text
 # v2: role_family-Definitionen im Prompt (236× fälschlich "other" mit v1)
 # v3: + wet_lab_rnd — Nasslabor-F&E (CRISPR Protein Engineer u. Ä. landeten in "other")
 # v4: evidenzbasierte Anforderungen und Belege für alle kritischen Felder
-SCHEMA_VERSION = 4
+# v5: + computational_chemistry — CADD/Docking/Molecular Modeling (landete in
+#     data_science / scientific_software / other, s. Nutzer-Feedback)
+SCHEMA_VERSION = 5
 BATCH_THRESHOLD = 500
 
 RoleFamily = Literal[
     "bioinformatics",
     "data_science",
+    "computational_chemistry",
     "csv_qa_validation",
     "lab_analytics",
     "downstream_process",
@@ -103,7 +106,8 @@ Regeln:
 - seniority: entry = Absolvent/keine Erfahrung, junior = 0-2 Jahre, mid = 2-5 Jahre, senior = 5+ Jahre oder Lead-Rolle.
 - role_family — wähle die passendste Kategorie nach diesen Definitionen:
   - bioinformatics: Analyse biologischer Daten (NGS, Genomik, Omics, Pipelines). Beispiele: "Bioinformatician", "Bioinformatiker", "Computational Biologist", "NGS Data Analyst".
-  - data_science: Datenanalyse/ML/Statistik, auch ohne Biologie-Bezug. Beispiele: "Data Scientist", "Machine Learning Engineer", "Biostatistiker".
+  - data_science: Datenanalyse/ML/Statistik, auch ohne Biologie-Bezug. Beispiele: "Data Scientist", "Machine Learning Engineer", "Biostatistiker". NICHT für Wirkstoffdesign am Molekül (das ist computational_chemistry).
+  - computational_chemistry: rechnergestütztes Wirkstoff-/Molekül-Design — Docking, Molecular Modeling, Molekulardynamik, CADD, Cheminformatik, virtuelles Screening, QSAR, Structure-based Drug Design. Beispiele: "Computational Chemist", "CADD Scientist", "Molecular Modeler", "Cheminformatician", "Scientist Computational Drug Discovery", "in-silico Screening". Kern ist die Chemie/Struktur des Moleküls, nicht Sequenz-Omics (bioinformatics) oder generische ML-Tabellen (data_science).
   - csv_qa_validation: Computer System Validation, Qualifizierung, QA im GMP-Umfeld. Beispiele: "CSV Engineer", "Validierungsingenieur", "Qualification Expert", "QA Specialist GMP".
   - lab_analytics: Labor-Analytik nasschemisch/instrumentell (HPLC, Assays, QC-Labor). Beispiele: "Laborant Analytik", "QC Analyst", "Labortechniker HPLC", "Laboranalytiker".
   - downstream_process: Aufreinigung/Prozessentwicklung Biopharma. Beispiele: "Downstream Processing Scientist", "Purification Chemist", "DSP Engineer", "Protein Purification".
@@ -111,7 +115,7 @@ Regeln:
   - data_steward: Datenmanagement, Datenqualität, FAIR, Research Data Management. Beispiele: "Data Steward", "Research Data Manager", "Clinical Data Manager".
   - scientific_software: Softwareentwicklung für Wissenschaft/Labor/Forschung. Beispiele: "Scientific Programmer", "Research Software Engineer", "Scientific Researcher / Research Engineer", "LIMS Developer".
   - wet_lab_rnd: molekularbiologische/biochemische Forschung & Entwicklung im Nasslabor (Klonierung, Proteinexpression und -aufreinigung, Assay-Entwicklung, Zellkultur, CRISPR, akademische Forschungsstellen in Biologie/Biomedizin). Beispiele: "Protein Engineer", "Research Associate Molecular Biology", "Scientist Cell Line Development", "PhD/PostDoc Position Cell Biology", "Master Thesis Student Biotech". NICHT für reine Produktions-/Routinetätigkeit ohne F&E-Anteil (das ist "other").
-  - other: NUR wenn keine der neun Kategorien passt (z. B. HR, Vertrieb, Einkauf, Personalverrechnung, reine IT-Administration, Produktions-/Logistikrollen, Pharmareferenten). Eine wissenschaftlich-technische Life-Science-Rolle mit F&E- oder Analytikanteil ist praktisch nie "other" — im Zweifel die nächstliegende Fachkategorie wählen.
+  - other: NUR wenn keine der zehn Kategorien passt (z. B. HR, Vertrieb, Einkauf, Personalverrechnung, reine IT-Administration, Produktions-/Logistikrollen, Pharmareferenten). Eine wissenschaftlich-technische Life-Science-Rolle mit F&E- oder Analytikanteil ist praktisch nie "other" — im Zweifel die nächstliegende Fachkategorie wählen.
 - Daten (contract_end, application_deadline) als ISO YYYY-MM-DD.
 - field_evidence: Für jeden gesetzten kritischen Wert das kürzeste WÖRTLICHE Zitat
   eintragen. Für false/null/unknown ist kein Beleg nötig. Ohne Beleg bleibt der Wert

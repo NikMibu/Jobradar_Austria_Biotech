@@ -10,9 +10,9 @@ import type {
 } from "./types";
 
 const ROLE_FAMILIES = [
-  "bioinformatics", "data_science", "csv_qa_validation", "lab_analytics",
-  "downstream_process", "mass_spec", "data_steward", "scientific_software",
-  "wet_lab_rnd", "other",
+  "bioinformatics", "data_science", "computational_chemistry", "csv_qa_validation",
+  "lab_analytics", "downstream_process", "mass_spec", "data_steward",
+  "scientific_software", "wet_lab_rnd", "other",
 ];
 const SAVED_KEY = "heimspiel.saved";
 const OVERRIDE_KEY = "heimspiel.roleOverrides";
