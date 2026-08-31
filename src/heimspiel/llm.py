@@ -1,21 +1,22 @@
-"""LLM-Backend-Abstraktion: Anthropic oder Ollama (lokaler Standard).
+"""LLM-Backend-Abstraktion: Anthropic, OpenAI oder Ollama (lokaler Standard).
 
 Konfiguration über Umgebungsvariablen:
-  HEIMSPIEL_LLM=anthropic|ollama   Backend (default: ollama)
-  HEIMSPIEL_EXTRACT_MODEL=<name>   Modell für strukturierte Extraktion (Ollama-Default: qwen3.8:27b)
-  HEIMSPIEL_SCORE_MODEL=<name>     Modell für das fachliche Assessment (Ollama-Default: qwen3.8:27b)
+  HEIMSPIEL_LLM=anthropic|openai|ollama   Backend (default: ollama)
+  HEIMSPIEL_EXTRACT_MODEL=<name>   Modell für strukturierte Extraktion
+  HEIMSPIEL_SCORE_MODEL=<name>     Modell für das fachliche Assessment
   HEIMSPIEL_MODEL=<name>           kompatibler Fallback für beide Aufgaben
   HEIMSPIEL_OLLAMA_URL=<url>       Ollama-Server (default: http://localhost:11434)
+  HEIMSPIEL_OPENAI_REASONING=<effort>  reasoning_effort für den Score-Pfad (default: low)
 
-Der Ollama-Default ist ein einziges Modell für beide Rollen: qwen3.8:27b deckt die
-Instruct-Extraktion (think=false) und das Reasoning-Assessment (natives think, sofern
-/api/show die Capability meldet) ab.
+Rollen-Defaults: Ollama qwen3.8:27b für beide Rollen, Anthropic claude-haiku-4-5,
+OpenAI gpt-5.6-luna. OPENAI_API_KEY / OPENAI_BASE_URL liest das openai-SDK selbst.
 
-Beide Backends liefern Pydantic-validierte Structured Outputs: Anthropic über
-messages.parse (mit Prompt-Caching), Ollama über /api/chat. Das Schema trägt beim
-Ollama-Pfad zuerst nur der Prompt; Ollamas `format`-Grammar unterdrückt bei einem
-großen verschachtelten Schema optionale Arrays (z. B. `requirements` blieb leer)
-und wird deshalb nur als Fallback bei einem Parse-Fehler geschickt.
+Alle drei Backends liefern Pydantic-validierte Structured Outputs: Anthropic über
+messages.parse (mit Prompt-Caching), OpenAI über chat.completions.parse (strict
+JSON-Schema), Ollama über /api/chat. Das Schema trägt beim Ollama-Pfad zuerst nur
+der Prompt; Ollamas `format`-Grammar unterdrückt bei einem großen verschachtelten
+Schema optionale Arrays (z. B. `requirements` blieb leer) und wird deshalb nur als
+Fallback bei einem Parse-Fehler geschickt.
 """
 
 import json
@@ -30,19 +31,29 @@ from pydantic import BaseModel, ValidationError
 BACKEND = os.environ.get("HEIMSPIEL_LLM", "ollama")
 _LEGACY_MODEL = os.environ.get("HEIMSPIEL_MODEL")
 _ANTHROPIC_DEFAULT = "claude-haiku-4-5"
+_OPENAI_DEFAULT = "gpt-5.6-luna"
 _OLLAMA_EXTRACT_DEFAULT = "qwen3.8:27b"
 _OLLAMA_SCORE_DEFAULT = "qwen3.8:27b"
+
+
+def _default_model(ollama_default: str) -> str:
+    if BACKEND == "anthropic":
+        return _ANTHROPIC_DEFAULT
+    if BACKEND == "openai":
+        return _OPENAI_DEFAULT
+    return ollama_default
+
+
 EXTRACT_MODEL = os.environ.get(
-    "HEIMSPIEL_EXTRACT_MODEL",
-    _LEGACY_MODEL or (_ANTHROPIC_DEFAULT if BACKEND == "anthropic" else _OLLAMA_EXTRACT_DEFAULT),
+    "HEIMSPIEL_EXTRACT_MODEL", _LEGACY_MODEL or _default_model(_OLLAMA_EXTRACT_DEFAULT)
 )
 SCORE_MODEL = os.environ.get(
-    "HEIMSPIEL_SCORE_MODEL",
-    _LEGACY_MODEL or (_ANTHROPIC_DEFAULT if BACKEND == "anthropic" else _OLLAMA_SCORE_DEFAULT),
+    "HEIMSPIEL_SCORE_MODEL", _LEGACY_MODEL or _default_model(_OLLAMA_SCORE_DEFAULT)
 )
 OLLAMA_URL = os.environ.get("HEIMSPIEL_OLLAMA_URL", "http://localhost:11434")
 OLLAMA_CONTEXT = int(os.environ.get("HEIMSPIEL_OLLAMA_CONTEXT", "16384"))
 OLLAMA_SEED = int(os.environ.get("HEIMSPIEL_OLLAMA_SEED", "42"))
+OPENAI_REASONING_EFFORT = os.environ.get("HEIMSPIEL_OPENAI_REASONING", "low")
 
 
 def _canonical_model_name(name: str) -> str:
@@ -51,8 +62,18 @@ def _canonical_model_name(name: str) -> str:
 
 
 def ensure_available(models: Iterable[str]) -> None:
-    """Ollama-Verbindung und lokale Modelle einmal vor einem Batch prüfen."""
+    """Ollama-Verbindung und lokale Modelle einmal vor einem Batch prüfen.
+
+    Für die API-Backends nur ein Schlüssel-Check — kein Netzcall.
+    """
     if BACKEND == "anthropic":
+        return
+    if BACKEND == "openai":
+        if not os.environ.get("OPENAI_API_KEY"):
+            raise RuntimeError(
+                "OPENAI_API_KEY ist nicht gesetzt. In .env eintragen (Repo-Wurzel) "
+                "oder in der Shell exportieren."
+            )
         return
     if BACKEND != "ollama":
         raise RuntimeError(f"Unbekanntes HEIMSPIEL_LLM-Backend: {BACKEND!r}")
@@ -101,6 +122,13 @@ def client():
     import anthropic
 
     return anthropic.Anthropic()
+
+
+@lru_cache(maxsize=1)
+def _openai_client():
+    import openai
+
+    return openai.OpenAI()
 
 
 def _json_object(text: str) -> str:
@@ -170,6 +198,32 @@ def parse_structured[T: BaseModel](
                 if use_format:
                     raise
         raise RuntimeError("unerreichbar")
+
+    if BACKEND == "openai":
+        # chat.completions.parse baut aus dem Pydantic-Modell ein strict
+        # JSON-Schema. reasoning_effort steuert die Denk-Tiefe (Extraktion: immer
+        # low; Score: HEIMSPIEL_OPENAI_REASONING, default low). Reasoning-Tokens
+        # zählen gegen max_completion_tokens, daher der Puffer.
+        completion = _openai_client().chat.completions.parse(
+            model=model or EXTRACT_MODEL,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            response_format=output,
+            max_completion_tokens=max_tokens + 8000,
+            reasoning_effort=OPENAI_REASONING_EFFORT if think else "low",
+            seed=OLLAMA_SEED if seed is None else seed,
+        )
+        message = completion.choices[0].message
+        if message.refusal:
+            raise ValueError(f"OpenAI hat die Anfrage abgelehnt: {message.refusal}")
+        if message.parsed is None:
+            raise ValueError(
+                "OpenAI-Antwort ohne parsebares Objekt "
+                f"(finish_reason={completion.choices[0].finish_reason})"
+            )
+        return message.parsed
 
     response = client().messages.parse(
         model=model or EXTRACT_MODEL,

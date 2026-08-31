@@ -62,6 +62,77 @@ def test_parse_structured_ollama_dispatch(monkeypatch):
     assert payload["options"]["seed"] == llm.OLLAMA_SEED
 
 
+def test_parse_structured_openai_dispatch(monkeypatch):
+    calls = {}
+
+    class FakeParsed:
+        def __init__(self):
+            self.message = type("M", (), {"parsed": Tiny(value=7), "refusal": None})()
+            self.finish_reason = "stop"
+
+    class FakeCompletion:
+        choices = [FakeParsed()]
+
+    class FakeClient:
+        class chat:  # noqa: N801
+            class completions:  # noqa: N801
+                @staticmethod
+                def parse(**kwargs):
+                    calls.update(kwargs)
+                    return FakeCompletion()
+
+    monkeypatch.setattr(llm, "BACKEND", "openai")
+    monkeypatch.setattr(llm, "_openai_client", lambda: FakeClient())
+    result = llm.parse_structured("sys", "user", Tiny, model="gpt-x", think=False)
+    assert result == Tiny(value=7)
+    assert calls["model"] == "gpt-x"
+    assert calls["response_format"] is Tiny
+    assert calls["reasoning_effort"] == "low"
+    assert calls["seed"] == llm.OLLAMA_SEED
+    assert "max_tokens" not in calls  # Reasoning-Modelle: nur max_completion_tokens
+
+
+def test_openai_score_path_uses_configured_reasoning_effort(monkeypatch):
+    calls = {}
+
+    class FakeClient:
+        class chat:  # noqa: N801
+            class completions:  # noqa: N801
+                @staticmethod
+                def parse(**kwargs):
+                    calls.update(kwargs)
+                    msg = type("M", (), {"parsed": Tiny(value=1), "refusal": None})()
+                    return type("C", (), {"choices": [type("Ch", (), {"message": msg, "finish_reason": "stop"})()]})()
+
+    monkeypatch.setattr(llm, "BACKEND", "openai")
+    monkeypatch.setattr(llm, "OPENAI_REASONING_EFFORT", "medium")
+    monkeypatch.setattr(llm, "_openai_client", lambda: FakeClient())
+    llm.parse_structured("sys", "user", Tiny, think=True)
+    assert calls["reasoning_effort"] == "medium"
+
+
+def test_openai_refusal_raises(monkeypatch):
+    class FakeClient:
+        class chat:  # noqa: N801
+            class completions:  # noqa: N801
+                @staticmethod
+                def parse(**kwargs):
+                    msg = type("M", (), {"parsed": None, "refusal": "nein"})()
+                    return type("C", (), {"choices": [type("Ch", (), {"message": msg, "finish_reason": "stop"})()]})()
+
+    monkeypatch.setattr(llm, "BACKEND", "openai")
+    monkeypatch.setattr(llm, "_openai_client", lambda: FakeClient())
+    with pytest.raises(ValueError, match="abgelehnt"):
+        llm.parse_structured("sys", "user", Tiny)
+
+
+def test_openai_preflight_requires_key(monkeypatch):
+    monkeypatch.setattr(llm, "BACKEND", "openai")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
+        llm.ensure_available(["gpt-5.6-luna"])
+
+
 def test_ollama_preflight_checks_connection_and_models(monkeypatch):
     class FakeResp:
         def raise_for_status(self):

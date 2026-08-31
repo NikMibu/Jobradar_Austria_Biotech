@@ -306,6 +306,8 @@ def extract_pending(conn: sqlite3.Connection, limit: int | None = None) -> int:
         rows = rows[:limit]
     if len(rows) > BATCH_THRESHOLD and llm.BACKEND == "anthropic":
         return _extract_via_batch(conn, rows)
+    if len(rows) > BATCH_THRESHOLD and llm.BACKEND != "ollama":
+        print(f"  {len(rows)} Inserate synchron (Batch-API nur für anthropic).")
     done = 0
     with typer.progressbar(rows, label="  Extraktion", show_pos=True) as bar:
         for raw in bar:
