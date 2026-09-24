@@ -97,6 +97,10 @@ STUB_TEXT_CHARS = 800
 STUB_CONFIDENCE_CAP = 30
 NOT_CLAIM_THRESHOLD = 0.7
 HARD_NO_THRESHOLD = 0.8
+# Erster Volllauf 2026-09-24: Jevs Choice sagte "bewerben" auch bei Fachfit 44 und
+# Fachnähe 0,27 (Testperson Marktforschung) — die Formel muss mitreden.
+OFF_DOMAIN = 0.35
+APPLY_MIN_FIT = 50
 
 
 def text_quality(raw_text: str | None) -> Literal["full", "stub"]:
@@ -182,6 +186,7 @@ ENTRY_SENIORITY = {"entry", "junior"}
 def decide_recommendation(
     assessment: JevAssessment | None, formal: TrafficStatus, quality: str,
     seniority: str = "junior", abroad: bool = False,
+    fit_score: int | None = None, initiative: bool = False,
 ) -> tuple[Recommendation, list[str]]:
     """Jev-Empfehlung plus harte Python-Regeln, die Jev nicht überstimmen darf.
 
@@ -213,9 +218,20 @@ def decide_recommendation(
         else:
             rec = "nicht_bewerben"
             notes.append(f"Verlangt Nicht-Claim (p={assessment.not_claim:.2f})")
-    if quality == "stub" and rec == "bewerben":
-        rec = "stretch"
-        notes.append("Stub-Inserat: höchstens Stretch bis zum Volltext")
+    if assessment.domain < OFF_DOMAIN:
+        if rec != "nicht_bewerben":
+            notes.append(f"Fachfremd (Fachnähe {assessment.domain:.2f})")
+        rec = "nicht_bewerben"
+    if rec == "bewerben":
+        if quality == "stub":
+            rec = "stretch"
+            notes.append("Stub-Inserat: höchstens Stretch bis zum Volltext")
+        elif initiative:
+            rec = "stretch"
+            notes.append("Initiativbewerbung/Talentpool: kein konkretes Stellenprofil")
+        elif fit_score is not None and fit_score < APPLY_MIN_FIT:
+            rec = "stretch"
+            notes.append(f"Fachfit {fit_score} < {APPLY_MIN_FIT}")
     return rec, notes
 
 
@@ -324,6 +340,8 @@ def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None 
         rec, rec_notes = decide_recommendation(
             assessment, formal, quality, ex.seniority,
             abroad=not in_austria and ex.workplace_mode != "remote",
+            fit_score=fit.fit_score if fit else None,
+            initiative=ex.position_type == "initiative",
         )
         return (hard, fit, assessment, quality, formal, formal_reasons,
                 practical, practical_reasons, rec, rec_notes)
@@ -395,7 +413,8 @@ def recompute_statuses(conn: sqlite3.Connection, profile: Profile) -> int:
     """Ampeln und Empfehlung aus dem gespeicherten Jev-Assessment neu berechnen —
     ohne API-Call. fit_score bleibt unverändert."""
     rows = conn.execute(
-        """SELECT s.posting_id, s.score_evidence, s.text_quality, p.extracted_json, p.site_id
+        """SELECT s.posting_id, s.score_evidence, s.text_quality, s.fit_score,
+                  p.extracted_json, p.site_id
            FROM scores s JOIN postings p ON p.id = s.posting_id
            WHERE s.profile_version = ? AND s.score_version = ? AND s.model = ?""",
         (profile.profile_version, SCORE_VERSION, SCORE_MODEL),
@@ -413,6 +432,8 @@ def recompute_statuses(conn: sqlite3.Connection, profile: Profile) -> int:
         rec, rec_notes = decide_recommendation(
             assessment, formal, quality, ex.seniority,
             abroad=not in_austria and ex.workplace_mode != "remote",
+            fit_score=row["fit_score"],
+            initiative=ex.position_type == "initiative",
         )
         conn.execute(
             """UPDATE scores SET formal_status = ?, formal_reasons = ?,

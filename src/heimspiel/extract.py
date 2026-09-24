@@ -43,7 +43,21 @@ RoleFamily = Literal[
 ]
 
 
-PositionType = Literal["job", "phd", "predoc", "postdoc", "internship", "thesis"]
+PositionType = Literal["job", "phd", "predoc", "postdoc", "internship", "thesis", "initiative"]
+
+# Initiativbewerbungen/Talentpools sind keine konkreten Stellen. Deterministisch am
+# Titel erkannt (nicht vom LLM), damit auch bestehende Extraktionen ohne Neu-Extraktion
+# umgestellt werden können (s. mark_initiative).
+INITIATIVE_RE = re.compile(
+    r"initiativ|unsolicited|proactive application|talent.?pool|various positions|spontanbewerbung",
+    re.IGNORECASE,
+)
+
+
+def mark_initiative(raw_title: str | None, ex: "Extraction") -> "Extraction":
+    if raw_title and INITIATIVE_RE.search(raw_title) and ex.position_type != "initiative":
+        return ex.model_copy(update={"position_type": "initiative"})
+    return ex
 
 
 class Requirement(BaseModel):
@@ -290,7 +304,7 @@ def _sanitize_extraction(raw: sqlite3.Row, ex: Extraction) -> Extraction:
         data["title_norm"] = raw_title
         warnings.append("title_norm wegen geringer Übereinstimmung auf Originaltitel zurückgesetzt")
     data["validation_warnings"] = warnings
-    return Extraction.model_validate(data)
+    return mark_initiative(raw["raw_title"], Extraction.model_validate(data))
 
 
 def _store(conn: sqlite3.Connection, raw: sqlite3.Row, ex: Extraction) -> None:

@@ -9,10 +9,11 @@ export const SEGMENTS: [string, string][] = [
 ];
 export const POSITIONS: [string, string][] = [
   ["", "Alle Stellen"], ["job", "Jobs"], ["phd", "PhD / Predoc"], ["postdoc", "Postdoc"],
-  ["training", "Praktikum / Thesis"],
+  ["training", "Praktikum / Thesis"], ["initiative", "Initiativ / Talentpool"],
 ];
 const POSITION_GROUP: Record<string, string> = {
   job: "job", phd: "phd", predoc: "phd", postdoc: "postdoc", internship: "training", thesis: "training",
+  initiative: "initiative",
 };
 export const positionGroup = (job: JobSummary): string => POSITION_GROUP[job.position_type ?? "job"] ?? "job";
 export const REC_LABEL: Record<Segment, string> = {

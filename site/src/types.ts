@@ -1,7 +1,7 @@
 export type TrafficStatus = "green" | "yellow" | "red";
 export type Recommendation = "bewerben" | "stretch" | "nicht_bewerben";
 export type Segment = "bewerben" | "stretch" | "nicht";
-export type PositionType = "job" | "phd" | "predoc" | "postdoc" | "internship" | "thesis";
+export type PositionType = "job" | "phd" | "predoc" | "postdoc" | "internship" | "thesis" | "initiative";
 export type RankingLabel = "yes" | "maybe" | "no";
 
 export interface JobSummary {

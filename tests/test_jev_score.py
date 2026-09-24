@@ -87,6 +87,9 @@ def test_recommendation_overrides():
     assert decide_recommendation(stretch, "yellow", "full") == ("stretch", [])
     assert decide_recommendation(None, "green", "full")[0] == "nicht_bewerben"
     assert decide_recommendation(assessment(), "green", "full", abroad=True)[0] == "nicht_bewerben"
+    assert decide_recommendation(assessment(domain=0.2), "green", "full")[0] == "nicht_bewerben"
+    assert decide_recommendation(assessment(), "green", "full", fit_score=44)[0] == "stretch"
+    assert decide_recommendation(assessment(), "green", "full", initiative=True)[0] == "stretch"
 
 
 def test_hard_no_probability_turns_formal_red():
@@ -113,6 +116,15 @@ def test_questions_cover_requirements_and_phd_only_for_phd():
     assert "RNA-Seq" in q["req_0"].instructions  # must zuerst
     assert "Ausland" not in q["hard_no"].instructions
     assert "phd_topic" in jev.build_questions(make_extraction(position_type="predoc"), make_profile())
+
+
+def test_initiative_titles_are_marked_deterministically():
+    from heimspiel.extract import mark_initiative
+
+    ex = make_extraction()
+    assert mark_initiative("Unsolicited Application – Talent Pool", ex).position_type == "initiative"
+    assert mark_initiative("Initiativbewerbung", ex).position_type == "initiative"
+    assert mark_initiative("Bioinformatiker NGS", ex).position_type == "job"
 
 
 def test_soft_skills_are_not_jev_questions():

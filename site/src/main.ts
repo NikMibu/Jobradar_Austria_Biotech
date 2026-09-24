@@ -12,7 +12,7 @@ import type {
 
 const POSITION_LABEL: Record<PositionType, string> = {
   job: "Job", phd: "🎓 PhD", predoc: "🎓 Predoc", postdoc: "Postdoc",
-  internship: "Praktikum", thesis: "Abschlussarbeit",
+  internship: "Praktikum", thesis: "Abschlussarbeit", initiative: "Initiativ",
 };
 const daysUntil = (iso: string): number => Math.round((Date.parse(iso) - Date.now()) / 86_400_000);
 
