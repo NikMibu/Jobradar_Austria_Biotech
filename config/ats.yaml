@@ -14,4 +14,4 @@ successfactors_tenants:
   jobs.boehringer-ingelheim.com: Boehringer Ingelheim RCV   # Wiens größter Biotech-Arbeitgeber
 
 # EURAXESS (akademische Stellen, alle AT-Unis/Institute): Seitenlimit pro Lauf
-euraxess_max_pages: 5
+euraxess_max_pages: 10

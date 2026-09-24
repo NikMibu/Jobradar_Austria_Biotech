@@ -33,7 +33,7 @@ export HEIMSPIEL_OPENAI_REASONING=low   # reasoning_effort for the score path (o
 export HEIMSPIEL_OPENAI_SERVICE_TIER=fast   # openai Fast Mode (~2x token price); empty = standard tier
 export HEIMSPIEL_LLM_CONCURRENCY=6   # parallel API calls for extract/score (default: openai 6, anthropic 8, ollama 1)
 ```
-Role defaults: Ollama `qwen3.8:27b`, Anthropic `claude-haiku-4-5`, OpenAI `gpt-5.6-luna`. `HEIMSPIEL_MODEL` remains a compatible override for both model variables. API keys are read by the vendor SDKs (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`); `heimspiel/__init__.py` loads a repo-root `.env` first (`override=False`, so shell vars win). `HEIMSPIEL_ROOT` overrides the repo root (used by tests/foreign checkouts) and `HEIMSPIEL_DB` overrides the SQLite file path.
+Role defaults: Ollama `qwen3.8:27b`, Anthropic `claude-haiku-4-5`, OpenAI `gpt-6-luna`. Scoring does not use these backends: it runs on Jev (TypeSafe System One, `jev.py`), configured via `TYPESAFE_API_KEY`, `HEIMSPIEL_JEV_MODEL` (pinned full version id, part of the score cache key) and `HEIMSPIEL_JEV_CONCURRENCY`. `HEIMSPIEL_MODEL` remains a compatible override for both model variables. API keys are read by the vendor SDKs (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`); `heimspiel/__init__.py` loads a repo-root `.env` first (`override=False`, so shell vars win). `HEIMSPIEL_ROOT` overrides the repo root (used by tests/foreign checkouts) and `HEIMSPIEL_DB` overrides the SQLite file path.
 
 ## Architecture
 
@@ -41,13 +41,15 @@ Role defaults: Ollama `qwen3.8:27b`, Anthropic `claude-haiku-4-5`, OpenAI `gpt-5
 ```
 fetch → extract → locations → companies(--geocode) → travel → score → export → report
 ```
-- `fetch`: adapters in `sources/` (`jobspy_src`, `karriere_at`, `biotechjobs`, `vbc`, `career_pages`, common helpers in `sources/base.py`) write into `postings_raw`; `normalize.dedup()` marks cross-source duplicates via fuzzy title match within a 60-day window.
+- `fetch`: adapters in `sources/` (`jobspy_src`, `karriere_at`, `biotechjobs`, `vbc`, `aithyra`, `euraxess`, `career_pages`, common helpers in `sources/base.py`) write into `postings_raw`; `normalize.dedup()` marks cross-source duplicates via fuzzy title match within a 60-day window.
 - `extract`: a local instruct model (`qwen3.8:27b` by default, `think=false`) extracts requirements and source evidence into the fixed `Extraction` schema (`extract.py`). Cached on content/schema/model. Backfills over 500 postings use the Anthropic Batch API when that backend is selected (OpenAI/Ollama run synchronously).
 - `locations`: resolves each posting's free-text `location_text` to a `sites` row (LLM-normalized city, cached per distinct string in `location_cache`; prefers an existing curated company site over creating a generic one). This is what feeds `lat`/`lon` and the travel-time filter — without it, `site_id` stays `NULL` and downstream travel/map data is empty.
 - `companies --geocode`: syncs `config/companies.yaml` into `companies`/`sites`, then geocodes any `sites` row that has `address_text` but no `lat`/`lon` via Nominatim (rate-limited, results are proposals — "prüfen!" — not verified truth).
 - `travel`: computes transit minutes for every `(site, anchor)` pair without a cache entry via the public Transitous API (rate-limited; `--rebuild` clears the cache after a GTFS schedule change).
-- `score`: only disallowed role families are hard-filtered. A local reasoning model returns categorical evidence; Python computes the 60/25/15 fach-fit. Seniority/education and travel/contract are separate formal/practical traffic lights.
+- `score`: only disallowed role families are hard-filtered. One Jev `system_one` call per posting answers closed questions (Score per requirement, domain/interest/PhD-topic fit, Noul for not-claims/hard-no, Choice `bewerben|stretch|nicht_bewerben`); Python computes the 60/25/15 fach-fit from the expected levels and applies recommendation overrides (formal red / not-claim → nicht_bewerben, stub posting < 800 chars → at most stretch, confidence capped). Seniority/education and travel/contract are separate formal/practical traffic lights. `score --recompute` re-derives lights + recommendation from the stored Jev answers without API calls.
 - `export` / `report`: `export.py` writes `site/public/data/{jobs,companies,meta}.json` for the frontend; `report.py` writes a daily markdown digest to `data/report-<date>.md`.
+
+**Fresh DB**: `heimspiel reset-db --keep-geo` backs up the SQLite file (`VACUUM INTO …bak-<ts>`) and rebuilds it, copying only `db.GEO_TABLES` (companies, anchors, sites, travel_times, location_cache) so Nominatim/Transitous don't have to rerun.
 
 **Ordering matters**: stages that consume `sites`/`site_id` (`travel`, `score`) must run after stages that populate it (`locations`, `companies --geocode`) in the *same* run, or a stage sees stale/missing data for one cycle.
 

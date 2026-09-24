@@ -11,7 +11,7 @@ Konfiguration über Umgebungsvariablen:
   HEIMSPIEL_LLM_CONCURRENCY=<n>         parallele API-Calls (default: openai 6, anthropic 8, ollama 1)
 
 Rollen-Defaults: Ollama qwen3.8:27b für beide Rollen, Anthropic claude-haiku-4-5,
-OpenAI gpt-5.6-luna. OPENAI_API_KEY / OPENAI_BASE_URL liest das openai-SDK selbst.
+OpenAI gpt-6-luna. OPENAI_API_KEY / OPENAI_BASE_URL liest das openai-SDK selbst.
 
 Alle drei Backends liefern Pydantic-validierte Structured Outputs: Anthropic über
 messages.parse (mit Prompt-Caching), OpenAI über chat.completions.parse (strict
@@ -34,7 +34,7 @@ from pydantic import BaseModel, ValidationError
 BACKEND = os.environ.get("HEIMSPIEL_LLM", "ollama")
 _LEGACY_MODEL = os.environ.get("HEIMSPIEL_MODEL")
 _ANTHROPIC_DEFAULT = "claude-haiku-4-5"
-_OPENAI_DEFAULT = "gpt-5.6-luna"
+_OPENAI_DEFAULT = "gpt-6-luna"
 _OLLAMA_EXTRACT_DEFAULT = "qwen3.8:27b"
 _OLLAMA_SCORE_DEFAULT = "qwen3.8:27b"
 
@@ -77,7 +77,7 @@ LLM_CONCURRENCY = int(
 
 
 def parallel_map[I, O](
-    fn: Callable[[I], O], items: Sequence[I]
+    fn: Callable[[I], O], items: Sequence[I], workers: int | None = None
 ) -> Iterator[tuple[I, O | Exception]]:
     """`fn` über `items` laufen lassen, bis zu LLM_CONCURRENCY gleichzeitig.
 
@@ -85,14 +85,15 @@ def parallel_map[I, O](
     der Aufrufer entscheidet, wie er mit Fehlern umgeht. Bei Concurrency 1 ein
     simpler serieller Durchlauf (kein Thread-Overhead, stabile Reihenfolge).
     """
-    if LLM_CONCURRENCY <= 1:
+    workers = workers or LLM_CONCURRENCY
+    if workers <= 1:
         for item in items:
             try:
                 yield item, fn(item)
             except Exception as error:  # noqa: BLE001 — Fehler reicht der Aufrufer weiter
                 yield item, error
         return
-    with ThreadPoolExecutor(max_workers=LLM_CONCURRENCY) as pool:
+    with ThreadPoolExecutor(max_workers=workers) as pool:
         futures = {pool.submit(fn, item): item for item in items}
         for future in as_completed(futures):
             item = futures[future]

@@ -23,7 +23,8 @@ from .normalize import match_company, norm_text
 # v4: evidenzbasierte Anforderungen und Belege für alle kritischen Felder
 # v5: + computational_chemistry — CADD/Docking/Molecular Modeling (landete in
 #     data_science / scientific_software / other, s. Nutzer-Feedback)
-SCHEMA_VERSION = 5
+# v6: + position_type (Job vs. PhD/Predoc/Postdoc/Praktikum/Abschlussarbeit) mit Beleg
+SCHEMA_VERSION = 6
 BATCH_THRESHOLD = 500
 
 RoleFamily = Literal[
@@ -41,6 +42,9 @@ RoleFamily = Literal[
 ]
 
 
+PositionType = Literal["job", "phd", "predoc", "postdoc", "internship", "thesis"]
+
+
 class Requirement(BaseModel):
     name: str
     importance: Literal["must", "nice"]
@@ -48,6 +52,7 @@ class Requirement(BaseModel):
 
 
 class FieldEvidence(BaseModel):
+    position_type: str | None = None
     phd_required: str | None = None
     years_experience_min: str | None = None
     german_required: str | None = None
@@ -61,6 +66,7 @@ class FieldEvidence(BaseModel):
 class Extraction(BaseModel):
     title_norm: str
     role_family: RoleFamily
+    position_type: PositionType = "job"
     seniority: Literal["entry", "junior", "mid", "senior"]
     education_min: Literal["none", "bsc", "msc", "phd"]
     phd_required: bool
@@ -101,6 +107,11 @@ Regeln:
 - must_skills und nice_skills aus denselben Anforderungen befüllen. domain_keywords
   enthält konkrete fachliche Themen des Jobs, nicht allgemeine Wörter wie "Teamarbeit".
 - Gehalt nur übernehmen, wenn im Text eine konkrete Zahl steht (österreichische Inserate müssen das kollektivvertragliche Mindestgehalt nennen). salary_min_eur_month ist immer der vergleichbare Monatswert: Monatsbrutto unverändert, Jahresbrutto durch 14. salary_basis beschreibt die Schreibweise der Quelle: monthly_14x für Monatsbrutto, yearly für Jahresbrutto.
+- position_type: job = reguläre Anstellung; phd = Doktoratsstelle/PhD-Programm/Doktorand:in
+  (auch "PhD Student", "Doctoral Researcher", "Universitätsassistent:in prae doc");
+  predoc = Predoc-Stelle ohne ausdrückliches Doktoratsprogramm; postdoc = Postdoc/Postdoktorand;
+  internship = Praktikum/Trainee; thesis = Master-/Bachelorarbeit. field_evidence.position_type
+  ist das wörtliche Zitat dafür; ohne Zitat bleibt "job".
 - phd_required = true NUR bei explizitem "PhD/Doktorat erforderlich", nicht bei "von Vorteil" oder "wünschenswert".
 - german_required = true nur, wenn Deutsch explizit verlangt wird (nicht bloß Inserat auf Deutsch).
 - seniority: entry = Absolvent/keine Erfahrung, junior = 0-2 Jahre, mid = 2-5 Jahre, senior = 5+ Jahre oder Lead-Rolle.
@@ -222,6 +233,7 @@ def _sanitize_extraction(raw: sqlite3.Row, ex: Extraction) -> Extraction:
 
     evidence = ex.field_evidence
     checks = {
+        "position_type": ex.position_type != "job",
         "phd_required": ex.phd_required,
         "years_experience_min": ex.years_experience_min is not None,
         "german_required": ex.german_required,
@@ -232,6 +244,7 @@ def _sanitize_extraction(raw: sqlite3.Row, ex: Extraction) -> Extraction:
         "application_deadline": ex.application_deadline is not None,
     }
     fallbacks = {
+        "position_type": "job",
         "phd_required": False,
         "years_experience_min": None,
         "german_required": False,

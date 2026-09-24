@@ -5,9 +5,8 @@ import sqlite3
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 
-from . import llm
 from .config import Profile
-from .match import SCORE_VERSION, initiative_scores
+from .match import SCORE_MODEL, SCORE_VERSION, initiative_scores
 
 BORDERLINE_MIN_SCORE = 50
 
@@ -28,7 +27,7 @@ def _funnel_stats(conn: sqlite3.Connection, profile: Profile, cutoff: str) -> di
            JOIN postings_raw r ON r.id = p.raw_id
            WHERE s.profile_version = ? AND s.score_version = ? AND s.model = ?
              AND s.hard_pass = 0 AND r.first_seen >= ?""",
-        (profile.profile_version, SCORE_VERSION, llm.SCORE_MODEL, cutoff),
+        (profile.profile_version, SCORE_VERSION, SCORE_MODEL, cutoff),
     ).fetchall()
     reasons: Counter[str] = Counter()
     for row in rejected:
@@ -43,7 +42,7 @@ def _funnel_stats(conn: sqlite3.Connection, profile: Profile, cutoff: str) -> di
            JOIN postings_raw r ON r.id = p.raw_id
            WHERE s.profile_version = ? AND s.score_version = ? AND s.model = ?
              AND s.hard_pass = 1 AND r.first_seen >= ?""",
-        (profile.profile_version, SCORE_VERSION, llm.SCORE_MODEL, cutoff),
+        (profile.profile_version, SCORE_VERSION, SCORE_MODEL, cutoff),
     ).fetchone()[0]
     return {
         "new": new,
@@ -54,6 +53,9 @@ def _funnel_stats(conn: sqlite3.Connection, profile: Profile, cutoff: str) -> di
     }
 
 
+REC_LABELS = {"bewerben": "Bewerben", "stretch": "Stretch", "nicht_bewerben": "Nicht bewerben"}
+
+
 def _job_block(row: sqlite3.Row) -> list[str]:
     ex = json.loads(row["extracted_json"])
     reasons = json.loads(row["fit_reasons"]) if row["fit_reasons"] else []
@@ -61,7 +63,9 @@ def _job_block(row: sqlite3.Row) -> list[str]:
     score = row["fit_score"] if row["fit_score"] is not None else "–"
     title = ex.get("title_norm") or row["raw_title"] or "?"
     lines = [
-        f"### {score}/100 — {title} @ {row['raw_company'] or '?'}",
+        f"### {score}/100 · {REC_LABELS.get(row['recommendation'], '?')} — {title} "
+        f"@ {row['raw_company'] or '?'}"
+        + (" · ⚠ Stub" if row["text_quality"] == "stub" else ""),
         f"{ex.get('location_text') or ''} · [{row['url']}]({row['url']})",
         "",
         ex.get("summary_2_lines") or "",
@@ -81,14 +85,16 @@ def daily_report(conn: sqlite3.Connection, profile: Profile, days: int = 1) -> s
 
     rows = conn.execute(
         """SELECT p.id, p.extracted_json, r.url, r.raw_title, r.raw_company, r.first_seen,
-                  s.fit_score, s.fit_reasons, s.gaps, s.angle, s.hard_reasons
+                  s.fit_score, s.fit_reasons, s.gaps, s.angle, s.hard_reasons,
+                  s.recommendation, s.text_quality
            FROM postings p
            JOIN postings_raw r ON r.id = p.raw_id
            JOIN scores s ON s.posting_id = p.id AND s.profile_version = ?
              AND s.score_version = ? AND s.model = ?
            WHERE s.hard_pass = 1 AND r.first_seen >= ?
-           ORDER BY s.fit_score DESC NULLS LAST""",
-        (profile.profile_version, SCORE_VERSION, llm.SCORE_MODEL, cutoff),
+           ORDER BY CASE s.recommendation WHEN 'bewerben' THEN 0 WHEN 'stretch' THEN 1 ELSE 2 END,
+                    s.fit_score DESC NULLS LAST""",
+        (profile.profile_version, SCORE_VERSION, SCORE_MODEL, cutoff),
     ).fetchall()
     top = rows[:10]
     borderline = [

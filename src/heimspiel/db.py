@@ -173,6 +173,13 @@ MIGRATIONS: list[list[str]] = [
         "DROP TABLE scores",
         "ALTER TABLE scores_new RENAME TO scores",
     ],
+    [
+        # Jev-Scoring (SCORE_VERSION 4): Bewerbungsempfehlung + Datenbasis je Score.
+        "ALTER TABLE scores ADD COLUMN recommendation TEXT",
+        "ALTER TABLE scores ADD COLUMN recommendation_probs TEXT",
+        "ALTER TABLE scores ADD COLUMN recommendation_notes TEXT",
+        "ALTER TABLE scores ADD COLUMN text_quality TEXT",
+    ],
 ]
 
 
@@ -195,3 +202,36 @@ def migrate(conn: sqlite3.Connection) -> None:
                 conn.execute(stmt)
             conn.execute(f"PRAGMA user_version = {target}")
             conn.commit()
+
+
+# Teure, extern rate-limitierte Caches (Nominatim-Geocodes, Transitous-Fahrzeiten,
+# LLM-Standortauflösung), die einen Neuaufbau überleben. Reihenfolge = FK-Reihenfolge.
+GEO_TABLES = ["companies", "anchors", "sites", "travel_times", "location_cache"]
+
+
+def reset(path: Path | None = None, keep_geo: bool = True) -> Path:
+    """DB sichern und frisch anlegen; optional die Geo-/Fahrzeit-Caches übernehmen.
+    Rückgabe: Pfad des Backups."""
+    from datetime import datetime
+
+    p = path or paths.db_path()
+    backup = p.with_name(f"{p.name}.bak-{datetime.now():%Y%m%d-%H%M%S}")
+    if p.exists():
+        old = sqlite3.connect(p)
+        old.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        old.execute(f"VACUUM INTO '{backup}'")
+        old.close()
+        for suffix in ("", "-wal", "-shm"):
+            Path(f"{p}{suffix}").unlink(missing_ok=True)
+    conn = connect(p)
+    if keep_geo and backup.exists():
+        conn.execute("ATTACH DATABASE ? AS old", (str(backup),))
+        for table in GEO_TABLES:
+            columns = [r["name"] for r in conn.execute(f"PRAGMA main.table_info({table})")]
+            old_columns = {r["name"] for r in conn.execute(f"PRAGMA old.table_info({table})")}
+            shared = ", ".join(c for c in columns if c in old_columns)
+            conn.execute(f"INSERT INTO main.{table} ({shared}) SELECT {shared} FROM old.{table}")
+        conn.commit()
+        conn.execute("DETACH DATABASE old")
+    conn.close()
+    return backup

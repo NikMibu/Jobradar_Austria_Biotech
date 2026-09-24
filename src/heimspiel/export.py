@@ -7,9 +7,9 @@ from pathlib import Path
 
 from . import llm, paths
 from .config import Profile
-from .match import SCORE_VERSION, initiative_scores
+from .match import SCORE_MODEL, SCORE_VERSION, initiative_scores
 
-DATA_SCHEMA_VERSION = 3
+DATA_SCHEMA_VERSION = 4
 
 
 def _split_job(job: dict) -> tuple[dict, dict]:
@@ -33,12 +33,15 @@ def _split_job(job: dict) -> tuple[dict, dict]:
             "score_confidence",
             "formal_status",
             "practical_status",
+            "recommendation",
+            "text_quality",
             "travel",
         )
     }
     summary.update(
         {
             "role_family": ex.get("role_family"),
+            "position_type": ex.get("position_type", "job"),
             "workplace_mode": ex.get("workplace_mode"),
             "contract_type": ex.get("contract_type"),
             "salary_min_eur_month": ex.get("salary_min_eur_month"),
@@ -59,7 +62,8 @@ def _split_job(job: dict) -> tuple[dict, dict]:
             "score_evidence",
             "formal_reasons",
             "practical_reasons",
-            "fallback_model",
+            "recommendation_probs",
+            "recommendation_notes",
         )
     }
     return summary, details
@@ -73,7 +77,8 @@ def _job_rows(conn: sqlite3.Connection, profile: Profile) -> list[dict]:
                   s.hard_pass, s.hard_reasons, s.fit_score, s.fit_reasons, s.gaps, s.angle,
                   s.score_breakdown, s.score_confidence, s.score_evidence,
                   s.formal_status, s.formal_reasons, s.practical_status,
-                  s.practical_reasons, s.fallback_model,
+                  s.practical_reasons, s.recommendation, s.recommendation_probs,
+                  s.recommendation_notes, s.text_quality,
                   c.name AS company_name,
                   st.lat, st.lon, st.label AS site_label
            FROM postings p
@@ -83,7 +88,7 @@ def _job_rows(conn: sqlite3.Connection, profile: Profile) -> list[dict]:
            LEFT JOIN companies c ON c.id = p.company_id
            LEFT JOIN sites st ON st.id = p.site_id
            ORDER BY r.first_seen DESC""",
-        (profile.profile_version, SCORE_VERSION, llm.SCORE_MODEL),
+        (profile.profile_version, SCORE_VERSION, SCORE_MODEL),
     ).fetchall()
 
     jobs = []
@@ -141,7 +146,14 @@ def _job_rows(conn: sqlite3.Connection, profile: Profile) -> list[dict]:
                 "practical_reasons": (
                     json.loads(row["practical_reasons"]) if row["practical_reasons"] else []
                 ),
-                "fallback_model": row["fallback_model"],
+                "recommendation": row["recommendation"],
+                "recommendation_probs": (
+                    json.loads(row["recommendation_probs"]) if row["recommendation_probs"] else None
+                ),
+                "recommendation_notes": (
+                    json.loads(row["recommendation_notes"]) if row["recommendation_notes"] else []
+                ),
+                "text_quality": row["text_quality"],
                 "travel": travel,
             }
         )
@@ -173,7 +185,7 @@ def export_all(conn: sqlite3.Connection, profile: Profile, out_dir: Path | None 
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "profile_version": profile.profile_version,
         "extraction_model": llm.EXTRACT_MODEL,
-        "scoring_model": llm.SCORE_MODEL,
+        "scoring_model": SCORE_MODEL,
         "score_version": SCORE_VERSION,
         "anchors": [
             {"id": a.id, "label": a.label, "max_minutes": a.max_minutes} for a in profile.anchors
@@ -181,6 +193,9 @@ def export_all(conn: sqlite3.Connection, profile: Profile, out_dir: Path | None 
         "counts": {
             "jobs": len(jobs),
             "hard_pass": sum(1 for j in jobs if j["hard_pass"]),
+            "bewerben": sum(1 for j in jobs if j["recommendation"] == "bewerben"),
+            "stretch": sum(1 for j in jobs if j["recommendation"] == "stretch"),
+            "phd": sum(1 for j in jobs if j["position_type"] in {"phd", "predoc"}),
             "companies_initiative": len(companies),
         },
     }

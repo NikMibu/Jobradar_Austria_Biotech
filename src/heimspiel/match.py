@@ -1,28 +1,25 @@
-"""Profil-Matching (SPEC §6): harte Filter (kein LLM), LLM-Score nur für hard_pass,
-Initiativ-Score pro Firma (kein LLM)."""
+"""Profil-Matching (SPEC §6): harte Filter (kein LLM), Jev-Score nur für hard_pass,
+Bewerbungsempfehlung (bewerben/stretch/nicht_bewerben), Initiativ-Score pro Firma (kein LLM)."""
 
 import json
-import re
 import sqlite3
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from typing import Literal
 
-import yaml
-from pydantic import BaseModel, Field
-from rapidfuzz import fuzz
-
-from . import llm, locations
+from . import jev, llm, locations
 from .config import Profile
 from .extract import SCHEMA_VERSION as EXTRACTION_SCHEMA_VERSION
-from .extract import Extraction, Requirement
-from .normalize import norm_text
+from .extract import Extraction
+from .jev import JevAssessment
 
 SHORT_CONTRACT_MONTHS = 12
 # v3: Extraktions-Schema 5 (role_family computational_chemistry) — der Score-Cache
 # keyt nicht auf die Extraktions-Version, daher hier bumpen, um alle Postings gegen
 # die neue Taxonomie neu zu bewerten.
-SCORE_VERSION = 3
+# v4: Jev (TypeSafe System One) statt Score-LLM; Empfehlung + Stub-Deckel.
+SCORE_VERSION = 4
+SCORE_MODEL = jev.MODEL
 
 
 @dataclass
@@ -87,143 +84,20 @@ def hard_filter(
     return res
 
 
-MatchLevel = Literal["direct", "transferable", "missing", "unknown"]
-FitLevel = Literal["strong", "moderate", "weak", "none", "unknown"]
 TrafficStatus = Literal["green", "yellow", "red"]
+Recommendation = Literal["bewerben", "stretch", "nicht_bewerben"]
+
+# Inserate unter dieser Textlänge sind Stubs (nur Titel/Teaser, z. B. PDF-Links
+# oder Kurz-Snippets). Daily 2026-09-15: solche Stubs landeten mit 70/100 ganz
+# oben, weil nur der Titel bewertet wurde → Confidence-Deckel + max. "stretch".
+STUB_TEXT_CHARS = 800
+STUB_CONFIDENCE_CAP = 30
+NOT_CLAIM_THRESHOLD = 0.7
+HARD_NO_THRESHOLD = 0.8
 
 
-class SkillAssessment(BaseModel):
-    requirement: str
-    match: MatchLevel
-    profile_evidence: str | None = None
-
-
-class HardNoHit(BaseModel):
-    rule: str
-    evidence: str
-
-
-class ScoreAssessment(BaseModel):
-    skills: list[SkillAssessment] = Field(default_factory=list)
-    domain_fit: FitLevel = "unknown"
-    domain_evidence: str = ""
-    interest_fit: FitLevel = "unknown"
-    interest_evidence: str = ""
-    hard_no_hits: list[HardNoHit] = Field(default_factory=list)
-    gaps: list[str] = Field(default_factory=list, max_length=3)
-    angle: str
-
-
-_SCORE_SYSTEM_TEMPLATE = """Du erstellst ein evidenzbasiertes fachliches Assessment.
-
-## Profil
-{profile_yaml}
-
-## Regeln
-- Vergib KEINE Punktzahl. Python berechnet den Score deterministisch.
-- Bewerte jede übergebene Anforderung genau einmal als direct, transferable,
-  missing oder unknown. direct/transferable nur mit einem kurzen WÖRTLICHEN
-  Beleg aus dem Profil; ohne Beleg ist der Wert unknown.
-- direct bedeutet dieselbe nachgewiesene Methode, Technologie oder Erfahrung;
-  bloß verwandte Themen und Interessen sind höchstens transferable. Ein Interesse
-  ist niemals Beleg für praktische Erfahrung. Bei Zweifel unknown.
-- domain_fit bewertet die fachliche Nähe der Tätigkeit zum belegten Profil;
-  domain_evidence ist ein kurzes WÖRTLICHES Zitat aus der Stelle.
-- interest_fit bewertet den Bezug zu den ausdrücklich genannten Interessen;
-  interest_evidence ist ein kurzes WÖRTLICHES Zitat aus dem Profil.
-- hard_no_hits nur für eine Regel aus hard_no und mit einem konkreten WÖRTLICHEN
-  Beleg aus der Stelle; nichts hineininterpretieren.
-- gaps: maximal drei konkrete Lücken. angle: ein Satz aus Ich-Perspektive.
-- Fehlende Angaben bleiben unknown. Nichts erfinden."""
-
-
-def score_system_prompt(profile: Profile) -> str:
-    safe = {k: v for k, v in profile.raw.items() if k != "anchors"}
-    return _SCORE_SYSTEM_TEMPLATE.format(
-        profile_yaml=yaml.safe_dump(safe, allow_unicode=True, sort_keys=True)
-    )
-
-
-def _requirements(ex: Extraction) -> list[Requirement]:
-    if ex.requirements:
-        return ex.requirements
-    return [
-        Requirement(name=name, importance=importance, evidence="")
-        for importance, names in (("must", ex.must_skills), ("nice", ex.nice_skills))
-        for name in names
-    ]
-
-
-def _assessment_call(
-    ex: Extraction,
-    profile: Profile,
-    model: str,
-    *,
-    think: bool,
-    seed: int | None = None,
-) -> ScoreAssessment:
-    return llm.parse_structured(
-        score_system_prompt(profile),
-        ex.model_dump_json(indent=2),
-        ScoreAssessment,
-        max_tokens=3000,
-        model=model,
-        think=think,
-        temperature=0.15 if think else 0,
-        seed=seed,
-    )
-
-
-def score_one(ex: Extraction, profile: Profile) -> tuple[ScoreAssessment, str | None]:
-    """Reasoning ist primär; Instruct ist der protokollierte Sicherheitsfallback."""
-    for attempt in range(2):
-        try:
-            return (
-                _assessment_call(
-                    ex,
-                    profile,
-                    llm.SCORE_MODEL,
-                    think=True,
-                    seed=llm.OLLAMA_SEED + attempt,
-                ),
-                None,
-            )
-        except Exception:  # noqa: BLE001 — ein zweiter strukturierter Versuch ist Absicht
-            pass
-    return _assessment_call(ex, profile, llm.EXTRACT_MODEL, think=False), llm.EXTRACT_MODEL
-
-
-_SKILL_FACTORS: dict[MatchLevel, float] = {
-    "direct": 1.0,
-    "transferable": 0.6,
-    "unknown": 0.25,
-    "missing": 0.0,
-}
-_DOMAIN_POINTS: dict[FitLevel, int] = {
-    "strong": 25,
-    "moderate": 18,
-    "weak": 10,
-    "none": 0,
-    "unknown": 12,
-}
-_INTEREST_POINTS: dict[FitLevel, int] = {
-    "strong": 15,
-    "moderate": 10,
-    "weak": 5,
-    "none": 0,
-    "unknown": 7,
-}
-
-_SHORT_SKILL_TOKENS = {"r", "c", "go", "ai", "ml", "qa"}
-
-
-def _skill_tokens(value: str) -> set[str]:
-    normalized = value.lower().replace("c++", "cpp").replace("c#", "csharp")
-    return {
-        token
-        for token in re.findall(r"[a-z0-9äöüß]+", normalized)
-        if len(token) >= 3 or token in _SHORT_SKILL_TOKENS
-    }
+def text_quality(raw_text: str | None) -> Literal["full", "stub"]:
+    return "stub" if len((raw_text or "").strip()) < STUB_TEXT_CHARS else "full"
 
 
 @dataclass
@@ -233,111 +107,56 @@ class ComputedScore:
     confidence: int
     reasons: list[str]
     gaps: list[str]
-    angle: str
     evidence: dict
 
 
-def _find_skill_assessment(
-    requirement: Requirement, assessments: list[SkillAssessment]
-) -> SkillAssessment | None:
-    target = norm_text(requirement.name)
-    exact = next((a for a in assessments if norm_text(a.requirement) == target), None)
-    if exact:
-        return exact
-    candidates = [
-        (fuzz.token_set_ratio(target, norm_text(a.requirement)), a) for a in assessments
-    ]
-    if not candidates:
-        return None
-    score, candidate = max(candidates, key=lambda item: item[0])
-    return candidate if score >= 85 else None
-
-
-def compute_score(ex: Extraction, profile: Profile, assessment: ScoreAssessment) -> ComputedScore:
-    requirements = _requirements(ex)
-    safe_profile = {key: value for key, value in profile.raw.items() if key != "anchors"}
-    profile_text = yaml.safe_dump(safe_profile, allow_unicode=True, sort_keys=True)
-    cleaned: list[dict] = []
-    evidence_ok = 0
-    for requirement in requirements:
-        found = _find_skill_assessment(requirement, assessment.skills)
-        level: MatchLevel = found.match if found else "unknown"
-        profile_evidence = found.profile_evidence if found else None
-        if level in {"direct", "transferable"} and not (
-            profile_evidence and norm_text(profile_evidence) in norm_text(profile_text)
-        ):
-            level = "unknown"
-        if level == "direct" and profile_evidence:
-            requirement_tokens = _skill_tokens(requirement.name)
-            evidence_tokens = _skill_tokens(profile_evidence)
-            if requirement_tokens.isdisjoint(evidence_tokens):
-                level = "unknown"
-        job_evidence_ok = bool(requirement.evidence)
-        profile_evidence_ok = level not in {"direct", "transferable"} or bool(profile_evidence)
-        evidence_ok += int(job_evidence_ok and profile_evidence_ok)
-        cleaned.append(
-            {
-                "requirement": requirement.name,
-                "importance": requirement.importance,
-                "match": level,
-                "job_evidence": requirement.evidence,
-                "profile_evidence": profile_evidence,
-            }
-        )
+def compute_score(
+    ex: Extraction, assessment: JevAssessment, quality: str = "full"
+) -> ComputedScore:
+    """60/25/15 aus Jev-Erwartungswerten (je 0–1). Für PhD-Stellen ersetzt der
+    Themenfit zur Promotion den allgemeinen Interessenfit."""
+    reqs = assessment.requirements
 
     def requirement_points(importance: str, maximum: int) -> int:
-        values = [
-            _SKILL_FACTORS[item["match"]]
-            for item in cleaned
-            if item["importance"] == importance
-        ]
+        values = [r["level"] for r in reqs if r["importance"] == importance and r["level"] is not None]
         return round(maximum * sum(values) / len(values)) if values else maximum // 2
 
     must_points = requirement_points("must", 50)
     nice_points = requirement_points("nice", 10)
     skills_points = must_points + nice_points
-    extraction_text = norm_text(ex.model_dump_json())
-    profile_text_normalized = norm_text(profile_text)
-    domain_fit = assessment.domain_fit
-    if domain_fit in {"strong", "moderate", "weak"} and not (
-        norm_text(assessment.domain_evidence)
-        and norm_text(assessment.domain_evidence) in extraction_text
-    ):
-        domain_fit = "unknown"
-    interest_fit = assessment.interest_fit
-    if interest_fit in {"strong", "moderate", "weak"} and not (
-        norm_text(assessment.interest_evidence)
-        and norm_text(assessment.interest_evidence) in profile_text_normalized
-    ):
-        interest_fit = "unknown"
-
-    domain_points = _DOMAIN_POINTS[domain_fit]
-    interest_points = _INTEREST_POINTS[interest_fit]
+    domain_points = round(25 * assessment.domain)
+    use_phd = ex.position_type in jev.PHD_TYPES and assessment.phd_topic is not None
+    interest_value = assessment.phd_topic if use_phd else assessment.interest
+    interest_points = round(15 * interest_value)
     fit_score = skills_points + domain_points + interest_points
 
-    confidence = 100
-    if not any(item["importance"] == "must" for item in cleaned):
-        confidence -= 40
-    if cleaned:
-        confidence -= round(40 * (1 - evidence_ok / len(cleaned)))
-    else:
-        confidence -= 40
-    if domain_fit == "unknown":
-        confidence -= 10
-    if interest_fit == "unknown":
-        confidence -= 10
+    confidence = round(100 * assessment.confidence)
+    if not any(r["importance"] == "must" for r in reqs):
+        confidence -= 30
+    if quality == "stub":
+        confidence = min(confidence, STUB_CONFIDENCE_CAP)
     confidence = max(0, min(100, confidence))
 
-    counts = {level: sum(item["match"] == level for item in cleaned) for level in _SKILL_FACTORS}
+    def count(key: str) -> int:
+        return sum(
+            max(("p_missing", "p_transferable", "p_direct"), key=lambda k: r[k]) == key
+            for r in reqs
+        )
+
+    interest_label = "PhD-Themenfit" if use_phd else "Interessenfit"
     reasons = [
-        f"Skills {skills_points}/60: {counts['direct']} direkt, "
-        f"{counts['transferable']} übertragbar, {counts['missing']} fehlen",
-        f"Domänenfit {domain_points}/25 ({domain_fit}): {assessment.domain_evidence}",
-        f"Interessenfit {interest_points}/15 ({interest_fit}): "
-        f"{assessment.interest_evidence}",
+        f"Skills {skills_points}/60: {count('p_direct')} direkt, "
+        f"{count('p_transferable')} übertragbar, {count('p_missing')} fehlen",
+        f"Domänenfit {domain_points}/25",
+        f"{interest_label} {interest_points}/15",
     ]
-    missing = [item["requirement"] for item in cleaned if item["match"] == "missing"]
-    gaps = list(dict.fromkeys([*assessment.gaps, *missing]))[:3]
+    if quality == "stub":
+        reasons.append("Datenbasis dünn: Inserat ohne verwertbaren Volltext")
+    gaps = [
+        r["requirement"]
+        for r in sorted(reqs, key=lambda r: (r["importance"] != "must", -r["p_missing"]))
+        if r["p_missing"] >= 0.5
+    ][:3]
     return ComputedScore(
         fit_score=fit_score,
         breakdown={
@@ -350,18 +169,35 @@ def compute_score(ex: Extraction, profile: Profile, assessment: ScoreAssessment)
         confidence=confidence,
         reasons=reasons,
         gaps=gaps,
-        angle=assessment.angle,
-        evidence={
-            "skills": cleaned,
-            "domain": {"fit": domain_fit, "quote": assessment.domain_evidence},
-            "interests": {"fit": interest_fit, "quote": assessment.interest_evidence},
-            "hard_no_hits": [hit.model_dump() for hit in assessment.hard_no_hits],
-        },
+        evidence={"jev": assessment.to_json(), "text_quality": quality},
     )
 
 
+def decide_recommendation(
+    assessment: JevAssessment | None, formal: TrafficStatus, quality: str
+) -> tuple[Recommendation, list[str]]:
+    """Jev-Empfehlung plus harte Python-Regeln, die Jev nicht überstimmen darf."""
+    if assessment is None or not assessment.recommendation_probs:
+        return "nicht_bewerben", ["Rollenfamilie ausgeschlossen"]
+    probs = assessment.recommendation_probs
+    rec: Recommendation = max(probs, key=probs.get)  # type: ignore[assignment]
+    notes: list[str] = []
+    if formal == "red":
+        if rec != "nicht_bewerben":
+            notes.append("Formale Hürde (Ampel rot)")
+        rec = "nicht_bewerben"
+    if assessment.not_claim > NOT_CLAIM_THRESHOLD:
+        if rec != "nicht_bewerben":
+            notes.append(f"Verlangt Nicht-Claim (p={assessment.not_claim:.2f})")
+        rec = "nicht_bewerben"
+    if quality == "stub" and rec == "bewerben":
+        rec = "stretch"
+        notes.append("Stub-Inserat: höchstens Stretch bis zum Volltext")
+    return rec, notes
+
+
 def formal_status(
-    ex: Extraction, profile: Profile, assessment: ScoreAssessment | None = None
+    ex: Extraction, profile: Profile, assessment: JevAssessment | None = None
 ) -> tuple[TrafficStatus, list[str]]:
     red: list[str] = []
     yellow: list[str] = []
@@ -370,7 +206,9 @@ def formal_status(
     if ex.education_min != "none" and education not in levels:
         yellow.append("Eigene Ausbildung nicht eindeutig einordenbar")
     elif ex.education_min != "none" and levels.get(education, -1) < levels[ex.education_min]:
-        red.append(f"Ausbildung: {ex.education_min} verlangt")
+        # Eine Doktoratsstelle "verlangt" im Extrakt oft phd, gemeint ist aber das Ziel.
+        if not (ex.position_type in jev.PHD_TYPES and ex.education_min == "phd"):
+            red.append(f"Ausbildung: {ex.education_min} verlangt")
     if ex.phd_required and not profile.phd_wanted:
         red.append("PhD ausdrücklich erforderlich")
     if ex.seniority not in profile.seniority_allowed:
@@ -382,31 +220,10 @@ def formal_status(
         red.append(
             f"{ex.years_experience_min} Jahre verlangt, Profilgrenze {profile.max_years_experience}"
         )
-    if assessment:
-        source = norm_text(ex.model_dump_json())
-        # Standort-hard_no ("Umzug ins Ausland") wird über das in_austria-Signal
-        # entschieden (hard_filter / practical_status), nicht über frei
-        # assoziierte LLM-hard_no_hits: qwen interpretiert bei jeder Österreich-
-        # Stelle "wäre für Auswärtige ein Umzug" hinein und zitiert als Beleg den
-        # Ortsnamen, der zwangsläufig im Extraktions-JSON steht — so kippten 72
-        # Wien-/Innsbruck-Stellen fälschlich auf formal=rot.
-        hard_no_rules = [
-            norm_text(rule)
-            for rule in profile.hard_no
-            if "ausland" not in norm_text(rule) and "umzug" not in norm_text(rule)
-        ]
-        red.extend(
-            f"Hard-no: {hit.rule}"
-            for hit in assessment.hard_no_hits
-            if norm_text(hit.evidence)
-            and norm_text(hit.evidence) in source
-            and any(
-                norm_text(hit.rule) in rule
-                or rule in norm_text(hit.rule)
-                or fuzz.token_set_ratio(norm_text(hit.rule), rule) >= 85
-                for rule in hard_no_rules
-            )
-        )
+    if assessment and assessment.hard_no > HARD_NO_THRESHOLD:
+        # Standort-hard_no entscheidet in_austria (practical_status); jev fragt nur
+        # die übrigen Regeln ab.
+        red.append(f"Hard-no (p={assessment.hard_no:.2f})")
     return ("red", red) if red else (("yellow", yellow) if yellow else ("green", []))
 
 
@@ -436,8 +253,10 @@ def practical_status(
 def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None = None) -> int:
     """Scort alle Postings ohne aktuelles Profil-/Formel-/Modell-Ergebnis."""
     rows = conn.execute(
-        """SELECT p.id AS posting_id, p.extracted_json, p.site_id
+        """SELECT p.id AS posting_id, p.extracted_json, p.site_id,
+                  r.raw_text, r.raw_company
            FROM postings p
+           JOIN postings_raw r ON r.id = p.raw_id
            LEFT JOIN scores s ON s.posting_id = p.id AND s.profile_version = ?
              AND s.score_version = ? AND s.model = ?
            WHERE s.posting_id IS NULL AND p.schema_version = ? AND p.model = ?
@@ -445,7 +264,7 @@ def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None 
         (
             profile.profile_version,
             SCORE_VERSION,
-            llm.SCORE_MODEL,
+            SCORE_MODEL,
             EXTRACTION_SCHEMA_VERSION,
             llm.EXTRACT_MODEL,
         ),
@@ -453,13 +272,14 @@ def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None 
     if limit:
         rows = rows[:limit]
     if rows:
-        llm.ensure_available([llm.SCORE_MODEL, llm.EXTRACT_MODEL])
+        jev.ensure_available()
     now = datetime.now(UTC).isoformat(timespec="seconds")
     done = 0
+    tokens = 0
     import typer
 
     # DB-Lesearbeit (site/location-Cache) im Haupt-Thread; danach laufen die
-    # LLM-Assessments über llm.parallel_map, die Writes wieder im Haupt-Thread.
+    # Jev-Calls parallel, die Writes wieder im Haupt-Thread.
     prepared = []
     for row in rows:
         ex = Extraction.model_validate_json(row["extracted_json"])
@@ -469,88 +289,106 @@ def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None 
 
     def _assess(item):
         row, ex, travel_ok, in_austria = item
+        quality = text_quality(row["raw_text"])
         hard = hard_filter(ex, profile, travel_ok, in_austria)
-        assessment: ScoreAssessment | None = None
+        assessment: JevAssessment | None = None
         fit: ComputedScore | None = None
-        fallback_model: str | None = None
         if hard.passed:
-            assessment, fallback_model = score_one(ex, profile)
-            fit = compute_score(ex, profile, assessment)
+            assessment = jev.assess(ex, profile, row["raw_company"], row["raw_text"])
+            fit = compute_score(ex, assessment, quality)
         formal, formal_reasons = formal_status(ex, profile, assessment)
         practical, practical_reasons = practical_status(ex, travel_ok, in_austria)
-        return (hard, fit, assessment, fallback_model, formal, formal_reasons, practical, practical_reasons)
+        rec, rec_notes = decide_recommendation(assessment, formal, quality)
+        return (hard, fit, assessment, quality, formal, formal_reasons,
+                practical, practical_reasons, rec, rec_notes)
 
-    with typer.progressbar(length=len(prepared), label="  Score", show_pos=True) as bar:
-        for item, result in llm.parallel_map(_assess, prepared):
+    with typer.progressbar(length=len(prepared), label="  Score (Jev)", show_pos=True) as bar:
+        for item, result in llm.parallel_map(_assess, prepared, workers=jev.CONCURRENCY):
             bar.update(1)
             row = item[0]
             if isinstance(result, Exception):
                 print(f"\n  Score fehlgeschlagen für posting {row['posting_id']}: {result}")
                 continue
-            (hard, fit, assessment, fallback_model, formal, formal_reasons,
-             practical, practical_reasons) = result
-            conn.execute(
-                """INSERT OR REPLACE INTO scores
-                   (posting_id, profile_version, hard_pass, hard_reasons,
-                    fit_score, fit_reasons, gaps, angle, model, scored_at,
-                    score_version, score_breakdown, score_confidence, score_evidence,
-                    formal_status, formal_reasons, practical_status, practical_reasons,
-                    fallback_model)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (
-                    row["posting_id"],
-                    profile.profile_version,
-                    int(hard.passed),
-                    json.dumps({"reasons": hard.reasons, "flags": hard.flags}, ensure_ascii=False),
-                    fit.fit_score if fit else None,
-                    json.dumps(fit.reasons, ensure_ascii=False) if fit else None,
-                    json.dumps(fit.gaps, ensure_ascii=False) if fit else None,
-                    fit.angle if fit else None,
-                    llm.SCORE_MODEL,
-                    now,
-                    SCORE_VERSION,
-                    json.dumps(fit.breakdown, ensure_ascii=False) if fit else None,
-                    fit.confidence if fit else None,
-                    json.dumps(fit.evidence, ensure_ascii=False) if fit else None,
-                    formal,
-                    json.dumps(formal_reasons, ensure_ascii=False),
-                    practical,
-                    json.dumps(practical_reasons, ensure_ascii=False),
-                    fallback_model,
-                ),
+            (hard, fit, assessment, quality, formal, formal_reasons,
+             practical, practical_reasons, rec, rec_notes) = result
+            if assessment and assessment.input_tokens:
+                tokens += assessment.input_tokens
+            _store_score(
+                conn, row["posting_id"], profile, now, hard, fit, assessment, quality,
+                formal, formal_reasons, practical, practical_reasons, rec, rec_notes,
             )
-            conn.commit()
             done += 1
+    if tokens:
+        print(f"  Jev: {tokens:,} Input-Tokens")
     return done
 
 
+def _store_score(
+    conn, posting_id, profile, now, hard, fit, assessment, quality,
+    formal, formal_reasons, practical, practical_reasons, rec, rec_notes,
+) -> None:
+    conn.execute(
+        """INSERT OR REPLACE INTO scores
+           (posting_id, profile_version, hard_pass, hard_reasons,
+            fit_score, fit_reasons, gaps, angle, model, scored_at,
+            score_version, score_breakdown, score_confidence, score_evidence,
+            formal_status, formal_reasons, practical_status, practical_reasons,
+            fallback_model, recommendation, recommendation_probs,
+            recommendation_notes, text_quality)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (
+            posting_id,
+            profile.profile_version,
+            int(hard.passed),
+            json.dumps({"reasons": hard.reasons, "flags": hard.flags}, ensure_ascii=False),
+            fit.fit_score if fit else None,
+            json.dumps(fit.reasons, ensure_ascii=False) if fit else None,
+            json.dumps(fit.gaps, ensure_ascii=False) if fit else None,
+            None,
+            SCORE_MODEL,
+            now,
+            SCORE_VERSION,
+            json.dumps(fit.breakdown, ensure_ascii=False) if fit else None,
+            fit.confidence if fit else None,
+            json.dumps(fit.evidence, ensure_ascii=False) if fit else None,
+            formal,
+            json.dumps(formal_reasons, ensure_ascii=False),
+            practical,
+            json.dumps(practical_reasons, ensure_ascii=False),
+            None,
+            rec,
+            json.dumps(assessment.recommendation_probs) if assessment else None,
+            json.dumps(rec_notes, ensure_ascii=False),
+            quality,
+        ),
+    )
+    conn.commit()
+
+
 def recompute_statuses(conn: sqlite3.Connection, profile: Profile) -> int:
-    """Formal-/Practical-Ampeln aus dem gespeicherten Assessment neu berechnen —
-    ohne LLM. Für Formeländerungen in formal_status/practical_status, die keinen
-    neuen score_breakdown brauchen (fit_score bleibt unverändert)."""
+    """Ampeln und Empfehlung aus dem gespeicherten Jev-Assessment neu berechnen —
+    ohne API-Call. fit_score bleibt unverändert."""
     rows = conn.execute(
-        """SELECT s.posting_id, s.score_evidence, p.extracted_json, p.site_id
+        """SELECT s.posting_id, s.score_evidence, s.text_quality, p.extracted_json, p.site_id
            FROM scores s JOIN postings p ON p.id = s.posting_id
            WHERE s.profile_version = ? AND s.score_version = ? AND s.model = ?""",
-        (profile.profile_version, SCORE_VERSION, llm.SCORE_MODEL),
+        (profile.profile_version, SCORE_VERSION, SCORE_MODEL),
     ).fetchall()
     done = 0
     for row in rows:
         ex = Extraction.model_validate_json(row["extracted_json"])
         evidence = json.loads(row["score_evidence"]) if row["score_evidence"] else {}
-        assessment: ScoreAssessment | None = None
-        if row["score_evidence"] is not None:
-            assessment = ScoreAssessment(
-                angle="",
-                hard_no_hits=[HardNoHit(**hit) for hit in evidence.get("hard_no_hits", [])],
-            )
+        assessment = JevAssessment.from_json(evidence["jev"]) if "jev" in evidence else None
+        quality = row["text_quality"] or "full"
         travel_ok = site_travel_ok(conn, row["site_id"], profile)
         in_austria = locations.is_in_austria(conn, ex.location_text)
         formal, formal_reasons = formal_status(ex, profile, assessment)
         practical, practical_reasons = practical_status(ex, travel_ok, in_austria)
+        rec, rec_notes = decide_recommendation(assessment, formal, quality)
         conn.execute(
             """UPDATE scores SET formal_status = ?, formal_reasons = ?,
-                   practical_status = ?, practical_reasons = ?
+                   practical_status = ?, practical_reasons = ?,
+                   recommendation = ?, recommendation_notes = ?
                WHERE posting_id = ? AND profile_version = ? AND score_version = ?
                  AND model = ?""",
             (
@@ -558,15 +396,18 @@ def recompute_statuses(conn: sqlite3.Connection, profile: Profile) -> int:
                 json.dumps(formal_reasons, ensure_ascii=False),
                 practical,
                 json.dumps(practical_reasons, ensure_ascii=False),
+                rec,
+                json.dumps(rec_notes, ensure_ascii=False),
                 row["posting_id"],
                 profile.profile_version,
                 SCORE_VERSION,
-                llm.SCORE_MODEL,
+                SCORE_MODEL,
             ),
         )
         done += 1
     conn.commit()
     return done
+
 
 
 def initiative_scores(conn: sqlite3.Connection, profile: Profile) -> list[dict]:

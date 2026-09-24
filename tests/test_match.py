@@ -1,12 +1,8 @@
 from datetime import date, timedelta
 
 from heimspiel.config import Anchor, Profile
-from heimspiel.extract import Extraction, Requirement
+from heimspiel.extract import Extraction
 from heimspiel.match import (
-    HardNoHit,
-    ScoreAssessment,
-    SkillAssessment,
-    compute_score,
     formal_status,
     hard_filter,
     practical_status,
@@ -114,130 +110,6 @@ def test_rule5_short_contract_flagged_not_dropped():
     res = hard_filter(make_extraction(contract_end=soon), make_profile(), travel_ok=True)
     assert res.passed
     assert any("Befristung" in f for f in res.flags)
-
-
-def test_deterministic_fachscore_uses_evidence_categories():
-    ex = make_extraction(
-        requirements=[
-            Requirement(name="Python", importance="must", evidence="Python erforderlich"),
-            Requirement(name="Nextflow", importance="nice", evidence="Nextflow von Vorteil"),
-        ]
-    )
-    assessment = ScoreAssessment(
-        skills=[
-            SkillAssessment(requirement="Python", match="direct", profile_evidence="Python"),
-            SkillAssessment(requirement="Nextflow", match="transferable", profile_evidence="Python"),
-        ],
-        domain_fit="strong",
-        domain_evidence="Bioinformatik",
-        interest_fit="strong",
-        interest_evidence="Massenspektrometrie",
-        angle="Ich verbinde Python mit Bioinformatik.",
-    )
-    score = compute_score(ex, make_profile(), assessment)
-    assert score.breakdown == {
-        "skills": 56,
-        "must_skills": 50,
-        "nice_skills": 6,
-        "domain": 25,
-        "interests": 15,
-    }
-    assert score.fit_score == 96
-    assert score.confidence == 100
-
-
-def test_missing_requirements_are_neutral_but_low_confidence():
-    assessment = ScoreAssessment(angle="Test", domain_fit="unknown", interest_fit="unknown")
-    score = compute_score(make_extraction(), make_profile(), assessment)
-    assert score.fit_score == 49  # 25/50 + 5/10 + 12/25 + 7/15
-    assert score.confidence == 0
-
-
-def test_unsubstantiated_positive_fit_is_downgraded_to_unknown():
-    ex = make_extraction(
-        requirements=[Requirement(name="Python", importance="must", evidence="Python")]
-    )
-    assessment = ScoreAssessment(
-        skills=[SkillAssessment(requirement="Python", match="direct", profile_evidence="Python")],
-        domain_fit="strong",
-        domain_evidence="erfundene Domäne",
-        interest_fit="strong",
-        interest_evidence="erfundenes Interesse",
-        angle="Test",
-    )
-    score = compute_score(ex, make_profile(), assessment)
-    assert score.fit_score == 74  # 50/50 + 5/10 + 12/25 + 7/15
-    assert score.breakdown["domain"] == 12
-    assert score.breakdown["interests"] == 7
-    assert score.confidence == 80
-
-
-def test_direct_match_requires_shared_skill_terms_in_profile_quote():
-    ex = make_extraction(
-        requirements=[
-            Requirement(
-                name="statistische Modellierung",
-                importance="must",
-                evidence="statistische Modellierung erforderlich",
-            )
-        ]
-    )
-    assessment = ScoreAssessment(
-        skills=[
-            SkillAssessment(
-                requirement="statistische Modellierung",
-                match="direct",
-                profile_evidence="Computational Drug Discovery",
-            )
-        ],
-        angle="Test",
-    )
-    profile = make_profile(
-        skills={"domain": ["Computational Drug Discovery"]},
-    )
-    score = compute_score(ex, profile, assessment)
-    assert score.breakdown["must_skills"] == 12  # direct wurde zu unknown gehärtet
-
-
-def test_direct_match_accepts_short_and_symbolic_skill_names():
-    for skill in ("R", "AI", "C++", "C#"):
-        ex = make_extraction(
-            requirements=[Requirement(name=skill, importance="must", evidence=skill)]
-        )
-        assessment = ScoreAssessment(
-            skills=[SkillAssessment(requirement=skill, match="direct", profile_evidence=skill)],
-            angle="Test",
-        )
-        profile = make_profile(skills={"programming": [skill]})
-        assert compute_score(ex, profile, assessment).breakdown["must_skills"] == 50
-
-
-def test_hard_no_requires_a_profile_rule_and_job_evidence():
-    ex = make_extraction(requirements=[Requirement(name="Python", importance="must", evidence="Python")])
-    invented = ScoreAssessment(
-        angle="Test", hard_no_hits=[HardNoHit(rule="Python", evidence="Python")]
-    )
-    assert formal_status(ex, make_profile(), invented) == ("green", [])
-
-    supported = ScoreAssessment(
-        angle="Test", hard_no_hits=[HardNoHit(rule="Vertrieb", evidence="Python")]
-    )
-    status, reasons = formal_status(ex, make_profile(), supported)
-    assert status == "red"
-    assert reasons == ["Hard-no: Vertrieb"]
-
-
-def test_location_hard_no_is_not_llm_adjudicated():
-    # qwen hängt "Umzug ins Ausland" an jede Österreich-Stelle und belegt es mit
-    # dem Ortsnamen (steht im Extraktions-JSON) — der Standort entscheidet, nicht
-    # das LLM. Siehe formal_status().
-    ex = make_extraction(location_text="Wien")
-    profile = make_profile(hard_no=["Vertrieb", "Umzug ins Ausland"])
-    hit = ScoreAssessment(
-        angle="Test",
-        hard_no_hits=[HardNoHit(rule="Umzug ins Ausland", evidence="Wien")],
-    )
-    assert formal_status(ex, profile, hit) == ("green", [])
 
 
 def test_practical_traffic_light_is_separate_from_fachscore():

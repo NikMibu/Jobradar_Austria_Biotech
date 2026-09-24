@@ -6,21 +6,10 @@ import sqlite3
 from collections import defaultdict
 from pathlib import Path
 
-from . import llm
+from . import jev
 from .config import Profile
 from .extract import Extraction
-from .match import _assessment_call, compute_score
-
-
-def _wants_thinking(model: str) -> bool:
-    """Wie der Produktionspfad (match.score_one): natives Thinking, wenn Ollama es
-    für das Modell meldet; sonst der Name-Heuristik-Fallback fürs Anthropic-Backend."""
-    if llm.BACKEND == "ollama":
-        try:
-            return llm._ollama_supports_thinking(model)
-        except Exception:  # noqa: BLE001 — Eval soll an einer /api/show-Panne nicht sterben
-            return "reasoning" in model.lower()
-    return "reasoning" in model.lower()
+from .match import compute_score, text_quality
 
 LABEL_CANONICAL = {
     "yes": "yes",
@@ -97,8 +86,9 @@ def run(conn: sqlite3.Connection, profile: Profile, labels_path: Path, models: l
     rows = {
         row["posting_id"]: row
         for row in conn.execute(
-            f"SELECT id AS posting_id, extracted_json FROM postings "
-            f"WHERE id IN ({','.join('?' for _ in labels)})",
+            f"SELECT p.id AS posting_id, p.extracted_json, r.raw_text, r.raw_company "
+            f"FROM postings p JOIN postings_raw r ON r.id = p.raw_id "
+            f"WHERE p.id IN ({','.join('?' for _ in labels)})",
             tuple(item["posting_id"] for item in labels),
         ).fetchall()
     } if labels else {}
@@ -114,12 +104,13 @@ def run(conn: sqlite3.Connection, profile: Profile, labels_path: Path, models: l
         errors = 0
         by_label: dict[str, list[int]] = defaultdict(list)
         for item in labels:
-            ex = Extraction.model_validate_json(rows[item["posting_id"]]["extracted_json"])
+            row = rows[item["posting_id"]]
+            ex = Extraction.model_validate_json(row["extracted_json"])
             try:
-                assessment = _assessment_call(
-                    ex, profile, model, think=_wants_thinking(model)
+                assessment = jev.assess(
+                    ex, profile, row["raw_company"], row["raw_text"], model=model
                 )
-                score = compute_score(ex, profile, assessment).fit_score
+                score = compute_score(ex, assessment, text_quality(row["raw_text"])).fit_score
             except Exception as error:  # noqa: BLE001
                 errors += 1
                 print(f"  {model}: posting {item['posting_id']} fehlgeschlagen: {error}")
