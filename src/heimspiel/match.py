@@ -181,7 +181,7 @@ ENTRY_SENIORITY = {"entry", "junior"}
 
 def decide_recommendation(
     assessment: JevAssessment | None, formal: TrafficStatus, quality: str,
-    seniority: str = "junior",
+    seniority: str = "junior", abroad: bool = False,
 ) -> tuple[Recommendation, list[str]]:
     """Jev-Empfehlung plus harte Python-Regeln, die Jev nicht überstimmen darf.
 
@@ -192,6 +192,12 @@ def decide_recommendation(
     probs = assessment.recommendation_probs
     rec: Recommendation = max(probs, key=probs.get)  # type: ignore[assignment]
     notes: list[str] = []
+    if abroad:
+        # Vor-Ort-/Hybridstelle außerhalb Österreichs: Umzug ins Ausland ist ein
+        # Hard-No im Profil (Zwischenstand 2026-09-24: DKFZ/MPI landeten auf "bewerben").
+        if rec != "nicht_bewerben":
+            notes.append("Standort außerhalb Österreichs (kein Umzug ins Ausland)")
+        rec = "nicht_bewerben"
     if formal == "red":
         if rec != "nicht_bewerben":
             notes.append("Formale Hürde (Ampel rot)")
@@ -315,7 +321,10 @@ def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None 
             fit = compute_score(ex, assessment, quality)
         formal, formal_reasons = formal_status(ex, profile, assessment)
         practical, practical_reasons = practical_status(ex, travel_ok, in_austria)
-        rec, rec_notes = decide_recommendation(assessment, formal, quality, ex.seniority)
+        rec, rec_notes = decide_recommendation(
+            assessment, formal, quality, ex.seniority,
+            abroad=not in_austria and ex.workplace_mode != "remote",
+        )
         return (hard, fit, assessment, quality, formal, formal_reasons,
                 practical, practical_reasons, rec, rec_notes)
 
@@ -401,7 +410,10 @@ def recompute_statuses(conn: sqlite3.Connection, profile: Profile) -> int:
         in_austria = locations.is_in_austria(conn, ex.location_text)
         formal, formal_reasons = formal_status(ex, profile, assessment)
         practical, practical_reasons = practical_status(ex, travel_ok, in_austria)
-        rec, rec_notes = decide_recommendation(assessment, formal, quality, ex.seniority)
+        rec, rec_notes = decide_recommendation(
+            assessment, formal, quality, ex.seniority,
+            abroad=not in_austria and ex.workplace_mode != "remote",
+        )
         conn.execute(
             """UPDATE scores SET formal_status = ?, formal_reasons = ?,
                    practical_status = ?, practical_reasons = ?,

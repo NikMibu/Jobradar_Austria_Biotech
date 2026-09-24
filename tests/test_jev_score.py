@@ -86,6 +86,7 @@ def test_recommendation_overrides():
     stretch = assessment(recommendation_probs={"bewerben": 0.2, "stretch": 0.5, "nicht_bewerben": 0.3})
     assert decide_recommendation(stretch, "yellow", "full") == ("stretch", [])
     assert decide_recommendation(None, "green", "full")[0] == "nicht_bewerben"
+    assert decide_recommendation(assessment(), "green", "full", abroad=True)[0] == "nicht_bewerben"
 
 
 def test_hard_no_probability_turns_formal_red():
