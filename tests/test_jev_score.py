@@ -114,6 +114,16 @@ def test_questions_cover_requirements_and_phd_only_for_phd():
     assert "phd_topic" in jev.build_questions(make_extraction(position_type="predoc"), make_profile())
 
 
+def test_soft_skills_are_not_jev_questions():
+    ex = make_extraction(
+        requirements=[
+            Requirement(name="Teamfähigkeit", importance="must", evidence="Team", kind="soft"),
+            Requirement(name="HPLC", importance="must", evidence="HPLC"),
+        ]
+    )
+    assert [r.name for r in jev.requirements_for(ex)] == ["HPLC"]
+
+
 def test_parse_response_normalizes_levels():
     ex = make_extraction(requirements=[Requirement(name="Python", importance="must", evidence="Python")])
 

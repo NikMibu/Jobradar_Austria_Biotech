@@ -97,6 +97,9 @@ def requirements_for(ex: Extraction) -> list[Requirement]:
             for importance, names in (("must", ex.must_skills), ("nice", ex.nice_skills))
             for name in names
         ]
+    # Soft Skills lassen sich aus einem CV nie direkt belegen und zogen im Retro-Check
+    # (2026-09-24) fast jede Stelle Richtung "stretch" — nicht Teil des Fachfits.
+    reqs = [r for r in reqs if r.kind != "soft"]
     reqs.sort(key=lambda r: r.importance != "must")
     return reqs[:MAX_REQUIREMENTS]
 

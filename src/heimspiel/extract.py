@@ -23,7 +23,8 @@ from .normalize import match_company, norm_text
 # v4: evidenzbasierte Anforderungen und Belege für alle kritischen Felder
 # v5: + computational_chemistry — CADD/Docking/Molecular Modeling (landete in
 #     data_science / scientific_software / other, s. Nutzer-Feedback)
-# v6: + position_type (Job vs. PhD/Predoc/Postdoc/Praktikum/Abschlussarbeit) mit Beleg
+# v6: + position_type (Job vs. PhD/Predoc/Postdoc/Praktikum/Abschlussarbeit) mit Beleg,
+#     requirements[].kind (technical/soft), Regel "Senior Scientist" ≠ Seniorität
 SCHEMA_VERSION = 6
 BATCH_THRESHOLD = 500
 
@@ -49,6 +50,9 @@ class Requirement(BaseModel):
     name: str
     importance: Literal["must", "nice"]
     evidence: str
+    # soft = Persönlichkeit/Soft Skill/Motivation — aus einem CV nie direkt belegbar,
+    # daher nicht Teil des Jev-Fachfits (jev.requirements_for).
+    kind: Literal["technical", "soft"] = "technical"
 
 
 class FieldEvidence(BaseModel):
@@ -104,6 +108,10 @@ Regeln:
 - requirements: Erfasse JEDE fachliche oder methodische Anforderung einzeln. `must` nur
   für erforderlich/verlangt/vorausgesetzt; Wünsche und Vorteile sind `nice`. `evidence`
   ist ein kurzes WÖRTLICHES Zitat aus dem Inserat. Keine Anforderung ohne Textbeleg.
+- requirements[].kind: "soft" für Persönlichkeit, Soft Skills und Haltung (Teamfähigkeit,
+  Kommunikation, Selbstständigkeit, Genauigkeit, Belastbarkeit, Motivation, Lernbereitschaft,
+  "Interesse an …", "Freude an …"); "technical" für alles fachlich Prüfbare (Methoden, Tools,
+  Abschlüsse, Sprachen, Berufserfahrung, Zertifikate).
 - must_skills und nice_skills aus denselben Anforderungen befüllen. domain_keywords
   enthält konkrete fachliche Themen des Jobs, nicht allgemeine Wörter wie "Teamarbeit".
 - Gehalt nur übernehmen, wenn im Text eine konkrete Zahl steht (österreichische Inserate müssen das kollektivvertragliche Mindestgehalt nennen). salary_min_eur_month ist immer der vergleichbare Monatswert: Monatsbrutto unverändert, Jahresbrutto durch 14. salary_basis beschreibt die Schreibweise der Quelle: monthly_14x für Monatsbrutto, yearly für Jahresbrutto.
@@ -115,6 +123,9 @@ Regeln:
 - phd_required = true NUR bei explizitem "PhD/Doktorat erforderlich", nicht bei "von Vorteil" oder "wünschenswert".
 - german_required = true nur, wenn Deutsch explizit verlangt wird (nicht bloß Inserat auf Deutsch).
 - seniority: entry = Absolvent/keine Erfahrung, junior = 0-2 Jahre, mid = 2-5 Jahre, senior = 5+ Jahre oder Lead-Rolle.
+  Seniorität nach den verlangten Jahren/Verantwortung bestimmen, NICHT nach Titelwörtern:
+  "Senior Scientist", "Senior Lecturer" und "Universitätsassistent:in" sind an österreichischen
+  Universitäten Stellenkategorien (Kollektivvertrag), keine Senior-Level-Rollen.
 - role_family — wähle die passendste Kategorie nach diesen Definitionen:
   - bioinformatics: Analyse biologischer Daten (NGS, Genomik, Omics, Pipelines). Beispiele: "Bioinformatician", "Bioinformatiker", "Computational Biologist", "NGS Data Analyst".
   - data_science: Datenanalyse/ML/Statistik, auch ohne Biologie-Bezug. Beispiele: "Data Scientist", "Machine Learning Engineer", "Biostatistiker". NICHT für Wirkstoffdesign am Molekül (das ist computational_chemistry).
