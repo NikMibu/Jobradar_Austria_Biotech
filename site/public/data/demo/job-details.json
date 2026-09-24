@@ -1,159 +1,303 @@
 {
-  "1": {
-    "url": "https://example.com/job/1",
-    "alt_urls": [
-      "https://example.com/indeed/1"
-    ],
-    "last_seen": "2026-08-25T06:30:00+00:00",
-    "extraction": {
-      "title_norm": "Bioinformatiker NGS-Pipelines",
-      "role_family": "bioinformatics",
-      "seniority": "junior",
-      "education_min": "msc",
-      "phd_required": false,
-      "years_experience_min": 1,
-      "must_skills": [
-        "Python",
-        "Nextflow",
-        "Linux"
-      ],
-      "nice_skills": [
-        "AWS"
-      ],
-      "domain_keywords": [
-        "NGS",
-        "RNA-Seq"
-      ],
-      "german_required": false,
-      "salary_min_eur_month": 3600,
-      "salary_basis": "monthly_14x",
-      "location_text": "Wien 22., Donaustadt",
-      "workplace_mode": "hybrid",
-      "contract_type": "permanent",
-      "summary_2_lines": "NGS-Auswertungspipelines für die klinische Diagnostik bauen und betreiben. Python, Nextflow und Linux verlangt, Cloud von Vorteil."
-    },
-    "fit_reasons": [
-      "Alle drei must_skills durch Profil belegt",
-      "Direkter Bezug zu Data Science + Medizin",
-      "Junior-Level passt exakt zum Abschluss"
-    ],
-    "gaps": [
-      "AWS bisher nur Grundlagen"
-    ],
-    "angle": "Ich bringe genau den Pipeline-Stack mit, den ihr betreibt, und will ihn in Richtung validierter klinischer Workflows weiterentwickeln."
+ "1": {
+  "url": "https://example.com/job/1",
+  "alt_urls": [
+   "https://example.com/indeed/1"
+  ],
+  "last_seen": "2026-08-25T06:30:00+00:00",
+  "extraction": {
+   "title_norm": "Bioinformatiker NGS-Pipelines",
+   "role_family": "bioinformatics",
+   "seniority": "junior",
+   "education_min": "msc",
+   "phd_required": false,
+   "years_experience_min": 1,
+   "must_skills": [
+    "Python",
+    "Nextflow",
+    "Linux"
+   ],
+   "nice_skills": [
+    "AWS"
+   ],
+   "domain_keywords": [
+    "NGS",
+    "RNA-Seq"
+   ],
+   "german_required": false,
+   "salary_min_eur_month": 3600,
+   "salary_basis": "monthly_14x",
+   "location_text": "Wien 22., Donaustadt",
+   "workplace_mode": "hybrid",
+   "contract_type": "permanent",
+   "summary_2_lines": "NGS-Auswertungspipelines für die klinische Diagnostik bauen und betreiben. Python, Nextflow und Linux verlangt, Cloud von Vorteil.",
+   "position_type": "job"
   },
-  "2": {
-    "url": "https://example.com/job/2",
-    "alt_urls": [],
-    "last_seen": "2026-08-25T06:30:00+00:00",
-    "extraction": {
-      "title_norm": "CSV Engineer GMP",
-      "role_family": "csv_qa_validation",
-      "seniority": "entry",
-      "education_min": "bsc",
-      "phd_required": false,
-      "years_experience_min": null,
-      "must_skills": [
-        "GMP-Grundlagen",
-        "Dokumentation"
-      ],
-      "nice_skills": [
-        "GAMP 5"
-      ],
-      "domain_keywords": [
-        "Computer System Validation"
-      ],
-      "german_required": true,
-      "salary_min_eur_month": 3200,
-      "salary_basis": "monthly_14x",
-      "location_text": "Krems an der Donau",
-      "workplace_mode": "onsite",
-      "contract_type": "permanent",
-      "summary_2_lines": "Computer System Validation im GMP-Labor, Einstieg möglich. Deutsch und saubere Dokumentation verlangt."
-    },
-    "fit_reasons": [
-      "Einstiegsrolle ohne Erfahrungshürde",
-      "GMP-Interesse deckt sich mit AI/ML-Validierungs-Ziel",
-      "Deutsch als Muttersprache erfüllt"
-    ],
-    "gaps": [
-      "GAMP 5 noch nicht praktisch angewandt",
-      "Kein Laborvalidierungs-Track-Record"
-    ],
-    "angle": "Ich positioniere mich als Bioinformatiker, der Validierung nicht als Papierkram, sondern als Datenproblem versteht."
+  "fit_reasons": [
+   "Alle drei must_skills durch Profil belegt",
+   "Direkter Bezug zu Data Science + Medizin",
+   "Junior-Level passt exakt zum Abschluss"
+  ],
+  "gaps": [],
+  "angle": "Ich bringe genau den Pipeline-Stack mit, den ihr betreibt, und will ihn in Richtung validierter klinischer Workflows weiterentwickeln.",
+  "recommendation_probs": {
+   "bewerben": 0.78,
+   "stretch": 0.18,
+   "nicht_bewerben": 0.04
   },
-  "3": {
-    "url": "https://example.com/job/3",
-    "alt_urls": [],
-    "last_seen": "2026-08-25T06:30:00+00:00",
-    "extraction": {
-      "title_norm": "Mass Spec Data Analyst",
-      "role_family": "mass_spec",
-      "seniority": "junior",
-      "education_min": "msc",
-      "phd_required": false,
-      "years_experience_min": 2,
-      "must_skills": [
-        "Proteomics",
-        "R",
-        "Statistik"
-      ],
-      "nice_skills": [
-        "MaxQuant"
-      ],
-      "domain_keywords": [
-        "LC-MS/MS"
-      ],
-      "german_required": false,
-      "salary_min_eur_month": null,
-      "salary_basis": null,
-      "location_text": "Salzburg",
-      "workplace_mode": "onsite",
-      "contract_type": "fixed_term",
-      "contract_end": "2027-03-31",
-      "summary_2_lines": "Auswertung von LC-MS/MS-Proteomikdaten in einem Forschungsprojekt. R und Statistik verlangt, Befristung bis März 2027."
-    },
-    "fit_reasons": [
-      "Massenspektrometrie ist erklärtes Lernziel",
-      "R-Kenntnisse vorhanden",
-      "2 Jahre Erfahrung gefordert — grenzwertig"
+  "recommendation_notes": [],
+  "score_evidence": {
+   "jev": {
+    "requirements": [
+     {
+      "requirement": "Python",
+      "importance": "must",
+      "job_evidence": "Python",
+      "level": 0.97,
+      "p_missing": 0.01,
+      "p_transferable": 0.04,
+      "p_direct": 0.95
+     },
+     {
+      "requirement": "Nextflow",
+      "importance": "must",
+      "job_evidence": "Nextflow",
+      "level": 0.94,
+      "p_missing": 0.02,
+      "p_transferable": 0.08,
+      "p_direct": 0.9
+     },
+     {
+      "requirement": "Linux",
+      "importance": "must",
+      "job_evidence": "Linux",
+      "level": 0.95,
+      "p_missing": 0.02,
+      "p_transferable": 0.06,
+      "p_direct": 0.92
+     },
+     {
+      "requirement": "AWS",
+      "importance": "nice",
+      "job_evidence": "AWS",
+      "level": 0.5,
+      "p_missing": 0.2,
+      "p_transferable": 0.6,
+      "p_direct": 0.2
+     }
     ],
-    "gaps": [
-      "Keine praktische Proteomics-Erfahrung",
-      "Befristung < 12 Monate",
-      "Pendelzeit Salzburg unklar"
-    ],
-    "angle": "Ich verkaufe die NGS-Statistik-Erfahrung als direkt übertragbar auf MS-Quantifizierung und die Stelle als bezahltes MS-Bootcamp."
-  },
-  "4": {
-    "url": "https://example.com/job/4",
-    "alt_urls": [],
-    "last_seen": "2026-08-25T06:30:00+00:00",
-    "extraction": {
-      "title_norm": "Senior Principal Scientist Computational Chemistry",
-      "role_family": "scientific_software",
-      "seniority": "senior",
-      "education_min": "phd",
-      "phd_required": true,
-      "years_experience_min": 8,
-      "must_skills": [
-        "Molecular Dynamics",
-        "10+ Jahre Industrie"
-      ],
-      "nice_skills": [],
-      "domain_keywords": [
-        "Drug Design"
-      ],
-      "german_required": false,
-      "salary_min_eur_month": 8000,
-      "salary_basis": "monthly_14x",
-      "location_text": "Wien",
-      "workplace_mode": "hybrid",
-      "contract_type": "permanent",
-      "summary_2_lines": "Leitende Rolle im computergestützten Wirkstoffdesign. PhD und 8+ Jahre Erfahrung zwingend."
-    },
-    "fit_reasons": null,
-    "gaps": null,
-    "angle": null
+    "domain": 0.8,
+    "interest": 0.7,
+    "phd_topic": null,
+    "not_claim": 0.03,
+    "hard_no": 0.02,
+    "confidence": 0.84
+   },
+   "text_quality": "full"
   }
+ },
+ "2": {
+  "url": "https://example.com/job/2",
+  "alt_urls": [],
+  "last_seen": "2026-08-25T06:30:00+00:00",
+  "extraction": {
+   "title_norm": "CSV Engineer GMP",
+   "role_family": "csv_qa_validation",
+   "seniority": "entry",
+   "education_min": "bsc",
+   "phd_required": false,
+   "years_experience_min": null,
+   "must_skills": [
+    "GMP-Grundlagen",
+    "Dokumentation"
+   ],
+   "nice_skills": [
+    "GAMP 5"
+   ],
+   "domain_keywords": [
+    "Computer System Validation"
+   ],
+   "german_required": true,
+   "salary_min_eur_month": 3200,
+   "salary_basis": "monthly_14x",
+   "location_text": "Krems an der Donau",
+   "workplace_mode": "onsite",
+   "contract_type": "permanent",
+   "summary_2_lines": "Computer System Validation im GMP-Labor, Einstieg möglich. Deutsch und saubere Dokumentation verlangt.",
+   "position_type": "job"
+  },
+  "fit_reasons": [
+   "Einstiegsrolle ohne Erfahrungshürde",
+   "GMP-Interesse deckt sich mit AI/ML-Validierungs-Ziel",
+   "Deutsch als Muttersprache erfüllt"
+  ],
+  "gaps": [
+   "GMP-Erfahrung",
+   "Computer System Validation"
+  ],
+  "angle": "Ich positioniere mich als Bioinformatiker, der Validierung nicht als Papierkram, sondern als Datenproblem versteht.",
+  "recommendation_probs": {
+   "bewerben": 0.12,
+   "stretch": 0.33,
+   "nicht_bewerben": 0.55
+  },
+  "recommendation_notes": [
+   "Verlangt Nicht-Claim (p=0.91)"
+  ],
+  "score_evidence": {
+   "jev": {
+    "requirements": [
+     {
+      "requirement": "GMP-Erfahrung",
+      "importance": "must",
+      "job_evidence": "GMP-Erfahrung",
+      "level": 0.07,
+      "p_missing": 0.88,
+      "p_transferable": 0.1,
+      "p_direct": 0.02
+     },
+     {
+      "requirement": "Computer System Validation",
+      "importance": "must",
+      "job_evidence": "Computer System Validation",
+      "level": 0.14,
+      "p_missing": 0.75,
+      "p_transferable": 0.22,
+      "p_direct": 0.03
+     },
+     {
+      "requirement": "Python",
+      "importance": "nice",
+      "job_evidence": "Python",
+      "level": 0.94,
+      "p_missing": 0.02,
+      "p_transferable": 0.08,
+      "p_direct": 0.9
+     }
+    ],
+    "domain": 0.8,
+    "interest": 0.7,
+    "phd_topic": null,
+    "not_claim": 0.91,
+    "hard_no": 0.02,
+    "confidence": 0.84
+   },
+   "text_quality": "full"
+  }
+ },
+ "3": {
+  "url": "https://example.com/job/3",
+  "alt_urls": [],
+  "last_seen": "2026-08-25T06:30:00+00:00",
+  "extraction": {
+   "title_norm": "PhD Position Computational Drug Discovery",
+   "role_family": "mass_spec",
+   "seniority": "junior",
+   "education_min": "msc",
+   "phd_required": false,
+   "years_experience_min": 2,
+   "must_skills": [
+    "Proteomics",
+    "R",
+    "Statistik"
+   ],
+   "nice_skills": [
+    "MaxQuant"
+   ],
+   "domain_keywords": [
+    "LC-MS/MS"
+   ],
+   "german_required": false,
+   "salary_min_eur_month": null,
+   "salary_basis": null,
+   "location_text": "Salzburg",
+   "workplace_mode": "onsite",
+   "contract_type": "fixed_term",
+   "contract_end": "2027-03-31",
+   "summary_2_lines": "Doktoratsstelle zu KI-gestützter Struktur- und Affinitätsvorhersage für das virtuelle Screening.",
+   "position_type": "phd"
+  },
+  "fit_reasons": [
+   "Massenspektrometrie ist erklärtes Lernziel",
+   "R-Kenntnisse vorhanden",
+   "2 Jahre Erfahrung gefordert — grenzwertig"
+  ],
+  "gaps": [],
+  "angle": "Ich verkaufe die NGS-Statistik-Erfahrung als direkt übertragbar auf MS-Quantifizierung und die Stelle als bezahltes MS-Bootcamp.",
+  "recommendation_probs": {
+   "bewerben": 0.46,
+   "stretch": 0.41,
+   "nicht_bewerben": 0.13
+  },
+  "recommendation_notes": [
+   "Stub-Inserat: höchstens Stretch bis zum Volltext"
+  ],
+  "score_evidence": {
+   "jev": {
+    "requirements": [
+     {
+      "requirement": "Machine Learning",
+      "importance": "must",
+      "job_evidence": "Machine Learning",
+      "level": 0.625,
+      "p_missing": 0.1,
+      "p_transferable": 0.55,
+      "p_direct": 0.35
+     },
+     {
+      "requirement": "Structural Biology",
+      "importance": "nice",
+      "job_evidence": "Structural Biology",
+      "level": 0.55,
+      "p_missing": 0.2,
+      "p_transferable": 0.5,
+      "p_direct": 0.3
+     }
+    ],
+    "domain": 0.8,
+    "interest": 0.7,
+    "phd_topic": 0.9,
+    "not_claim": 0.05,
+    "hard_no": 0.02,
+    "confidence": 0.84
+   },
+   "text_quality": "stub"
+  }
+ },
+ "4": {
+  "url": "https://example.com/job/4",
+  "alt_urls": [],
+  "last_seen": "2026-08-25T06:30:00+00:00",
+  "extraction": {
+   "title_norm": "Senior Principal Scientist Computational Chemistry",
+   "role_family": "scientific_software",
+   "seniority": "senior",
+   "education_min": "phd",
+   "phd_required": true,
+   "years_experience_min": 8,
+   "must_skills": [
+    "Molecular Dynamics",
+    "10+ Jahre Industrie"
+   ],
+   "nice_skills": [],
+   "domain_keywords": [
+    "Drug Design"
+   ],
+   "german_required": false,
+   "salary_min_eur_month": 8000,
+   "salary_basis": "monthly_14x",
+   "location_text": "Wien",
+   "workplace_mode": "hybrid",
+   "contract_type": "permanent",
+   "summary_2_lines": "Leitende Rolle im computergestützten Wirkstoffdesign. PhD und 8+ Jahre Erfahrung zwingend.",
+   "position_type": "job"
+  },
+  "fit_reasons": null,
+  "gaps": null,
+  "angle": null,
+  "recommendation_probs": null,
+  "recommendation_notes": [
+   "Rollenfamilie ausgeschlossen"
+  ]
+ }
 }

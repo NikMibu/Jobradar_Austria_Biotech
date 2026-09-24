@@ -1,11 +1,30 @@
 {
-  "data_schema_version": 2,
-  "generated_at": "2026-08-25T06:30:00+00:00",
-  "profile_version": 1,
-  "anchors": [
-    {"id": "home", "label": "St. Pölten Hbf", "max_minutes": 75},
-    {"id": "wien", "label": "Wien Hauptbahnhof", "max_minutes": 60},
-    {"id": "family", "label": "Vöcklabruck Bahnhof", "max_minutes": 90}
-  ],
-  "counts": {"jobs": 4, "hard_pass": 3, "companies_initiative": 2}
+ "data_schema_version": 4,
+ "generated_at": "2026-08-25T06:30:00+00:00",
+ "profile_version": 1,
+ "anchors": [
+  {
+   "id": "home",
+   "label": "St. Pölten Hbf",
+   "max_minutes": 75
+  },
+  {
+   "id": "wien",
+   "label": "Wien Hauptbahnhof",
+   "max_minutes": 60
+  },
+  {
+   "id": "family",
+   "label": "Vöcklabruck Bahnhof",
+   "max_minutes": 90
+  }
+ ],
+ "counts": {
+  "jobs": 4,
+  "hard_pass": 3,
+  "companies_initiative": 2
+ },
+ "scoring_model": "jev-1.13.0",
+ "extraction_model": "gpt-6-luna",
+ "score_version": 4
 }

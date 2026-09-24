@@ -1,4 +1,7 @@
 export type TrafficStatus = "green" | "yellow" | "red";
+export type Recommendation = "bewerben" | "stretch" | "nicht_bewerben";
+export type Segment = "bewerben" | "stretch" | "nicht";
+export type PositionType = "job" | "phd" | "predoc" | "postdoc" | "internship" | "thesis";
 export type RankingLabel = "yes" | "maybe" | "no";
 
 export interface JobSummary {
@@ -17,6 +20,9 @@ export interface JobSummary {
   score_confidence?: number | null;
   formal_status?: TrafficStatus | null;
   practical_status?: TrafficStatus | null;
+  recommendation?: Recommendation | null;
+  text_quality?: "full" | "stub" | null;
+  position_type?: PositionType | null;
   travel: Record<string, { minutes: number | null; transfers: number | null }>;
   role_family: string | null;
   workplace_mode: string | null;
@@ -52,6 +58,28 @@ export interface JobDetail {
   formal_reasons: string[];
   practical_reasons: string[];
   fallback_model: string | null;
+  recommendation_probs: Partial<Record<Recommendation, number>> | null;
+  recommendation_notes: string[];
+}
+
+export interface JevRequirement {
+  requirement: string;
+  importance: "must" | "nice";
+  job_evidence: string;
+  level: number | null;
+  p_missing: number;
+  p_transferable: number;
+  p_direct: number;
+}
+
+export interface JevEvidence {
+  requirements: JevRequirement[];
+  domain: number;
+  interest: number;
+  phd_topic: number | null;
+  not_claim: number;
+  hard_no: number;
+  confidence: number;
 }
 
 export interface Company {
@@ -78,6 +106,7 @@ export type ColorMode = "score" | "travel";
 
 export interface Filters {
   segment: string;
+  position: string;
   sort: string;
   role: string;
   source: string;

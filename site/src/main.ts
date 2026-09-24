@@ -2,12 +2,19 @@ import "./style.css";
 
 import {
   coordinateKey, effectiveRole, effectiveSegment, filterJobs, filtersUrl, groupJobsByLocation,
-  isForeign, readFilters, scoreColor,
+  isForeign, POSITIONS, positionGroup, readFilters, REC_LABEL, scoreColor, segmentMatches, SEGMENTS,
 } from "./state";
 import type { MapView } from "./map-view";
 import type {
-  Company, Filters, JobDetail, JobSummary, Meta, RankingLabel, StoredState, TrafficStatus,
+  Company, Filters, JevEvidence, JobDetail, JobSummary, Meta, PositionType, RankingLabel,
+  Recommendation, StoredState, TrafficStatus,
 } from "./types";
+
+const POSITION_LABEL: Record<PositionType, string> = {
+  job: "Job", phd: "🎓 PhD", predoc: "🎓 Predoc", postdoc: "Postdoc",
+  internship: "Praktikum", thesis: "Abschlussarbeit",
+};
+const daysUntil = (iso: string): number => Math.round((Date.parse(iso) - Date.now()) / 86_400_000);
 
 const ROLE_FAMILIES = [
   "bioinformatics", "data_science", "computational_chemistry", "csv_qa_validation",
@@ -67,6 +74,9 @@ function normalizeJob(raw: Record<string, unknown>): JobSummary {
     score_confidence: (raw.score_confidence ?? null) as number | null,
     formal_status: (raw.formal_status ?? null) as TrafficStatus | null,
     practical_status: (raw.practical_status ?? null) as TrafficStatus | null,
+    recommendation: (raw.recommendation ?? null) as Recommendation | null,
+    text_quality: (raw.text_quality ?? null) as JobSummary["text_quality"],
+    position_type: (raw.position_type ?? extraction.position_type ?? "job") as PositionType,
   };
 }
 
@@ -97,7 +107,7 @@ function legacyDetail(job: JobSummary): JobDetail | null {
     gaps: job.gaps ?? null, angle: job.angle ?? null,
     score_breakdown: job.score_breakdown ?? null, score_evidence: job.score_evidence ?? null,
     formal_reasons: job.formal_reasons ?? [], practical_reasons: job.practical_reasons ?? [],
-    fallback_model: job.fallback_model ?? null,
+    fallback_model: job.fallback_model ?? null, recommendation_probs: null, recommendation_notes: [],
   };
 }
 
@@ -109,6 +119,8 @@ function normalizeDetail(raw: Partial<JobDetail>): JobDetail {
     score_breakdown: raw.score_breakdown ?? null, score_evidence: raw.score_evidence ?? null,
     formal_reasons: raw.formal_reasons ?? [], practical_reasons: raw.practical_reasons ?? [],
     fallback_model: raw.fallback_model ?? null,
+    recommendation_probs: raw.recommendation_probs ?? null,
+    recommendation_notes: raw.recommendation_notes ?? [],
   };
 }
 
@@ -162,7 +174,6 @@ async function main() {
   });
 
   const syncControls = () => {
-    $<HTMLSelectElement>("f-segment").value = filters.segment;
     $<HTMLSelectElement>("f-sort").value = filters.sort;
     $<HTMLSelectElement>("f-color").value = filters.color;
     $<HTMLSelectElement>("f-role").value = filters.role;
@@ -172,7 +183,6 @@ async function main() {
     $<HTMLInputElement>("f-days").value = filters.days;
     $<HTMLSelectElement>("f-anchor").value = filters.anchor;
     $<HTMLInputElement>("f-minutes").value = filters.minutes;
-    $<HTMLInputElement>("f-initiative").checked = filters.initiative;
     $<HTMLInputElement>("f-saved").checked = filters.saved;
   };
   syncControls();
@@ -180,7 +190,6 @@ async function main() {
   const readControls = () => {
     filters = {
       ...filters,
-      segment: $<HTMLSelectElement>("f-segment").value,
       sort: $<HTMLSelectElement>("f-sort").value,
       color: $<HTMLSelectElement>("f-color").value as Filters["color"],
       role: $<HTMLSelectElement>("f-role").value,
@@ -190,7 +199,6 @@ async function main() {
       days: $<HTMLInputElement>("f-days").value,
       anchor: $<HTMLSelectElement>("f-anchor").value,
       minutes: $<HTMLInputElement>("f-minutes").value,
-      initiative: $<HTMLInputElement>("f-initiative").checked,
       saved: $<HTMLInputElement>("f-saved").checked,
     };
   };
@@ -201,8 +209,27 @@ async function main() {
     if (next !== current) history.replaceState(null, "", next);
   };
 
+  const recPill = (job: JobSummary): string => {
+    const segment = effectiveSegment(job, stored);
+    return `<span class="rec rec-${segment}">${REC_LABEL[segment]}</span>`;
+  };
+
+  const deadlineChip = (job: JobSummary): string => {
+    if (!job.application_deadline) return "";
+    const left = daysUntil(job.application_deadline);
+    const urgent = left >= 0 && left <= 14;
+    const label = left < 0 ? `abgelaufen ${job.application_deadline}` : `bis ${job.application_deadline} (${left} d)`;
+    return `<span class="chip ${urgent ? "chip-urgent" : "chip-warn"}">⏳ ${esc(label)}</span>`;
+  };
+
   const cardBadges = (job: JobSummary): string => {
-    const badges = [`<span class="chip chip-role" data-action="role" title="Rollenfamilie korrigieren">${esc(effectiveRole(job, stored) || "?")}${stored.overrides[String(job.id)] ? " ✎" : ""}</span>`];
+    const badges: string[] = [];
+    if (job.position_type && job.position_type !== "job")
+      badges.push(`<span class="chip chip-position">${POSITION_LABEL[job.position_type]}</span>`);
+    badges.push(deadlineChip(job));
+    if (job.text_quality === "stub")
+      badges.push(`<span class="chip chip-stub" title="Inserat ohne verwertbaren Volltext — Score nur aus Titel/Teaser">⚠ dünne Datenbasis</span>`);
+    badges.push(`<span class="chip chip-role" data-action="role" title="Rollenfamilie korrigieren">${esc(effectiveRole(job, stored) || "?")}${stored.overrides[String(job.id)] ? " ✎" : ""}</span>`);
     for (const anchor of meta.anchors) {
       const travel = job.travel[anchor.id];
       if (travel?.minutes != null && (!filters.anchor || filters.anchor === anchor.id)) {
@@ -216,12 +243,25 @@ async function main() {
     if (job.salary_min_eur_month) badges.push(`<span class="chip">≥ ${job.salary_min_eur_month.toLocaleString("de-AT")} €</span>`);
     if (job.contract_type && !["permanent", "unknown"].includes(job.contract_type))
       badges.push(`<span class="chip chip-warn">${esc(job.contract_type)}</span>`);
-    if (job.application_deadline) badges.push(`<span class="chip chip-warn">bis ${esc(job.application_deadline)}</span>`);
     badges.push(statusBadge("formal", job.formal_status));
     badges.push(statusBadge("praktisch", job.practical_status));
     const open = daysSince(job.first_seen);
     if (open) badges.push(`<span class="chip chip-dim">${open} d offen</span>`);
     return badges.join("");
+  };
+
+  const renderTabs = () => {
+    const inPosition = jobs.filter((job) => !filters.position || positionGroup(job) === filters.position);
+    const segmentCount = (key: string) =>
+      inPosition.filter((job) => segmentMatches(key, effectiveSegment(job, stored))).length;
+    $("segments").innerHTML = SEGMENTS.map(([key, label]) =>
+      `<button class="tab tab-${key}${filters.segment === key && !filters.initiative ? " on" : ""}" data-segment="${key}">${label}<span class="count">${segmentCount(key)}</span></button>`,
+    ).join("") + `<button class="tab tab-initiative${filters.initiative ? " on" : ""}" data-segment="initiative" title="Firmen ohne passende offene Stelle">Initiativ<span class="count">${companies.length}</span></button>`;
+    const inSegment = jobs.filter((job) => segmentMatches(filters.segment, effectiveSegment(job, stored)));
+    $("positions").innerHTML = POSITIONS.map(([key, label]) => {
+      const count = key ? inSegment.filter((job) => positionGroup(job) === key).length : inSegment.length;
+      return `<button class="tab${filters.position === key ? " on" : ""}" data-position="${key}"${count || !key ? "" : " disabled"}>${label}<span class="count">${count}</span></button>`;
+    }).join("");
   };
 
   const renderChips = () => {
@@ -238,11 +278,14 @@ async function main() {
       chip.onclick = () => { locationFilter = null; mapView?.highlight(null); scheduleRender(true, true); };
       chipbar.appendChild(chip);
     }
-    const noLocation = document.createElement("button");
-    noLocation.className = `chip chip-filter${filters.noLocation ? " on" : ""}`;
-    noLocation.textContent = `ohne Standort (${jobs.filter((job) => job.lat == null || job.lon == null).length})`;
-    noLocation.onclick = () => { filters.noLocation = !filters.noLocation; scheduleRender(true, true); };
-    chipbar.appendChild(noLocation);
+    const noLocationCount = jobs.filter((job) => job.lat == null || job.lon == null).length;
+    if (noLocationCount || filters.noLocation) {
+      const noLocation = document.createElement("button");
+      noLocation.className = `chip chip-filter${filters.noLocation ? " on" : ""}`;
+      noLocation.textContent = `ohne Standort (${noLocationCount})`;
+      noLocation.onclick = () => { filters.noLocation = !filters.noLocation; scheduleRender(true, true); };
+      chipbar.appendChild(noLocation);
+    }
     const foreignCount = jobs.filter(isForeign).length;
     if (foreignCount) {
       const foreign = document.createElement("button");
@@ -277,12 +320,13 @@ async function main() {
     const fragment = document.createDocumentFragment();
     for (const job of filtered) {
       const card = document.createElement("article");
-      card.className = `card${effectiveSegment(job, stored) === "raus" ? " muted" : ""}${
+      const segment = effectiveSegment(job, stored);
+      card.className = `card card-${segment}${segment === "nicht" ? " muted" : ""}${
         String(job.id) === filters.job ? " selected" : ""}`;
       card.dataset.jobId = String(job.id);
       card.tabIndex = 0;
-      card.innerHTML = `<div class="card-head"><span class="score" style="background:${scoreColor(job, stored)}">${job.fit_score ?? "–"}</span>
-        <strong>${esc(job.title)}</strong><button class="star${stored.saved.has(job.id) ? " on" : ""}" data-action="save" title="merken" aria-label="Job merken">★</button></div>
+      card.innerHTML = `<div class="card-head"><span class="score" style="background:${scoreColor(job, stored)}" title="Fachfit${job.score_confidence != null ? ` · Datenbasis ${job.score_confidence}/100` : ""}">${job.fit_score ?? "–"}</span>
+        <strong>${esc(job.title)}</strong>${recPill(job)}<button class="star${stored.saved.has(job.id) ? " on" : ""}" data-action="save" title="merken" aria-label="Job merken">★</button></div>
         <div class="card-sub">${esc(job.company ?? "?")} · ${esc(job.location_text ?? "?")} · <em>${esc(job.source)}</em></div>
         <div class="card-badges">${cardBadges(job)}</div>`;
       fragment.appendChild(card);
@@ -318,6 +362,7 @@ async function main() {
   const render = () => {
     renderFrame = 0;
     writeUrl();
+    renderTabs();
     renderChips();
     if (filters.initiative) {
       if (listDirty) renderInitiative();
@@ -327,8 +372,8 @@ async function main() {
       const filtered = filterJobs(jobs, filters, stored, locationFilter);
       if (listDirty) renderList(filtered);
       if (mapDirty) mapView?.setLocations(groupJobsByLocation(filtered, filters, stored));
-      const matches = jobs.filter((job) => effectiveSegment(job, stored) !== "raus").length;
-      $("meta-line").textContent = `${filtered.length} angezeigt · ${matches} Treffer von ${jobs.length} · Stand ${new Date(meta.generated_at).toLocaleDateString("de-AT")}`;
+      const apply = jobs.filter((job) => effectiveSegment(job, stored) === "bewerben").length;
+      $("meta-line").textContent = `${filtered.length} angezeigt · ${apply} zum Bewerben von ${jobs.length} · Stand ${new Date(meta.generated_at).toLocaleDateString("de-AT")}`;
     }
     listDirty = mapDirty = false;
     performance.mark("heimspiel:view-rendered");
@@ -389,16 +434,33 @@ async function main() {
       const breakdownRows = breakdown ? [
         ["Skills", `${breakdown.skills ?? 0}/60`],
         ["Domäne", `${breakdown.domain ?? 0}/25`],
-        ["Interessen", `${breakdown.interests ?? 0}/15`],
+        [job.position_type === "phd" || job.position_type === "predoc" ? "PhD-Thema" : "Interessen", `${breakdown.interests ?? 0}/15`],
       ].map(([name, value]) => `<tr><td>${name}</td><td>${value}</td></tr>`).join("") : "";
       const currentLabel = stored.labels[String(job.id)];
-      $("drawer-content").innerHTML = `<h2>${esc(job.title)}</h2>
+      const jevEvidence = (detail.score_evidence as { jev?: JevEvidence } | null)?.jev;
+      const pct = (value: number) => `${Math.round(value * 100)}%`;
+      const probs = detail.recommendation_probs;
+      const recBars = probs ? ([["bewerben", "Bewerben"], ["stretch", "Stretch"], ["nicht_bewerben", "Nicht"]] as [Recommendation, string][])
+        .map(([key, label]) => `<div class="bar-row"><span>${label}</span><div class="bar"><i class="rec-fill-${key}" style="width:${pct(probs[key] ?? 0)}"></i></div><span>${pct(probs[key] ?? 0)}</span></div>`).join("") : "";
+      const matrix = jevEvidence?.requirements.length ? `<table class="req-matrix"><thead><tr><th>Anforderung</th><th>Profil</th></tr></thead><tbody>${
+        jevEvidence.requirements.map((req) => `<tr title="${esc(req.job_evidence)}"><td>${req.importance === "must" ? "<b>Muss</b> · " : ""}${esc(req.requirement)}</td>
+          <td><div class="stack" aria-label="direkt ${pct(req.p_direct)}, übertragbar ${pct(req.p_transferable)}, fehlt ${pct(req.p_missing)}">
+            <i class="s-direct" style="width:${pct(req.p_direct)}"></i><i class="s-transfer" style="width:${pct(req.p_transferable)}"></i><i class="s-missing" style="width:${pct(req.p_missing)}"></i></div></td></tr>`).join("")
+      }</tbody></table><p class="legend"><i class="s-direct"></i> direkt belegt <i class="s-transfer"></i> übertragbar <i class="s-missing"></i> fehlt</p>` : "";
+      const segment = effectiveSegment(job, stored);
+      $("drawer-content").innerHTML = `<div class="drawer-kicker">${recPill(job)}${job.position_type && job.position_type !== "job" ? `<span class="chip chip-position">${POSITION_LABEL[job.position_type]}</span>` : ""}${deadlineChip(job)}</div>
+        <h2>${esc(job.title)}</h2>
         <p class="card-sub">${esc(job.company ?? "?")} · ${esc(job.location_text ?? "?")} · seit ${daysSince(job.first_seen)} d · zuletzt gesehen ${new Date(detail.last_seen).toLocaleDateString("de-AT")}</p>
         <p>${esc(String(extraction.summary_2_lines ?? ""))}</p>${travel ? `<p>🚆 ${esc(travel)}</p>` : ""}
+        ${job.text_quality === "stub" ? `<p class="callout warn">⚠ Dieses Inserat hat kaum Text (Stub). Score und Empfehlung beruhen fast nur auf dem Titel — Originalanzeige lesen, bevor du entscheidest.</p>` : ""}
+        ${jevEvidence && jevEvidence.not_claim > 0.5 ? `<p class="callout bad">Verlangt vermutlich Erfahrung, die du nicht hast (Nicht-Claim, p=${jevEvidence.not_claim.toFixed(2)}).</p>` : ""}
+        ${probs ? `<section class="panel panel-${segment}"><h3>Empfehlung: ${REC_LABEL[segment]}</h3>${recBars}
+          ${detail.recommendation_notes.length ? `<ul class="notes">${detail.recommendation_notes.map((note) => `<li>${esc(note)}</li>`).join("")}</ul>` : ""}</section>` : ""}
         ${job.fit_score != null ? `<h3>Fachfit: ${job.fit_score}/100</h3>
           ${breakdownRows ? `<table class="score-breakdown">${breakdownRows}</table>` : ""}
           <p class="confidence">Datenbasis: ${job.score_confidence ?? "?"}/100</p>
           <ul>${(detail.fit_reasons ?? []).map((reason) => `<li>${esc(reason)}</li>`).join("")}</ul>` : ""}
+        ${matrix ? `<h3>Anforderungen</h3>${matrix}` : ""}
         <h3>Einordnung</h3><p>${statusBadge("formal", job.formal_status)} ${statusBadge("praktisch", job.practical_status)}</p>
         ${detail.formal_reasons.length ? `<ul>${detail.formal_reasons.map((reason) => `<li>Formal: ${esc(reason)}</li>`).join("")}</ul>` : ""}
         ${detail.practical_reasons.length ? `<ul>${detail.practical_reasons.map((reason) => `<li>Praktisch: ${esc(reason)}</li>`).join("")}</ul>` : ""}
@@ -476,6 +538,21 @@ async function main() {
         inputTimer = window.setTimeout(handle, 120);
       });
     } else element.addEventListener("change", handle);
+  });
+  $("segments").addEventListener("click", (event) => {
+    const tab = (event.target as HTMLElement).closest<HTMLElement>("[data-segment]");
+    if (!tab) return;
+    const segment = tab.dataset.segment!;
+    if (segment === "initiative") filters.initiative = !filters.initiative;
+    else { filters.initiative = false; filters.segment = segment; }
+    syncControls();
+    scheduleRender(true, true);
+  });
+  $("positions").addEventListener("click", (event) => {
+    const tab = (event.target as HTMLElement).closest<HTMLElement>("[data-position]");
+    if (!tab) return;
+    filters.position = tab.dataset.position!;
+    scheduleRender(true, true);
   });
   $("drawer-close").addEventListener("click", closeDrawer);
 

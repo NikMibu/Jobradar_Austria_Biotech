@@ -55,6 +55,26 @@ describe("frontend state", () => {
     expect(groups[0]).toMatchObject({ jobCount: 2, maxScore: 91, color: "#16a34a" });
   });
 
+  it("segments by Jev recommendation, falling back to filter logic", () => {
+    const state = stored();
+    const jobs = [
+      job({ id: 1, recommendation: "bewerben", fit_score: 60 }),
+      job({ id: 2, recommendation: "stretch", fit_score: 90 }),
+      job({ id: 3, recommendation: "nicht_bewerben", fit_score: 95 }),
+      job({ id: 4, hard_reasons: { reasons: [], flags: ["Befristung"] } }),
+    ];
+    const top = filterJobs(jobs, defaultFilters(), state, null).map((j) => j.id);
+    expect(top).toEqual([1, 2, 4]); // Empfehlung vor Score, Legacy-Grenzfall = stretch
+    expect(filterJobs(jobs, { ...defaultFilters(), segment: "nicht" }, state, null).map((j) => j.id)).toEqual([3]);
+  });
+
+  it("filters PhD and predoc positions together", () => {
+    const jobs = [job({ id: 1, position_type: "phd" }), job({ id: 2, position_type: "predoc" }), job({ id: 3 })];
+    const phd = filterJobs(jobs, { ...defaultFilters(), position: "phd" }, stored(), null);
+    expect(phd.map((j) => j.id).sort()).toEqual([1, 2]);
+    expect(readFilters(filtersUrl({ ...defaultFilters(), position: "phd" }, "/")).position).toBe("phd");
+  });
+
   it("does not let rejected jobs hide an eligible unscored location", () => {
     const groups = groupJobsByLocation([
       job({ id: 1, hard_pass: false, fit_score: null, hard_reasons: { reasons: ["PhD erforderlich"], flags: [] } }),

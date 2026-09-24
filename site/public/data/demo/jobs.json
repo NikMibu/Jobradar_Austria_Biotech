@@ -1,123 +1,137 @@
 [
-  {
-    "id": 1,
-    "title": "Bioinformatiker NGS-Pipelines",
-    "company": "Alpenpharm GmbH (Demo)",
-    "source": "karriere_at",
-    "first_seen": "2026-08-24T06:30:00+00:00",
-    "location_text": "Wien 22., Donaustadt",
-    "lat": 48.24,
-    "lon": 16.41,
-    "site_label": "Wien Werk",
-    "hard_pass": true,
-    "hard_reasons": {
-      "reasons": [],
-      "flags": []
-    },
-    "fit_score": 86,
-    "travel": {
-      "wien": {
-        "minutes": 38,
-        "transfers": 1
-      },
-      "home": {
-        "minutes": 71,
-        "transfers": 2
-      }
-    },
-    "role_family": "bioinformatics",
-    "workplace_mode": "hybrid",
-    "contract_type": "permanent",
-    "salary_min_eur_month": 3600,
-    "application_deadline": null
+ {
+  "id": 1,
+  "title": "Bioinformatiker NGS-Pipelines",
+  "company": "Alpenpharm GmbH (Demo)",
+  "source": "karriere_at",
+  "first_seen": "2026-08-24T06:30:00+00:00",
+  "location_text": "Wien 22., Donaustadt",
+  "lat": 48.24,
+  "lon": 16.41,
+  "site_label": "Wien Werk",
+  "hard_pass": true,
+  "hard_reasons": {
+   "reasons": [],
+   "flags": []
   },
-  {
-    "id": 2,
-    "title": "CSV Engineer GMP",
-    "company": "Donau Diagnostics (Demo)",
-    "source": "jobspy_indeed",
-    "first_seen": "2026-08-25T06:30:00+00:00",
-    "location_text": "Krems an der Donau",
-    "lat": 48.41,
-    "lon": 15.6,
-    "site_label": "Krems",
-    "hard_pass": true,
-    "hard_reasons": {
-      "reasons": [],
-      "flags": []
-    },
-    "fit_score": 72,
-    "travel": {
-      "home": {
-        "minutes": 52,
-        "transfers": 1
-      },
-      "wien": {
-        "minutes": 68,
-        "transfers": 1
-      }
-    },
-    "role_family": "csv_qa_validation",
-    "workplace_mode": "onsite",
-    "contract_type": "permanent",
-    "salary_min_eur_month": 3200,
-    "application_deadline": null
+  "fit_score": 86,
+  "travel": {
+   "wien": {
+    "minutes": 38,
+    "transfers": 1
+   },
+   "home": {
+    "minutes": 71,
+    "transfers": 2
+   }
   },
-  {
-    "id": 3,
-    "title": "Mass Spec Data Analyst",
-    "company": "Salzach Proteomics (Demo)",
-    "source": "vbc",
-    "first_seen": "2026-08-23T06:30:00+00:00",
-    "location_text": "Salzburg",
-    "lat": 47.81,
-    "lon": 13.04,
-    "site_label": "Salzburg",
-    "hard_pass": true,
-    "hard_reasons": {
-      "reasons": [],
-      "flags": [
-        "Befristung endet 2027-03-31",
-        "Standort/Fahrzeit unbekannt"
-      ]
-    },
-    "fit_score": 58,
-    "travel": {},
-    "role_family": "mass_spec",
-    "workplace_mode": "onsite",
-    "contract_type": "fixed_term",
-    "salary_min_eur_month": null,
-    "application_deadline": null
+  "role_family": "bioinformatics",
+  "workplace_mode": "hybrid",
+  "contract_type": "permanent",
+  "salary_min_eur_month": 3600,
+  "application_deadline": null,
+  "recommendation": "bewerben",
+  "position_type": "job",
+  "text_quality": "full",
+  "score_confidence": 84
+ },
+ {
+  "id": 2,
+  "title": "CSV Engineer GMP",
+  "company": "Donau Diagnostics (Demo)",
+  "source": "jobspy_indeed",
+  "first_seen": "2026-08-25T06:30:00+00:00",
+  "location_text": "Krems an der Donau",
+  "lat": 48.41,
+  "lon": 15.6,
+  "site_label": "Krems",
+  "hard_pass": true,
+  "hard_reasons": {
+   "reasons": [],
+   "flags": []
   },
-  {
-    "id": 4,
-    "title": "Senior Principal Scientist Computational Chemistry",
-    "company": "Alpenpharm GmbH (Demo)",
-    "source": "jobspy_linkedin",
-    "first_seen": "2026-08-25T06:30:00+00:00",
-    "location_text": "Wien",
-    "lat": 48.24,
-    "lon": 16.41,
-    "site_label": "Wien Werk",
-    "hard_pass": false,
-    "hard_reasons": {
-      "reasons": [
-        "PhD erforderlich",
-        "Seniorität: senior, 8 Jahre"
-      ],
-      "flags": []
-    },
-    "fit_score": null,
-    "travel": {
-      "wien": {
-        "minutes": 38,
-        "transfers": 1
-      }
-    },
-    "role_family": "scientific_software",
-    "workplace_mode": "hybrid",
-    "contract_type": "permanent",
-    "salary_min_eur_month": 8000,
-    "application_deadline": null
-  }
+  "fit_score": 72,
+  "travel": {
+   "home": {
+    "minutes": 52,
+    "transfers": 1
+   },
+   "wien": {
+    "minutes": 68,
+    "transfers": 1
+   }
+  },
+  "role_family": "csv_qa_validation",
+  "workplace_mode": "onsite",
+  "contract_type": "permanent",
+  "salary_min_eur_month": 3200,
+  "application_deadline": null,
+  "recommendation": "nicht_bewerben",
+  "position_type": "job",
+  "text_quality": "full",
+  "score_confidence": 84
+ },
+ {
+  "id": 3,
+  "title": "PhD Position Computational Drug Discovery",
+  "company": "Donau Institute (Demo)",
+  "source": "vbc",
+  "first_seen": "2026-08-23T06:30:00+00:00",
+  "location_text": "Salzburg",
+  "lat": 47.81,
+  "lon": 13.04,
+  "site_label": "Salzburg",
+  "hard_pass": true,
+  "hard_reasons": {
+   "reasons": [],
+   "flags": [
+    "Standort/Fahrzeit unbekannt"
+   ]
+  },
+  "fit_score": 68,
+  "travel": {},
+  "role_family": "computational_chemistry",
+  "workplace_mode": "onsite",
+  "contract_type": "fixed_term",
+  "salary_min_eur_month": null,
+  "application_deadline": "2026-10-05",
+  "recommendation": "stretch",
+  "position_type": "phd",
+  "text_quality": "stub",
+  "score_confidence": 30
+ },
+ {
+  "id": 4,
+  "title": "Senior Principal Scientist Computational Chemistry",
+  "company": "Alpenpharm GmbH (Demo)",
+  "source": "jobspy_linkedin",
+  "first_seen": "2026-08-25T06:30:00+00:00",
+  "location_text": "Wien",
+  "lat": 48.24,
+  "lon": 16.41,
+  "site_label": "Wien Werk",
+  "hard_pass": false,
+  "hard_reasons": {
+   "reasons": [
+    "PhD erforderlich",
+    "Seniorität: senior, 8 Jahre"
+   ],
+   "flags": []
+  },
+  "fit_score": null,
+  "travel": {
+   "wien": {
+    "minutes": 38,
+    "transfers": 1
+   }
+  },
+  "role_family": "scientific_software",
+  "workplace_mode": "hybrid",
+  "contract_type": "permanent",
+  "salary_min_eur_month": 8000,
+  "application_deadline": null,
+  "recommendation": "nicht_bewerben",
+  "position_type": "job",
+  "text_quality": "full"
+ }
 ]
