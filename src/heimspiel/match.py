@@ -18,7 +18,7 @@ SHORT_CONTRACT_MONTHS = 12
 # keyt nicht auf die Extraktions-Version, daher hier bumpen, um alle Postings gegen
 # die neue Taxonomie neu zu bewerten.
 # v4: Jev (TypeSafe System One) statt Score-LLM; Empfehlung + Stub-Deckel.
-# v5: eine Jev-Hard-No-Frage je Regel statt gebündelt; Life-Science-Tätigkeit als Frage.
+# v5: eine Jev-Hard-No-Frage je Regel statt gebündelt; Life-Science-Tätigkeit als Info-Frage.
 SCORE_VERSION = 5
 SCORE_MODEL = jev.MODEL
 
@@ -101,7 +101,6 @@ HARD_NO_THRESHOLD = 0.8
 # Erster Volllauf 2026-09-24: Jevs Choice sagte "bewerben" auch bei Fachfit 44 und
 # Fachnähe 0,27 (Testperson Marktforschung) — die Formel muss mitreden.
 OFF_DOMAIN = 0.35
-LIFE_SCIENCE_MIN = 0.4
 APPLY_MIN_FIT = 50
 
 
@@ -225,12 +224,9 @@ def decide_recommendation(
             notes.append(f"Fachfremd (Fachnähe {assessment.domain:.2f})")
         rec = "nicht_bewerben"
     if rec == "bewerben":
-        if assessment.life_science < LIFE_SCIENCE_MIN:
-            rec = "stretch"
-            notes.append(
-                f"Tätigkeit kaum naturwissenschaftlich (p={assessment.life_science:.2f})"
-            )
-        elif quality == "stub":
+        # life_science ist nur Information: IT-/KI-Stellen ohne Life-Science-Bezug
+        # können passen (Nutzerentscheidung 2026-09-24), daher kein Deckel.
+        if quality == "stub":
             rec = "stretch"
             notes.append("Stub-Inserat: höchstens Stretch bis zum Volltext")
         elif initiative:

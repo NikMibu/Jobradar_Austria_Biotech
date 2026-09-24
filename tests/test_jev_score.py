@@ -90,7 +90,8 @@ def test_recommendation_overrides():
     assert decide_recommendation(assessment(domain=0.2), "green", "full")[0] == "nicht_bewerben"
     assert decide_recommendation(assessment(), "green", "full", fit_score=44)[0] == "stretch"
     assert decide_recommendation(assessment(), "green", "full", initiative=True)[0] == "stretch"
-    assert decide_recommendation(assessment(life_science=0.1), "green", "full")[0] == "stretch"
+    # IT-/KI-Stellen ohne Life-Science-Bezug dürfen "bewerben" bleiben
+    assert decide_recommendation(assessment(life_science=0.1), "green", "full")[0] == "bewerben"
 
 
 def test_hard_no_probability_turns_formal_red():
