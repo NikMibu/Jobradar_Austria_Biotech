@@ -90,6 +90,7 @@ def test_recommendation_overrides():
     assert decide_recommendation(assessment(domain=0.2), "green", "full")[0] == "nicht_bewerben"
     assert decide_recommendation(assessment(), "green", "full", fit_score=44)[0] == "stretch"
     assert decide_recommendation(assessment(), "green", "full", initiative=True)[0] == "stretch"
+    assert decide_recommendation(assessment(life_science=0.1), "green", "full")[0] == "stretch"
 
 
 def test_hard_no_probability_turns_formal_red():
@@ -111,10 +112,11 @@ def test_questions_cover_requirements_and_phd_only_for_phd():
         ]
     )
     q = jev.build_questions(ex, make_profile(hard_no=["Vertrieb", "Umzug ins Ausland"]))
-    assert {"req_0", "req_1", "domain", "interest", "not_claim", "hard_no", "recommendation"} <= set(q)
+    assert {"req_0", "req_1", "domain", "interest", "not_claim", "hard_no_0", "recommendation"} <= set(q)
+    assert "hard_no_1" not in q  # Standortregel entscheidet in_austria, nicht Jev
     assert "phd_topic" not in q
     assert "RNA-Seq" in q["req_0"].instructions  # must zuerst
-    assert "Ausland" not in q["hard_no"].instructions
+    assert "Ausland" not in q["hard_no_0"].instructions
     assert "phd_topic" in jev.build_questions(make_extraction(position_type="predoc"), make_profile())
 
 

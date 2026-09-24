@@ -65,6 +65,7 @@ class JevAssessment:
     phd_topic: float | None = None
     not_claim: float = 0.0
     hard_no: float = 0.0
+    life_science: float = 1.0
     recommendation_probs: dict[str, float] = field(default_factory=dict)
     confidence: float = 0.0
     input_tokens: int | None = None
@@ -77,6 +78,7 @@ class JevAssessment:
             "phd_topic": self.phd_topic,
             "not_claim": self.not_claim,
             "hard_no": self.hard_no,
+            "life_science": self.life_science,
             "recommendation_probs": self.recommendation_probs,
             "confidence": self.confidence,
             "input_tokens": self.input_tokens,
@@ -171,19 +173,23 @@ def build_questions(ex: Extraction, profile: Profile) -> dict[str, Any]:
             ),
             criteria=FIT_LEVELS,
         )
+    questions["life_science"] = Noul(
+        instructions=(
+            "Ist die Tätigkeit selbst naturwissenschaftlich, biotechnologisch, pharmazeutisch, "
+            "medizinisch oder bioinformatisch — nicht bloß der Kundenkreis oder die Branche?"
+        ),
+    )
     questions["not_claim"] = Noul(
         instructions=(
             "Setzt die Stelle zwingend (als Muss-Anforderung) eine Erfahrung aus "
             "kandidat.nicht_vorhanden voraus? Wünschenswerte Punkte zählen nicht."
         ),
     )
-    hard_no = _location_free_hard_no(profile)
-    if hard_no:
-        questions["hard_no"] = Noul(
-            instructions=(
-                "Fällt die Stelle eindeutig unter eine dieser Ausschlussregeln: "
-                + "; ".join(hard_no) + "?"
-            ),
+    # Eine Noul-Frage je Regel: gebündelt verwässerte die Wahrscheinlichkeit
+    # (C#-Entwickler ohne Life-Science-Bezug nur p=0,61 statt eindeutig).
+    for i, rule in enumerate(_location_free_hard_no(profile)):
+        questions[f"hard_no_{i}"] = Noul(
+            instructions=f"Fällt die Stelle eindeutig unter diese Ausschlussregel: {rule}?",
         )
     questions["recommendation"] = Choice(
         instructions=(
@@ -235,7 +241,10 @@ def parse_response(ex: Extraction, answers: dict[str, Any], input_tokens: int | 
         interest=level("interest", len(FIT_LEVELS)) if "interest" in answers else 0.5,
         phd_topic=level("phd_topic", len(FIT_LEVELS)),
         not_claim=float(answers["not_claim"].noul) if "not_claim" in answers else 0.0,
-        hard_no=float(answers["hard_no"].noul) if "hard_no" in answers else 0.0,
+        hard_no=max(
+            (float(a.noul) for k, a in answers.items() if k.startswith("hard_no")), default=0.0
+        ),
+        life_science=float(answers["life_science"].noul) if "life_science" in answers else 1.0,
         recommendation_probs=(
             {k: round(float(v), 3) for k, v in rec.probabilities.items()} if rec else {}
         ),
