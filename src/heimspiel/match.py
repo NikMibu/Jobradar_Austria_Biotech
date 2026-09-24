@@ -59,8 +59,11 @@ def hard_filter(
     ):
         res.flags.append(f"Seniorität: {ex.seniority}, {ex.years_experience_min or '?'} Jahre")
     if ex.role_family not in profile.role_families_allowed:
-        res.passed = False
-        res.reasons.append(f"Rollenfamilie {ex.role_family} nicht erlaubt")
+        # Kein Ausschluss mehr: Jev bewertet jedes Inserat (kostet praktisch nichts).
+        # Gegencheck 2026-09-24: "Production Supervisor IVD" (role_family other) wäre
+        # sonst ungesehen aussortiert worden — trotz Gesprächseinladung. Vertrieb &
+        # Co. fängt die Hard-No-Frage an Jev ab.
+        res.flags.append(f"Rollenfamilie {ex.role_family} außerhalb des Zielprofils")
     if ex.workplace_mode == "remote":
         pass  # vollständig Remote: Standort/Fahrzeit irrelevant
     elif not in_austria:

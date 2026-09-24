@@ -67,9 +67,10 @@ def test_unstated_experience_is_not_a_formal_warning():
     assert formal_status(make_extraction(), make_profile()) == ("green", [])
 
 
-def test_rule3_role_family():
+def test_rule3_role_family_is_flag_not_exclusion():
     res = hard_filter(make_extraction(role_family="other"), make_profile(), travel_ok=True)
-    assert not res.passed
+    assert res.passed
+    assert any("Rollenfamilie other" in f for f in res.flags)
 
 
 def test_rule4_travel():

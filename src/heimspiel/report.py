@@ -92,6 +92,7 @@ def daily_report(conn: sqlite3.Connection, profile: Profile, days: int = 1) -> s
            JOIN scores s ON s.posting_id = p.id AND s.profile_version = ?
              AND s.score_version = ? AND s.model = ?
            WHERE s.hard_pass = 1 AND r.first_seen >= ?
+             AND COALESCE(s.recommendation, '') != 'nicht_bewerben'
            ORDER BY CASE s.recommendation WHEN 'bewerben' THEN 0 WHEN 'stretch' THEN 1 ELSE 2 END,
                     s.fit_score DESC NULLS LAST""",
         (profile.profile_version, SCORE_VERSION, SCORE_MODEL, cutoff),
