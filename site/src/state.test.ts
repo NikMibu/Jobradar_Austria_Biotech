@@ -75,6 +75,12 @@ describe("frontend state", () => {
     expect(readFilters(filtersUrl({ ...defaultFilters(), position: "phd" }, "/")).position).toBe("phd");
   });
 
+  it("hides expired deadlines unless requested", () => {
+    const jobs = [job({ id: 1, application_deadline: "2020-01-01" }), job({ id: 2, application_deadline: "2999-01-01" })];
+    expect(filterJobs(jobs, defaultFilters(), stored(), null).map((j) => j.id)).toEqual([2]);
+    expect(filterJobs(jobs, { ...defaultFilters(), expired: true }, stored(), null)).toHaveLength(2);
+  });
+
   it("does not let rejected jobs hide an eligible unscored location", () => {
     const groups = groupJobsByLocation([
       job({ id: 1, hard_pass: false, fit_score: null, hard_reasons: { reasons: ["PhD erforderlich"], flags: [] } }),

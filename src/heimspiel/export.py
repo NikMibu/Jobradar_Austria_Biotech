@@ -87,6 +87,7 @@ def _job_rows(conn: sqlite3.Connection, profile: Profile) -> list[dict]:
              AND s.score_version = ? AND s.model = ?
            LEFT JOIN companies c ON c.id = p.company_id
            LEFT JOIN sites st ON st.id = p.site_id
+           WHERE r.duplicate_of IS NULL
            ORDER BY r.first_seen DESC""",
         (profile.profile_version, SCORE_VERSION, SCORE_MODEL),
     ).fetchall()

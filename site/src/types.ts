@@ -120,6 +120,7 @@ export interface Filters {
   color: ColorMode;
   foreign: boolean;
   noLocation: boolean;
+  expired: boolean;
   job: string;
 }
 

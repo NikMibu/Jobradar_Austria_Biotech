@@ -23,7 +23,7 @@ export const REC_LABEL: Record<Segment, string> = {
 export const defaultFilters = (): Filters => ({
   segment: DEFAULT_SEGMENT, position: "", sort: "rec", role: "", source: "", contract: "",
   score: "", days: "", anchor: "", minutes: "", initiative: false, saved: false,
-  color: "score", foreign: false, noLocation: false, job: "",
+  color: "score", foreign: false, noLocation: false, expired: false, job: "",
 });
 
 export function readFilters(search: string): Filters {
@@ -44,6 +44,7 @@ export function readFilters(search: string): Filters {
     color: p.get("color") === "travel" ? "travel" : "score",
     foreign: p.get("foreign") === "hide",
     noLocation: p.get("noloc") === "1",
+    expired: p.get("exp") === "1",
     job: p.get("job") ?? "",
   };
 }
@@ -65,6 +66,7 @@ export function filtersUrl(filters: Filters, pathname: string): string {
   if (filters.color === "travel") p.set("color", "travel");
   if (filters.foreign) p.set("foreign", "hide");
   if (filters.noLocation) p.set("noloc", "1");
+  if (filters.expired) p.set("exp", "1");
   if (filters.job) p.set("job", filters.job);
   const query = p.toString();
   return query ? `?${query}` : pathname;
@@ -126,11 +128,19 @@ export function travelColor(minutes: number | null): string {
   return "#ef4444";
 }
 
+const todayIso = (): string => new Date().toISOString().slice(0, 10);
+
+/** Bewerbungsfrist verstrichen (ISO-Datum aus der Extraktion). */
+export const isExpired = (job: JobSummary, today = todayIso()): boolean =>
+  !!job.application_deadline && job.application_deadline < today;
+
 export function filterJobs(
   jobs: JobSummary[], filters: Filters, state: StoredState, locationKey: string | null,
 ): JobSummary[] {
   const cutoff = filters.days ? Date.now() - Number(filters.days) * 86_400_000 : null;
+  const today = todayIso();
   const output = jobs.filter((job) => {
+    if (!filters.expired && isExpired(job, today)) return false;
     if (!segmentMatches(filters.segment, effectiveSegment(job, state))) return false;
     if (filters.position && positionGroup(job) !== filters.position) return false;
     if (filters.saved && !state.saved.has(job.id)) return false;

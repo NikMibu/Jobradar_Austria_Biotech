@@ -2,7 +2,7 @@ import "./style.css";
 
 import {
   coordinateKey, effectiveRole, effectiveSegment, filterJobs, filtersUrl, groupJobsByLocation,
-  isForeign, POSITIONS, positionGroup, readFilters, REC_LABEL, scoreColor, segmentMatches, SEGMENTS,
+  isExpired, isForeign, POSITIONS, positionGroup, readFilters, REC_LABEL, scoreColor, segmentMatches, SEGMENTS,
 } from "./state";
 import type { MapView } from "./map-view";
 import type {
@@ -285,6 +285,14 @@ async function main() {
       noLocation.textContent = `ohne Standort (${noLocationCount})`;
       noLocation.onclick = () => { filters.noLocation = !filters.noLocation; scheduleRender(true, true); };
       chipbar.appendChild(noLocation);
+    }
+    const expiredCount = jobs.filter((job) => isExpired(job)).length;
+    if (expiredCount) {
+      const expired = document.createElement("button");
+      expired.className = `chip chip-filter${filters.expired ? " on" : ""}`;
+      expired.textContent = `abgelaufene Fristen zeigen (${expiredCount})`;
+      expired.onclick = () => { filters.expired = !filters.expired; scheduleRender(true, true); };
+      chipbar.appendChild(expired);
     }
     const foreignCount = jobs.filter(isForeign).length;
     if (foreignCount) {
