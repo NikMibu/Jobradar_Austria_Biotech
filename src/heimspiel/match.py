@@ -173,10 +173,17 @@ def compute_score(
     )
 
 
+ENTRY_SENIORITY = {"entry", "junior"}
+
+
 def decide_recommendation(
-    assessment: JevAssessment | None, formal: TrafficStatus, quality: str
+    assessment: JevAssessment | None, formal: TrafficStatus, quality: str,
+    seniority: str = "junior",
 ) -> tuple[Recommendation, list[str]]:
-    """Jev-Empfehlung plus harte Python-Regeln, die Jev nicht überstimmen darf."""
+    """Jev-Empfehlung plus harte Python-Regeln, die Jev nicht überstimmen darf.
+
+    Ein verlangter Nicht-Claim (z. B. CSV/GMP-Praxis) heißt bei Einstiegsstellen
+    höchstens "stretch" — dort wird es oft angelernt —, sonst "nicht_bewerben"."""
     if assessment is None or not assessment.recommendation_probs:
         return "nicht_bewerben", ["Rollenfamilie ausgeschlossen"]
     probs = assessment.recommendation_probs
@@ -186,10 +193,17 @@ def decide_recommendation(
         if rec != "nicht_bewerben":
             notes.append("Formale Hürde (Ampel rot)")
         rec = "nicht_bewerben"
-    if assessment.not_claim > NOT_CLAIM_THRESHOLD:
-        if rec != "nicht_bewerben":
+    if assessment.not_claim > NOT_CLAIM_THRESHOLD and rec != "nicht_bewerben":
+        if seniority in ENTRY_SENIORITY:
+            if rec == "bewerben":
+                rec = "stretch"
+                notes.append(
+                    f"Verlangt Erfahrung, die fehlt (p={assessment.not_claim:.2f}) — "
+                    "Einstiegsstelle, daher Stretch"
+                )
+        else:
+            rec = "nicht_bewerben"
             notes.append(f"Verlangt Nicht-Claim (p={assessment.not_claim:.2f})")
-        rec = "nicht_bewerben"
     if quality == "stub" and rec == "bewerben":
         rec = "stretch"
         notes.append("Stub-Inserat: höchstens Stretch bis zum Volltext")
@@ -298,7 +312,7 @@ def score_pending(conn: sqlite3.Connection, profile: Profile, limit: int | None 
             fit = compute_score(ex, assessment, quality)
         formal, formal_reasons = formal_status(ex, profile, assessment)
         practical, practical_reasons = practical_status(ex, travel_ok, in_austria)
-        rec, rec_notes = decide_recommendation(assessment, formal, quality)
+        rec, rec_notes = decide_recommendation(assessment, formal, quality, ex.seniority)
         return (hard, fit, assessment, quality, formal, formal_reasons,
                 practical, practical_reasons, rec, rec_notes)
 
@@ -384,7 +398,7 @@ def recompute_statuses(conn: sqlite3.Connection, profile: Profile) -> int:
         in_austria = locations.is_in_austria(conn, ex.location_text)
         formal, formal_reasons = formal_status(ex, profile, assessment)
         practical, practical_reasons = practical_status(ex, travel_ok, in_austria)
-        rec, rec_notes = decide_recommendation(assessment, formal, quality)
+        rec, rec_notes = decide_recommendation(assessment, formal, quality, ex.seniority)
         conn.execute(
             """UPDATE scores SET formal_status = ?, formal_reasons = ?,
                    practical_status = ?, practical_reasons = ?,

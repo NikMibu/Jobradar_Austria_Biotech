@@ -80,7 +80,9 @@ def test_gaps_are_likely_missing_requirements_must_first():
 def test_recommendation_overrides():
     assert decide_recommendation(assessment(), "green", "full") == ("bewerben", [])
     assert decide_recommendation(assessment(), "red", "full")[0] == "nicht_bewerben"
-    assert decide_recommendation(assessment(not_claim=0.9), "green", "full")[0] == "nicht_bewerben"
+    # Nicht-Claim: Einstiegsstelle höchstens stretch, erfahrene Stelle nicht_bewerben
+    assert decide_recommendation(assessment(not_claim=0.9), "green", "full", "junior")[0] == "stretch"
+    assert decide_recommendation(assessment(not_claim=0.9), "green", "full", "mid")[0] == "nicht_bewerben"
     stretch = assessment(recommendation_probs={"bewerben": 0.2, "stretch": 0.5, "nicht_bewerben": 0.3})
     assert decide_recommendation(stretch, "yellow", "full") == ("stretch", [])
     assert decide_recommendation(None, "green", "full")[0] == "nicht_bewerben"
