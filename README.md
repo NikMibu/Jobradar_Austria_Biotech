@@ -2,7 +2,7 @@
 
 **A personal job radar for life-science and bioinformatics roles in Austria.**
 
-[![CI](https://github.com/NikMibu/heimspiel_jobradar/actions/workflows/ci.yml/badge.svg)](https://github.com/NikMibu/heimspiel_jobradar/actions/workflows/ci.yml)
+[![CI](https://github.com/NikMibu/Jobradar_Austria_Biotech/actions/workflows/ci.yml/badge.svg)](https://github.com/NikMibu/Jobradar_Austria_Biotech/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)](pyproject.toml)
 [![uv](https://img.shields.io/badge/managed%20with-uv-de5fe9)](https://github.com/astral-sh/uv)
@@ -90,7 +90,7 @@ in a lot of small LLM-backed tools, if that's what you're here for:
 ## Run it yourself
 
 ```bash
-git clone https://github.com/NikMibu/heimspiel_jobradar && cd heimspiel_jobradar
+git clone https://github.com/NikMibu/Jobradar_Austria_Biotech && cd Jobradar_Austria_Biotech
 uv sync --extra scrape
 cp config/profile.example.yaml config/profile.local.yaml   # fill in your own profile
 export ANTHROPIC_API_KEY=sk-ant-...
