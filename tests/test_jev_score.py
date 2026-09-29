@@ -171,6 +171,8 @@ def test_score_pending_uses_jev_boundary(conn, monkeypatch):
 
     monkeypatch.setenv("TYPESAFE_API_KEY", "test")
     monkeypatch.setattr(match.jev, "assess", lambda *a, **k: assessment())
+    # Ortsauflösung fragt sonst das LLM (Ollama) — in CI nicht erreichbar
+    monkeypatch.setattr(match.locations, "is_in_austria", lambda *a, **k: True)
     conn.execute(
         "INSERT INTO postings_raw (source, source_id, url, raw_title, raw_text, content_hash, "
         "first_seen, last_seen) VALUES ('t','1','u','Bioinformatiker',?, 'h','2026-09-24','2026-09-24')",
