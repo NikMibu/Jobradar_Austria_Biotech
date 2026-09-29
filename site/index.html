@@ -4,26 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Heimspiel — Jobradar</title>
-    <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
     <div id="app">
       <header id="topbar">
-        <h1>Heimspiel</h1>
+        <h1>Heimspiel <small>Jobradar</small></h1>
         <span id="meta-line"></span>
         <span id="demo-badge" hidden>Demo-Daten</span>
+        <button id="labels-export" hidden>Labels exportieren (0)</button>
       </header>
       <div id="layout">
-        <div id="map"></div>
+        <div id="map-shell">
+          <div id="map"></div>
+          <div id="map-status" role="status">Karte wird vorbereitet …</div>
+        </div>
         <aside id="sidebar">
+          <nav id="segments" class="tabs" aria-label="Empfehlung"></nav>
+          <nav id="positions" class="tabs tabs-sub" aria-label="Stellenart"></nav>
           <div id="filters">
-            <select id="f-segment">
-              <option value="treffer">Treffer</option>
-              <option value="grenzfall">Grenzfälle</option>
-              <option value="alle">Alle</option>
-            </select>
             <select id="f-sort">
+              <option value="rec">Empfehlung ↓</option>
               <option value="score">Score ↓</option>
+              <option value="deadline">Deadline ↑</option>
               <option value="travel">Fahrzeit ↑</option>
               <option value="new">Neu zuerst</option>
             </select>
@@ -38,7 +40,6 @@
             <label>neu ≤ <input id="f-days" type="number" min="1" placeholder="Tage" /> d</label>
             <select id="f-anchor"><option value="">Anker: alle</option></select>
             <label>≤ <input id="f-minutes" type="number" min="0" step="15" placeholder="min" /> min</label>
-            <label class="toggle"><input id="f-initiative" type="checkbox" /> Initiativ-Kandidaten</label>
             <label class="toggle"><input id="f-saved" type="checkbox" /> ★ Merkliste</label>
           </div>
           <div id="chipbar"></div>

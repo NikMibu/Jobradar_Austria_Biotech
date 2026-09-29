@@ -2,7 +2,11 @@ from datetime import date, timedelta
 
 from heimspiel.config import Anchor, Profile
 from heimspiel.extract import Extraction
-from heimspiel.match import hard_filter
+from heimspiel.match import (
+    formal_status,
+    hard_filter,
+    practical_status,
+)
 
 
 def make_profile(**overrides) -> Profile:
@@ -46,25 +50,35 @@ def test_pass_baseline():
 
 def test_rule1_phd_required():
     res = hard_filter(make_extraction(phd_required=True), make_profile(), travel_ok=True)
-    assert not res.passed
-    assert any("PhD" in r for r in res.reasons)
+    assert res.passed
+    assert any("PhD" in r for r in res.flags)
+    assert formal_status(make_extraction(phd_required=True), make_profile())[0] == "red"
 
 
 def test_rule2_seniority_and_experience():
-    assert not hard_filter(make_extraction(seniority="senior"), make_profile(), True).passed
-    assert not hard_filter(
-        make_extraction(years_experience_min=5), make_profile(), True
-    ).passed
+    assert hard_filter(make_extraction(seniority="senior"), make_profile(), True).passed
+    assert hard_filter(make_extraction(years_experience_min=5), make_profile(), True).passed
+    assert formal_status(make_extraction(seniority="senior"), make_profile())[0] == "red"
+    assert formal_status(make_extraction(years_experience_min=5), make_profile())[0] == "red"
     assert hard_filter(make_extraction(years_experience_min=3), make_profile(), True).passed
 
 
-def test_rule3_role_family():
+def test_unstated_experience_is_not_a_formal_warning():
+    assert formal_status(make_extraction(), make_profile()) == ("green", [])
+
+
+def test_rule3_role_family_is_flag_not_exclusion():
     res = hard_filter(make_extraction(role_family="other"), make_profile(), travel_ok=True)
-    assert not res.passed
+    assert res.passed
+    assert any("Rollenfamilie other" in f for f in res.flags)
 
 
 def test_rule4_travel():
-    assert not hard_filter(make_extraction(), make_profile(), travel_ok=False).passed
+    # Kein Ausschluss mehr (Nutzer-Feedback) — nur Flag, sonst verschwinden
+    # echte Österreich-Stellen außerhalb des Fahrzeit-Limits einfach aus dem Radar.
+    outside = hard_filter(make_extraction(), make_profile(), travel_ok=False)
+    assert outside.passed
+    assert any("Fahrzeit-Limit" in f for f in outside.flags)
     unknown = hard_filter(make_extraction(), make_profile(), travel_ok=None)
     assert unknown.passed
     assert any("unbekannt" in f for f in unknown.flags)
@@ -97,3 +111,9 @@ def test_rule5_short_contract_flagged_not_dropped():
     res = hard_filter(make_extraction(contract_end=soon), make_profile(), travel_ok=True)
     assert res.passed
     assert any("Befristung" in f for f in res.flags)
+
+
+def test_practical_traffic_light_is_separate_from_fachscore():
+    assert practical_status(make_extraction(), travel_ok=True, in_austria=True)[0] == "green"
+    assert practical_status(make_extraction(), travel_ok=None, in_austria=True)[0] == "yellow"
+    assert practical_status(make_extraction(), travel_ok=False, in_austria=True)[0] == "red"

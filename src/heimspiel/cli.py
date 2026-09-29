@@ -18,6 +18,7 @@ def fetch(
     karriere: bool = typer.Option(True, help="karriere.at"),
     biotech: bool = typer.Option(True, help="biotechjobs.at"),
     vbc: bool = typer.Option(True, help="Vienna BioCenter"),
+    aithyra: bool = typer.Option(True, help="AITHYRA (Stellen + PhD-Call)"),
     ats: bool = typer.Option(True, help="eRecruiter/SuccessFactors/EURAXESS (config/ats.yaml)"),
     xing: bool = typer.Option(True, help="XING (Stadt-Suchen aus search.yaml)"),
     career_pages: bool = typer.Option(False, "--career-pages", help="Firmen-Karriereseiten (wöchentlich)"),
@@ -47,6 +48,10 @@ def fetch(
         from .sources import vbc as vbc_src
 
         total += run_source("Vienna BioCenter", vbc_src.fetch)
+    if aithyra:
+        from .sources import aithyra as aithyra_src
+
+        total += run_source("AITHYRA", aithyra_src.fetch)
     if karriere:
         from .sources import karriere_at
 
@@ -110,6 +115,8 @@ def extract(limit: int | None = typer.Option(None, help="max. Anzahl")) -> None:
     conn = db.connect()
     pending = len(ex.pending_raws(conn))
     typer.echo(f"{pending} Postings zu extrahieren …")
+    if pending:
+        ex.llm.ensure_available([ex.llm.EXTRACT_MODEL])
     done = ex.extract_pending(conn, limit=limit)
     typer.echo(f"{done} extrahiert.")
 
@@ -126,25 +133,78 @@ def locations(limit: int | None = typer.Option(None, help="max. Anzahl")) -> Non
 
 @app.command("eval-roles")
 def eval_roles(
-    models: str = typer.Option("qwen2.5:7b,qwen3:8b,gpt-oss:20b", help="Kommagetrennte Modellliste"),
+    models: str = typer.Option(
+        "qwen3.5:9b,qwen3.8:27b", help="Kommagetrennte Modellliste"
+    ),
     n_random: int = typer.Option(20, help="Zufalls-Postings zusätzlich zu den Verdachtsfällen"),
 ) -> None:
     """role_family-Klassifikation mehrerer Modelle auf ~30 DB-Postings vergleichen."""
     from . import eval_roles as er
+    from . import llm
 
     conn = db.connect()
-    er.run(conn, [m.strip() for m in models.split(",") if m.strip()], n_random=n_random)
+    selected = [m.strip() for m in models.split(",") if m.strip()]
+    llm.ensure_available(selected)
+    er.run(conn, selected, n_random=n_random)
+
+
+@app.command("eval-ranking")
+def eval_ranking(
+    labels: Path = typer.Option(..., exists=True, readable=True, help="JSONL aus dem UI"),
+    models: str | None = typer.Option(None, help="Kommagetrennte Jev-Modell-IDs"),
+) -> None:
+    """Jev-Modelle read-only gegen persönliche Passt/Vielleicht/Nein-Labels vergleichen."""
+    from . import eval_ranking as ranking
+    from . import jev
+
+    conn = db.connect()
+    profile = cfg.load_profile()
+    selected = models or jev.MODEL
+    selected_models = [m.strip() for m in selected.split(",") if m.strip()]
+    jev.ensure_available()
+    ranking.run(conn, profile, labels, selected_models)
+
+
+@app.command("eval-extraction")
+def eval_extraction(
+    labels: Path = typer.Option(..., exists=True, readable=True, help="Feldlabels als JSONL"),
+    models: str = typer.Option(
+        "qwen3.5:9b,qwen3.8:27b", help="Kommagetrennte Extraktionsmodelle"
+    ),
+) -> None:
+    """Extraktionsmodelle read-only gegen handgelabelte Inseratsfelder vergleichen."""
+    from . import eval_extraction as extraction_eval
+    from . import llm
+
+    conn = db.connect()
+    selected = [model.strip() for model in models.split(",") if model.strip()]
+    llm.ensure_available(selected)
+    extraction_eval.run(conn, labels, selected)
 
 
 @app.command()
-def score(limit: int | None = typer.Option(None)) -> None:
-    """Harte Filter + LLM-Score gegen profile.local.yaml."""
+def score(
+    limit: int | None = typer.Option(None),
+    recompute: bool = typer.Option(
+        False,
+        "--recompute",
+        help="Nur Ampeln + Empfehlung aus gespeichertem Jev-Assessment neu rechnen (kein API-Call)",
+    ),
+) -> None:
+    """Harte Filter + Jev-Score + Bewerbungsempfehlung gegen profile.local.yaml."""
     from . import match
 
     conn = db.connect()
     profile = cfg.load_profile()
+    if recompute:
+        done = match.recompute_statuses(conn, profile)
+        typer.echo(f"{done} Ampeln neu berechnet (kein LLM).")
+        return
     done = match.score_pending(conn, profile, limit=limit)
-    typer.echo(f"{done} Postings gescort (profile_version={profile.profile_version}).")
+    typer.echo(
+        f"{done} Postings gescort (profile_version={profile.profile_version}, "
+        f"score_version={match.SCORE_VERSION}, model={match.SCORE_MODEL})."
+    )
 
 
 @app.command()
@@ -199,16 +259,39 @@ def report(
     typer.echo(f"\n→ {target}")
 
 
+@app.command("reset-db")
+def reset_db(
+    keep_geo: bool = typer.Option(
+        True, "--keep-geo/--all", help="Geocodes, Fahrzeiten und Standort-Cache übernehmen"
+    ),
+    yes: bool = typer.Option(False, "--yes", help="ohne Rückfrage"),
+) -> None:
+    """DB sichern und neu anlegen (Rohdaten, Extraktionen, Scores werden neu erzeugt)."""
+    if not yes:
+        typer.confirm(f"{paths.db_path()} sichern und leeren?", abort=True)
+    backup = db.reset(keep_geo=keep_geo)
+    conn = db.connect()
+    kept = {t: conn.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in db.GEO_TABLES}
+    typer.echo(f"Backup: {backup}\nNeue DB, übernommen: {kept}")
+
+
 @app.command()
 def daily(career_pages: bool | None = typer.Option(None, help="Karriereseiten erzwingen/übergehen (default: sonntags)")) -> None:
     """Kompletter Tageslauf: fetch → extract → locations → companies → travel → score → export → report."""
     with_career = career_pages if career_pages is not None else datetime.now().weekday() == 6
-    fetch(career_pages=with_career)
+    # Jede Stage wird hier als reine Funktion aufgerufen, nicht über Typer — daher
+    # MÜSSEN alle Flags explizit gesetzt werden. Ein ausgelassenes bool-Flag ist
+    # sonst das typer.Option(...)-Sentinel und damit truthy (z. B. score(recompute=…)
+    # übersprang so lautlos das komplette LLM-Scoring).
+    fetch(
+        jobspy=True, karriere=True, biotech=True, vbc=True, aithyra=True, ats=True, xing=True,
+        career_pages=with_career,
+    )
     extract(limit=None)
     locations(limit=None)
     companies(geocode=True)
     travel(rebuild=False)
-    score(limit=None)
+    score(limit=None, recompute=False)
     export()
     report(days=1, out=None)
 

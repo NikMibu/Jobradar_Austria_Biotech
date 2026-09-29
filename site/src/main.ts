@@ -1,583 +1,655 @@
-import maplibregl, { Map as MlMap, Marker } from "maplibre-gl";
-import type { GeoJSONSource, MapLayerMouseEvent } from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
+import "./style.css";
 
-// ---------- Typen (Spiegel des Python-Exports) ----------
-interface Job {
-  id: number;
-  title: string;
-  company: string | null;
-  source: string;
-  url: string | null;
-  alt_urls: string[];
-  first_seen: string;
-  last_seen: string;
-  location_text: string | null;
-  lat: number | null;
-  lon: number | null;
-  site_label: string | null;
-  extraction: Record<string, unknown>;
-  hard_pass: boolean | null;
-  hard_reasons: { reasons: string[]; flags: string[] } | null;
-  fit_score: number | null;
-  fit_reasons: string[] | null;
-  gaps: string[] | null;
-  angle: string | null;
-  travel: Record<string, { minutes: number | null; transfers: number | null }>;
-}
-interface Company {
-  name: string;
-  website: string | null;
-  career_url: string | null;
-  initiative_score: number;
-  summary: string;
-  sites: { label: string; lat: number | null; lon: number | null }[];
-}
-interface Meta {
-  generated_at: string;
-  anchors: { id: string; label: string; max_minutes: number }[];
-  counts: Record<string, number>;
-}
+import {
+  coordinateKey, effectiveRole, effectiveSegment, filterJobs, filtersUrl, groupJobsByLocation,
+  isExpired, isForeign, POSITIONS, positionGroup, readFilters, REC_LABEL, scoreColor, segmentMatches, SEGMENTS,
+} from "./state";
+import type { MapView } from "./map-view";
+import type {
+  Company, Filters, JevEvidence, JobDetail, JobSummary, Meta, PositionType, RankingLabel,
+  Recommendation, StoredState, TrafficStatus,
+} from "./types";
+
+const POSITION_LABEL: Record<PositionType, string> = {
+  job: "Job", phd: "🎓 PhD", predoc: "🎓 Predoc", postdoc: "Postdoc",
+  internship: "Praktikum", thesis: "Abschlussarbeit", initiative: "Initiativ",
+};
+const daysUntil = (iso: string): number => Math.round((Date.parse(iso) - Date.now()) / 86_400_000);
 
 const ROLE_FAMILIES = [
-  "bioinformatics", "data_science", "csv_qa_validation", "lab_analytics",
-  "downstream_process", "mass_spec", "data_steward", "scientific_software",
-  "wet_lab_rnd", "other",
+  "bioinformatics", "data_science", "computational_chemistry", "csv_qa_validation",
+  "lab_analytics", "downstream_process", "mass_spec", "data_steward",
+  "scientific_software", "wet_lab_rnd", "other",
 ];
+const SAVED_KEY = "heimspiel.saved";
+const OVERRIDE_KEY = "heimspiel.roleOverrides";
+const LABEL_KEY = "heimspiel.rankingLabels.v1";
 
-// ---------- Daten laden (Fallback: Demo-Modus) ----------
-async function loadData(): Promise<{ jobs: Job[]; companies: Company[]; meta: Meta; prefix: string; demo: boolean }> {
-  for (const [prefix, demo] of [["data", false], ["data/demo", true]] as const) {
+const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+const esc = (value: string): string => value.replace(/[&<>"']/g, (char) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
+const fmt = (value: unknown): string =>
+  value == null || value === "" ? "–" : Array.isArray(value) ? (value.length ? value.join(", ") : "–") : String(value);
+const daysSince = (iso: string): number => Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 86_400_000));
+const safeUrl = (value: string | null): string | null => {
+  if (!value) return null;
+  try {
+    const url = new URL(value, location.href);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  } catch { return null; }
+};
+const hostOf = (url: string): string => {
+  try { return new URL(url).hostname; } catch { return url.slice(0, 40); }
+};
+
+function parseStorage<T>(key: string, fallback: T): T {
+  try { return JSON.parse(localStorage.getItem(key) ?? "") as T; } catch { return fallback; }
+}
+
+function loadStoredState(): StoredState {
+  return {
+    saved: new Set(parseStorage<number[]>(SAVED_KEY, [])),
+    overrides: parseStorage<Record<string, string>>(OVERRIDE_KEY, {}),
+    labels: parseStorage<Record<string, RankingLabel>>(LABEL_KEY, {}),
+  };
+}
+
+function persistStoredState(state: StoredState) {
+  try {
+    localStorage.setItem(SAVED_KEY, JSON.stringify([...state.saved]));
+    localStorage.setItem(OVERRIDE_KEY, JSON.stringify(state.overrides));
+    localStorage.setItem(LABEL_KEY, JSON.stringify(state.labels));
+  } catch { /* private mode */ }
+}
+
+function normalizeJob(raw: Record<string, unknown>): JobSummary {
+  const extraction = (raw.extraction ?? {}) as Record<string, unknown>;
+  return {
+    ...(raw as unknown as JobSummary),
+    role_family: (raw.role_family ?? extraction.role_family ?? null) as string | null,
+    workplace_mode: (raw.workplace_mode ?? extraction.workplace_mode ?? null) as string | null,
+    contract_type: (raw.contract_type ?? extraction.contract_type ?? null) as string | null,
+    salary_min_eur_month: (raw.salary_min_eur_month ?? extraction.salary_min_eur_month ?? null) as number | null,
+    application_deadline: (raw.application_deadline ?? extraction.application_deadline ?? null) as string | null,
+    score_confidence: (raw.score_confidence ?? null) as number | null,
+    formal_status: (raw.formal_status ?? null) as TrafficStatus | null,
+    practical_status: (raw.practical_status ?? null) as TrafficStatus | null,
+    recommendation: (raw.recommendation ?? null) as Recommendation | null,
+    text_quality: (raw.text_quality ?? null) as JobSummary["text_quality"],
+    position_type: (raw.position_type ?? extraction.position_type ?? "job") as PositionType,
+  };
+}
+
+async function loadData(): Promise<{
+  jobs: JobSummary[]; companies: Company[]; meta: Meta; prefix: string; demo: boolean;
+}> {
+  const prefixes = new URLSearchParams(location.search).get("demo") === "1"
+    ? [["data/demo", true]] as const
+    : [["data", false], ["data/demo", true]] as const;
+  for (const [prefix, demo] of prefixes) {
     try {
-      const [jobs, companies, meta] = await Promise.all(
-        ["jobs.json", "companies.json", "meta.json"].map((f) =>
-          fetch(`./${prefix}/${f}`).then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-        )
-      );
-      return { jobs, companies, meta, prefix, demo };
-    } catch {
-      /* nächster Prefix */
-    }
+      const [rawJobs, companies, meta] = await Promise.all([
+        fetch(`./${prefix}/jobs.json`).then((response) => response.ok ? response.json() : Promise.reject(response.status)),
+        fetch(`./${prefix}/companies.json`).then((response) => response.ok ? response.json() : Promise.reject(response.status)),
+        fetch(`./${prefix}/meta.json`).then((response) => response.ok ? response.json() : Promise.reject(response.status)),
+      ]) as [Record<string, unknown>[], Company[], Meta];
+      return { jobs: rawJobs.map(normalizeJob), companies, meta, prefix, demo };
+    } catch { /* try demo */ }
   }
   throw new Error("Keine Daten gefunden — Pipeline oder Demo-Daten fehlen.");
 }
 
-// ---------- URL-State, Merkliste, Overrides ----------
-type Filters = {
-  segment: string; sort: string; role: string; source: string; contract: string;
-  score: string; days: string; anchor: string; minutes: string;
-  initiative: boolean; saved: boolean; job: string;
-};
-function readFilters(): Filters {
-  const p = new URLSearchParams(location.search);
+function legacyDetail(job: JobSummary): JobDetail | null {
+  if (!job.extraction || !job.last_seen) return null;
   return {
-    segment: p.get("seg") ?? "treffer", sort: p.get("sort") ?? "score",
-    role: p.get("role") ?? "", source: p.get("source") ?? "", contract: p.get("contract") ?? "",
-    score: p.get("score") ?? "", days: p.get("days") ?? "", anchor: p.get("anchor") ?? "",
-    minutes: p.get("minutes") ?? "", initiative: p.get("init") === "1", saved: p.get("saved") === "1",
-    job: p.get("job") ?? "",
+    url: job.url ?? null, alt_urls: job.alt_urls ?? [], last_seen: job.last_seen,
+    extraction: job.extraction, fit_reasons: job.fit_reasons ?? null,
+    gaps: job.gaps ?? null, angle: job.angle ?? null,
+    score_breakdown: job.score_breakdown ?? null, score_evidence: job.score_evidence ?? null,
+    formal_reasons: job.formal_reasons ?? [], practical_reasons: job.practical_reasons ?? [],
+    fallback_model: job.fallback_model ?? null, recommendation_probs: null, recommendation_notes: [],
   };
 }
-function writeFilters(f: Filters) {
-  const p = new URLSearchParams();
-  if (f.segment !== "treffer") p.set("seg", f.segment);
-  if (f.sort !== "score") p.set("sort", f.sort);
-  if (f.role) p.set("role", f.role);
-  if (f.source) p.set("source", f.source);
-  if (f.contract) p.set("contract", f.contract);
-  if (f.score) p.set("score", f.score);
-  if (f.days) p.set("days", f.days);
-  if (f.anchor) p.set("anchor", f.anchor);
-  if (f.minutes) p.set("minutes", f.minutes);
-  if (f.initiative) p.set("init", "1");
-  if (f.saved) p.set("saved", "1");
-  if (f.job) p.set("job", f.job);
-  history.replaceState(null, "", p.size ? `?${p}` : location.pathname);
-}
 
-const SAVED_KEY = "heimspiel.saved";
-const OVERRIDE_KEY = "heimspiel.roleOverrides"; // {jobId: korrigierte role_family}
-function lsGet<T>(key: string, fallback: T): T {
-  try { return JSON.parse(localStorage.getItem(key) ?? "") as T; } catch { return fallback; }
+function normalizeDetail(raw: Partial<JobDetail>): JobDetail {
+  return {
+    url: raw.url ?? null, alt_urls: raw.alt_urls ?? [], last_seen: raw.last_seen ?? "",
+    extraction: raw.extraction ?? {}, fit_reasons: raw.fit_reasons ?? null,
+    gaps: raw.gaps ?? null, angle: raw.angle ?? null,
+    score_breakdown: raw.score_breakdown ?? null, score_evidence: raw.score_evidence ?? null,
+    formal_reasons: raw.formal_reasons ?? [], practical_reasons: raw.practical_reasons ?? [],
+    fallback_model: raw.fallback_model ?? null,
+    recommendation_probs: raw.recommendation_probs ?? null,
+    recommendation_notes: raw.recommendation_notes ?? [],
+  };
 }
-function lsSet(key: string, value: unknown) {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ }
-}
-const getSaved = () => new Set<number>(lsGet<number[]>(SAVED_KEY, []));
-function toggleSaved(id: number) {
-  const s = getSaved();
-  s.has(id) ? s.delete(id) : s.add(id);
-  lsSet(SAVED_KEY, [...s]);
-}
-const getOverrides = () => lsGet<Record<string, string>>(OVERRIDE_KEY, {});
-function setOverride(id: number, family: string | null) {
-  const o = getOverrides();
-  if (family) o[String(id)] = family; else delete o[String(id)];
-  lsSet(OVERRIDE_KEY, o);
-}
-
-// ---------- Farben & Helfer ----------
-function scoreColor(job: Job): string {
-  if (effectiveSegment(job) === "raus") return "#9ca3af";
-  const s = job.fit_score;
-  if (s == null) return "#60a5fa";
-  if (s >= 80) return "#16a34a";
-  if (s >= 60) return "#84cc16";
-  if (s >= 40) return "#f59e0b";
-  return "#ef4444";
-}
-function travelColor(minutes: number | null): string {
-  if (minutes == null) return "#9ca3af";
-  if (minutes <= 45) return "#16a34a";
-  if (minutes <= 60) return "#84cc16";
-  if (minutes <= 90) return "#f59e0b";
-  return "#ef4444";
-}
-function bestTravel(job: Job, anchor: string): number | null {
-  const entries = anchor ? [job.travel[anchor]] : Object.values(job.travel);
-  const mins = entries.filter((t) => t && t.minutes != null).map((t) => t!.minutes!) as number[];
-  return mins.length ? Math.min(...mins) : null;
-}
-// "treffer" | "grenzfall" | "raus" — Overrides holen role_family-Ablehnungen zurück
-function effectiveSegment(job: Job): string {
-  const overridden = getOverrides()[String(job.id)] != null;
-  if (job.hard_pass) return job.hard_reasons?.flags.length ? "grenzfall" : "treffer";
-  if (overridden && job.hard_reasons?.reasons.every((r) => r.startsWith("Rollenfamilie")))
-    return "treffer";
-  return "raus";
-}
-const daysSince = (iso: string) => Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 864e5));
-const fmt = (v: unknown): string =>
-  v == null || v === "" ? "–" : Array.isArray(v) ? (v.length ? v.join(", ") : "–") : String(v);
-const esc = (s: string): string =>
-  s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
-const hostOf = (u: string): string => {
-  try { return new URL(u, location.href).hostname; } catch { return u.slice(0, 40); }
-};
-const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-
-// ---------- App ----------
-let coordFilter: { lat: number; lon: number } | null = null;
-let noLocationFilter = false;
-let foreignFilter = false;
-const isForeign = (j: Job): boolean =>
-  !!j.hard_reasons?.flags.includes("Standort außerhalb Österreichs");
 
 async function main() {
+  const mapModulePromise = import("./map-view");
   const { jobs, companies, meta, prefix, demo } = await loadData();
+  performance.mark("heimspiel:data-loaded");
   if (demo) $("demo-badge").hidden = false;
-  const jobById = new Map(jobs.map((j) => [j.id, j]));
 
-  const map = new maplibregl.Map({
-    container: "map",
-    style: "https://tiles.openfreemap.org/styles/liberty",
-    center: [14.5, 47.8],
-    zoom: 6.3,
-    attributionControl: { compact: true },
-  });
-  map.addControl(new maplibregl.NavigationControl());
+  const jobById = new Map(jobs.map((job) => [job.id, job]));
+  const stored = loadStoredState();
+  let filters = readFilters(location.search);
+  let locationFilter: string | null = null;
+  let mapView: MapView | null = null;
+  let detailsPromise: Promise<Record<string, JobDetail>> | null = null;
+  let renderFrame = 0;
+  let listDirty = true;
+  let mapDirty = true;
+  let inputTimer = 0;
 
-  // Filter-Optionen befüllen
-  const fill = (id: string, values: (string | null)[]) => {
-    const sel = $<HTMLSelectElement>(id);
-    [...new Set(values.filter(Boolean) as string[])].sort().forEach((v) => {
-      const o = document.createElement("option");
-      o.value = o.textContent = v;
-      sel.appendChild(o);
+  const statusBadge = (label: string, status: TrafficStatus | null | undefined): string => {
+    if (!status) return "";
+    const icon = status === "green" ? "●" : status === "yellow" ? "●" : "●";
+    return `<span class="chip status-${status}" title="${esc(label)}">${icon} ${esc(label)}</span>`;
+  };
+
+  const updateLabelsButton = () => {
+    const count = Object.keys(stored.labels).length;
+    const button = $<HTMLButtonElement>("labels-export");
+    button.hidden = count === 0;
+    button.textContent = `Labels exportieren (${count})`;
+  };
+  updateLabelsButton();
+
+  const fillSelect = (id: string, values: (string | null)[]) => {
+    const select = $<HTMLSelectElement>(id);
+    [...new Set(values.filter(Boolean) as string[])].sort().forEach((value) => {
+      const option = document.createElement("option");
+      option.value = option.textContent = value;
+      select.appendChild(option);
     });
   };
-  fill("f-role", jobs.map((j) => String(j.extraction.role_family ?? "")));
-  fill("f-source", jobs.map((j) => j.source));
-  fill("f-contract", jobs.map((j) => String(j.extraction.contract_type ?? "")));
-  const anchorSel = $<HTMLSelectElement>("f-anchor");
-  meta.anchors.forEach((a) => {
-    const o = document.createElement("option");
-    o.value = a.id;
-    o.textContent = `Anker: ${a.label}`;
-    anchorSel.appendChild(o);
+  fillSelect("f-role", jobs.map((job) => job.role_family));
+  fillSelect("f-source", jobs.map((job) => job.source));
+  fillSelect("f-contract", jobs.map((job) => job.contract_type));
+  meta.anchors.forEach((anchor) => {
+    const option = document.createElement("option");
+    option.value = anchor.id;
+    option.textContent = `Anker: ${anchor.label}`;
+    $<HTMLSelectElement>("f-anchor").appendChild(option);
   });
 
-  const f0 = readFilters();
-  $<HTMLSelectElement>("f-segment").value = f0.segment;
-  $<HTMLSelectElement>("f-sort").value = f0.sort;
-  $<HTMLSelectElement>("f-role").value = f0.role;
-  $<HTMLSelectElement>("f-source").value = f0.source;
-  $<HTMLSelectElement>("f-contract").value = f0.contract;
-  $<HTMLInputElement>("f-score").value = f0.score;
-  $<HTMLInputElement>("f-days").value = f0.days;
-  anchorSel.value = f0.anchor;
-  $<HTMLInputElement>("f-minutes").value = f0.minutes;
-  $<HTMLInputElement>("f-initiative").checked = f0.initiative;
-  $<HTMLInputElement>("f-saved").checked = f0.saved;
+  const syncControls = () => {
+    $<HTMLSelectElement>("f-sort").value = filters.sort;
+    $<HTMLSelectElement>("f-color").value = filters.color;
+    $<HTMLSelectElement>("f-role").value = filters.role;
+    $<HTMLSelectElement>("f-source").value = filters.source;
+    $<HTMLSelectElement>("f-contract").value = filters.contract;
+    $<HTMLInputElement>("f-score").value = filters.score;
+    $<HTMLInputElement>("f-days").value = filters.days;
+    $<HTMLSelectElement>("f-anchor").value = filters.anchor;
+    $<HTMLInputElement>("f-minutes").value = filters.minutes;
+    $<HTMLInputElement>("f-saved").checked = filters.saved;
+  };
+  syncControls();
 
-  function currentFilters(): Filters {
-    return {
-      segment: $<HTMLSelectElement>("f-segment").value,
+  const readControls = () => {
+    filters = {
+      ...filters,
       sort: $<HTMLSelectElement>("f-sort").value,
+      color: $<HTMLSelectElement>("f-color").value as Filters["color"],
       role: $<HTMLSelectElement>("f-role").value,
       source: $<HTMLSelectElement>("f-source").value,
       contract: $<HTMLSelectElement>("f-contract").value,
       score: $<HTMLInputElement>("f-score").value,
       days: $<HTMLInputElement>("f-days").value,
-      anchor: anchorSel.value,
+      anchor: $<HTMLSelectElement>("f-anchor").value,
       minutes: $<HTMLInputElement>("f-minutes").value,
-      initiative: $<HTMLInputElement>("f-initiative").checked,
       saved: $<HTMLInputElement>("f-saved").checked,
-      job: new URLSearchParams(location.search).get("job") ?? "",
     };
-  }
+  };
 
-  function applyFilters(f: Filters): Job[] {
-    const saved = getSaved();
-    const cutoff = f.days ? Date.now() - Number(f.days) * 864e5 : null;
-    let out = jobs.filter((j) => {
-      if (f.segment === "treffer" && effectiveSegment(j) === "raus") return false;
-      if (f.segment === "grenzfall" && effectiveSegment(j) !== "grenzfall") return false;
-      if (f.saved && !saved.has(j.id)) return false;
-      if (f.role && j.extraction.role_family !== f.role) return false;
-      if (f.source && j.source !== f.source) return false;
-      if (f.contract && j.extraction.contract_type !== f.contract) return false;
-      if (f.score && (j.fit_score == null || j.fit_score < Number(f.score))) return false;
-      if (cutoff && Date.parse(j.first_seen) < cutoff) return false;
-      if (f.minutes) {
-        const t = bestTravel(j, f.anchor);
-        if (t == null || t > Number(f.minutes)) return false;
-      }
-      if (coordFilter && (j.lat !== coordFilter.lat || j.lon !== coordFilter.lon)) return false;
-      if (noLocationFilter && j.lat != null) return false;
-      if (foreignFilter && isForeign(j)) return false;
-      return true;
-    });
-    const sorters: Record<string, (a: Job, b: Job) => number> = {
-      score: (a, b) => (b.fit_score ?? -1) - (a.fit_score ?? -1),
-      travel: (a, b) => (bestTravel(a, f.anchor) ?? 9e9) - (bestTravel(b, f.anchor) ?? 9e9),
-      new: (a, b) => Date.parse(b.first_seen) - Date.parse(a.first_seen),
-    };
-    out = out.sort(sorters[f.sort] ?? sorters.score);
-    return out;
-  }
+  const writeUrl = () => {
+    const next = filtersUrl(filters, location.pathname);
+    const current = location.search || location.pathname;
+    if (next !== current) history.replaceState(null, "", next);
+  };
 
-  // ---------- Karte: GeoJSON-Cluster statt gestapelter Marker ----------
-  let initiativeMarkers: Marker[] = [];
-  let colorMode: "score" | "travel" = "score";
+  const recPill = (job: JobSummary): string => {
+    const segment = effectiveSegment(job, stored);
+    return `<span class="rec rec-${segment}">${REC_LABEL[segment]}</span>`;
+  };
 
-  function jobsGeojson(list: Job[], f: Filters): GeoJSON.FeatureCollection {
-    return {
-      type: "FeatureCollection",
-      features: list
-        .filter((j) => j.lat != null && j.lon != null)
-        .map((j) => ({
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [j.lon!, j.lat!] },
-          properties: {
-            id: j.id,
-            color: colorMode === "score" ? scoreColor(j) : travelColor(bestTravel(j, f.anchor)),
-          },
-        })),
-    };
-  }
+  const deadlineChip = (job: JobSummary): string => {
+    if (!job.application_deadline) return "";
+    const left = daysUntil(job.application_deadline);
+    const urgent = left >= 0 && left <= 14;
+    const label = left < 0 ? `abgelaufen ${job.application_deadline}` : `bis ${job.application_deadline} (${left} d)`;
+    return `<span class="chip ${urgent ? "chip-urgent" : "chip-warn"}">⏳ ${esc(label)}</span>`;
+  };
 
-  map.on("load", () => {
-    map.addSource("jobs", {
-      type: "geojson",
-      data: jobsGeojson([], readFilters()),
-      cluster: true,
-      clusterMaxZoom: 13,
-      clusterRadius: 42,
-    });
-    map.addLayer({
-      id: "clusters", type: "circle", source: "jobs", filter: ["has", "point_count"],
-      paint: {
-        "circle-color": "#3b82f6", "circle-opacity": 0.85,
-        "circle-radius": ["step", ["get", "point_count"], 14, 10, 18, 50, 24],
-      },
-    });
-    map.addLayer({
-      id: "cluster-count", type: "symbol", source: "jobs", filter: ["has", "point_count"],
-      layout: { "text-field": "{point_count_abbreviated}", "text-size": 12 },
-      paint: { "text-color": "#ffffff" },
-    });
-    map.addLayer({
-      id: "job-points", type: "circle", source: "jobs", filter: ["!", ["has", "point_count"]],
-      paint: {
-        "circle-color": ["get", "color"], "circle-radius": 8,
-        "circle-stroke-width": 1.5, "circle-stroke-color": "#ffffff",
-      },
-    });
-    map.on("click", "clusters", async (e: MapLayerMouseEvent) => {
-      const feat = map.queryRenderedFeatures(e.point, { layers: ["clusters"] })[0];
-      const src = map.getSource("jobs") as GeoJSONSource;
-      const clusterId = feat.properties!.cluster_id as number;
-      const zoom = await src.getClusterExpansionZoom(clusterId);
-      const [lon, lat] = (feat.geometry as GeoJSON.Point).coordinates;
-      if (zoom > map.getMaxZoom() - 0.5 || zoom > 15) {
-        // gleiche Koordinate (z. B. 78× "Wien") — Liste auf diesen Punkt filtern
-        coordFilter = { lat, lon };
-        render();
-      } else {
-        map.easeTo({ center: [lon, lat], zoom });
-      }
-    });
-    map.on("click", "job-points", (e: MapLayerMouseEvent) => {
-      const feat = e.features?.[0];
-      if (!feat) return;
-      const [lon, lat] = (feat.geometry as GeoJSON.Point).coordinates;
-      const siblings = applyFilters(currentFilters()).filter((j) => j.lat === lat && j.lon === lon);
-      if (siblings.length > 1) {
-        coordFilter = { lat, lon };
-        render();
-      } else {
-        openDrawer(jobById.get(feat.properties!.id as number)!, meta);
-      }
-    });
-    for (const id of ["clusters", "job-points"]) {
-      map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer"));
-      map.on("mouseleave", id, () => (map.getCanvas().style.cursor = ""));
-    }
-    addIsochroneLayers(map, meta, prefix);
-    render();
-  });
-
-  // ---------- Karten (Liste) ----------
-  function cardBadges(job: Job, f: Filters): string {
-    const ex = job.extraction;
+  const cardBadges = (job: JobSummary): string => {
     const badges: string[] = [];
-    const role = getOverrides()[String(job.id)] ?? String(ex.role_family ?? "?");
-    badges.push(`<span class="chip chip-role" data-id="${job.id}" title="Klick: Rollenfamilie korrigieren">${esc(role)}${getOverrides()[String(job.id)] ? " ✎" : ""}</span>`);
-    for (const a of meta.anchors) {
-      const t = job.travel[a.id];
-      if (t?.minutes != null && (!f.anchor || f.anchor === a.id)) {
-        const ok = t.minutes <= a.max_minutes;
-        badges.push(`<span class="chip" style="color:${ok ? "var(--ok)" : "var(--bad)"}">${esc(a.id)} ${t.minutes}′</span>`);
+    if (job.position_type && job.position_type !== "job")
+      badges.push(`<span class="chip chip-position">${POSITION_LABEL[job.position_type]}</span>`);
+    badges.push(deadlineChip(job));
+    if (job.text_quality === "stub")
+      badges.push(`<span class="chip chip-stub" title="Inserat ohne verwertbaren Volltext — Score nur aus Titel/Teaser">⚠ dünne Datenbasis</span>`);
+    badges.push(`<span class="chip chip-role" data-action="role" title="Rollenfamilie korrigieren">${esc(effectiveRole(job, stored) || "?")}${stored.overrides[String(job.id)] ? " ✎" : ""}</span>`);
+    for (const anchor of meta.anchors) {
+      const travel = job.travel[anchor.id];
+      if (travel?.minutes != null && (!filters.anchor || filters.anchor === anchor.id)) {
+        const ok = travel.minutes <= anchor.max_minutes;
+        badges.push(`<span class="chip" style="color:${ok ? "var(--ok)" : "var(--bad)"}">${esc(anchor.id)} ${travel.minutes}′</span>`);
       }
     }
-    const wm = String(ex.workplace_mode ?? "");
-    if (wm === "hybrid" || wm === "remote") badges.push(`<span class="chip chip-alt">${wm}</span>`);
+    if (job.workplace_mode === "hybrid" || job.workplace_mode === "remote")
+      badges.push(`<span class="chip chip-alt">${esc(job.workplace_mode)}</span>`);
     if (isForeign(job)) badges.push(`<span class="chip chip-warn" title="Standort außerhalb Österreichs">🌍 Ausland</span>`);
-    if (ex.salary_min_eur_month) badges.push(`<span class="chip">≥ ${Number(ex.salary_min_eur_month).toLocaleString("de-AT")} €</span>`);
-    const ct = String(ex.contract_type ?? "");
-    if (ct && ct !== "permanent" && ct !== "unknown") badges.push(`<span class="chip chip-warn">${ct}</span>`);
-    if (ex.application_deadline) badges.push(`<span class="chip chip-warn">bis ${esc(String(ex.application_deadline))}</span>`);
+    if (job.salary_min_eur_month) badges.push(`<span class="chip">≥ ${job.salary_min_eur_month.toLocaleString("de-AT")} €</span>`);
+    if (job.contract_type && !["permanent", "unknown"].includes(job.contract_type))
+      badges.push(`<span class="chip chip-warn">${esc(job.contract_type)}</span>`);
+    badges.push(statusBadge("formal", job.formal_status));
+    badges.push(statusBadge("praktisch", job.practical_status));
     const open = daysSince(job.first_seen);
-    if (open > 0) badges.push(`<span class="chip chip-dim">${open} d offen</span>`);
+    if (open) badges.push(`<span class="chip chip-dim">${open} d offen</span>`);
     return badges.join("");
-  }
+  };
 
-  function render() {
-    const f = currentFilters();
-    writeFilters(f);
-    const list = $("list");
-    list.innerHTML = "";
+  const renderTabs = () => {
+    const inPosition = jobs.filter((job) => !filters.position || positionGroup(job) === filters.position);
+    const segmentCount = (key: string) =>
+      inPosition.filter((job) => segmentMatches(key, effectiveSegment(job, stored))).length;
+    $("segments").innerHTML = SEGMENTS.map(([key, label]) =>
+      `<button class="tab tab-${key}${filters.segment === key && !filters.initiative ? " on" : ""}" data-segment="${key}">${label}<span class="count">${segmentCount(key)}</span></button>`,
+    ).join("") + `<button class="tab tab-initiative${filters.initiative ? " on" : ""}" data-segment="initiative" title="Firmen ohne passende offene Stelle">Initiativ<span class="count">${companies.length}</span></button>`;
+    const inSegment = jobs.filter((job) => segmentMatches(filters.segment, effectiveSegment(job, stored)));
+    $("positions").innerHTML = POSITIONS.map(([key, label]) => {
+      const count = key ? inSegment.filter((job) => positionGroup(job) === key).length : inSegment.length;
+      return `<button class="tab${filters.position === key ? " on" : ""}" data-position="${key}"${count || !key ? "" : " disabled"}>${label}<span class="count">${count}</span></button>`;
+    }).join("");
+  };
 
-    // Aktive Punkt-Filter als lösbare Chips
+  const renderChips = () => {
     const chipbar = $("chipbar");
-    chipbar.innerHTML = "";
-    if (coordFilter) {
-      const sample = jobs.find((j) => j.lat === coordFilter!.lat && j.lon === coordFilter!.lon);
-      const label = sample?.site_label ?? sample?.location_text ?? "Punkt";
+    chipbar.replaceChildren();
+    if (locationFilter) {
+      const atLocation = jobs.filter((job) =>
+        job.lat != null && job.lon != null && coordinateKey(job.lat, job.lon) === locationFilter);
+      const sample = atLocation[0];
       const chip = document.createElement("button");
-      chip.className = "chip chip-filter";
-      chip.textContent = `📍 ${label} ×`;
-      chip.onclick = () => { coordFilter = null; render(); };
+      chip.className = "chip chip-filter chip-location";
+      chip.textContent = `📍 ${sample?.site_label ?? sample?.location_text ?? "Standort"} · ${atLocation.length} ×`;
+      chip.title = "Standortfilter aufheben";
+      chip.onclick = () => { locationFilter = null; mapView?.highlight(null); scheduleRender(true, true); };
       chipbar.appendChild(chip);
     }
-    const noLoc = document.createElement("button");
-    const noLocCount = jobs.filter((j) => j.lat == null).length;
-    noLoc.className = "chip chip-filter" + (noLocationFilter ? " on" : "");
-    noLoc.textContent = `ohne Standort (${noLocCount})`;
-    noLoc.onclick = () => { noLocationFilter = !noLocationFilter; render(); };
-    chipbar.appendChild(noLoc);
-
+    const noLocationCount = jobs.filter((job) => job.lat == null || job.lon == null).length;
+    if (noLocationCount || filters.noLocation) {
+      const noLocation = document.createElement("button");
+      noLocation.className = `chip chip-filter${filters.noLocation ? " on" : ""}`;
+      noLocation.textContent = `ohne Standort (${noLocationCount})`;
+      noLocation.onclick = () => { filters.noLocation = !filters.noLocation; scheduleRender(true, true); };
+      chipbar.appendChild(noLocation);
+    }
+    const expiredCount = jobs.filter((job) => isExpired(job)).length;
+    if (expiredCount) {
+      const expired = document.createElement("button");
+      expired.className = `chip chip-filter${filters.expired ? " on" : ""}`;
+      expired.textContent = `abgelaufene Fristen zeigen (${expiredCount})`;
+      expired.onclick = () => { filters.expired = !filters.expired; scheduleRender(true, true); };
+      chipbar.appendChild(expired);
+    }
     const foreignCount = jobs.filter(isForeign).length;
     if (foreignCount) {
       const foreign = document.createElement("button");
-      foreign.className = "chip chip-filter" + (foreignFilter ? " on" : "");
+      foreign.className = `chip chip-filter${filters.foreign ? " on" : ""}`;
       foreign.textContent = `Ausland ausblenden (${foreignCount})`;
-      foreign.onclick = () => { foreignFilter = !foreignFilter; render(); };
+      foreign.onclick = () => { filters.foreign = !filters.foreign; scheduleRender(true, true); };
       chipbar.appendChild(foreign);
     }
+  };
 
-    if (f.initiative) {
+  const markSelectedCard = (jobId: number | null) => {
+    for (const element of $("list").querySelectorAll(".card.selected")) element.classList.remove("selected");
+    if (jobId == null) return;
+    const card = $("list").querySelector<HTMLElement>(`[data-job-id="${jobId}"]`);
+    card?.classList.add("selected");
+    card?.scrollIntoView({ block: "nearest" });
+  };
+
+  const setDrawerOpen = (open: boolean) => {
+    const drawer = $("drawer");
+    if (open) {
+      drawer.hidden = false;
+      void drawer.offsetWidth; // reflow, so the slide-in transition runs from the closed state
+      drawer.classList.add("open");
+    } else {
+      drawer.classList.remove("open");
+    }
+    drawer.setAttribute("aria-hidden", String(!open));
+  };
+
+  const renderList = (filtered: JobSummary[]) => {
+    const fragment = document.createDocumentFragment();
+    for (const job of filtered) {
+      const card = document.createElement("article");
+      const segment = effectiveSegment(job, stored);
+      card.className = `card card-${segment}${segment === "nicht" ? " muted" : ""}${
+        String(job.id) === filters.job ? " selected" : ""}`;
+      card.dataset.jobId = String(job.id);
+      card.tabIndex = 0;
+      card.innerHTML = `<div class="card-head"><span class="score" style="background:${scoreColor(job, stored)}" title="Fachfit${job.score_confidence != null ? ` · Datenbasis ${job.score_confidence}/100` : ""}">${job.fit_score ?? "–"}</span>
+        <strong>${esc(job.title)}</strong>${recPill(job)}<button class="star${stored.saved.has(job.id) ? " on" : ""}" data-action="save" title="merken" aria-label="Job merken">★</button></div>
+        <div class="card-sub">${esc(job.company ?? "?")} · ${esc(job.location_text ?? "?")} · <em>${esc(job.source)}</em></div>
+        <div class="card-badges">${cardBadges(job)}</div>`;
+      fragment.appendChild(card);
+    }
+    if (!filtered.length) {
+      const empty = document.createElement("p");
+      empty.className = "empty";
+      empty.textContent = "Keine Treffer mit diesen Filtern.";
+      fragment.appendChild(empty);
+    }
+    $("list").replaceChildren(fragment);
+  };
+
+  const renderInitiative = () => {
+    const fragment = document.createDocumentFragment();
+    for (const company of companies) {
+      const card = document.createElement("article");
+      card.className = "card";
+      const careerUrl = safeUrl(company.career_url);
+      card.innerHTML = `<div class="card-head"><span class="score initiative-score">${company.initiative_score}</span><strong>${esc(company.name)}</strong></div>
+        <div class="card-sub">${esc(company.summary)}</div>${careerUrl ? `<a href="${esc(careerUrl)}" target="_blank" rel="noopener">Karriereseite ↗</a>` : ""}`;
+      fragment.appendChild(card);
+    }
+    if (!companies.length) {
+      const empty = document.createElement("p");
+      empty.className = "empty";
+      empty.textContent = "Noch keine Initiativ-Kandidaten — Historie wächst mit jedem Tag Laufzeit.";
+      fragment.appendChild(empty);
+    }
+    $("list").replaceChildren(fragment);
+  };
+
+  const render = () => {
+    renderFrame = 0;
+    writeUrl();
+    renderTabs();
+    renderChips();
+    if (filters.initiative) {
+      if (listDirty) renderInitiative();
+      if (mapDirty) mapView?.setInitiative(companies);
       $("meta-line").textContent = `${companies.length} Initiativ-Kandidaten · Stand ${new Date(meta.generated_at).toLocaleDateString("de-AT")}`;
-      renderInitiative(list, map, companies);
+    } else {
+      const filtered = filterJobs(jobs, filters, stored, locationFilter);
+      if (listDirty) renderList(filtered);
+      if (mapDirty) mapView?.setLocations(groupJobsByLocation(filtered, filters, stored));
+      const apply = jobs.filter((job) => effectiveSegment(job, stored) === "bewerben").length;
+      $("meta-line").textContent = `${filtered.length} angezeigt · ${apply} zum Bewerben von ${jobs.length} · Stand ${new Date(meta.generated_at).toLocaleDateString("de-AT")}`;
+    }
+    listDirty = mapDirty = false;
+    performance.mark("heimspiel:view-rendered");
+  };
+
+  function scheduleRender(updateList: boolean, updateMap: boolean) {
+    listDirty ||= updateList;
+    mapDirty ||= updateMap;
+    if (!renderFrame) renderFrame = requestAnimationFrame(render);
+  }
+
+  const loadDetail = async (job: JobSummary): Promise<JobDetail> => {
+    const legacy = legacyDetail(job);
+    if (legacy) return legacy;
+    detailsPromise ??= fetch(`./${prefix}/job-details.json`).then((response) => {
+      if (!response.ok) throw new Error(`Details konnten nicht geladen werden (${response.status}).`);
+      return response.json() as Promise<Record<string, JobDetail>>;
+    });
+    const detail = (await detailsPromise)[String(job.id)];
+    if (!detail) throw new Error("Für diesen Job fehlen Detaildaten.");
+    return normalizeDetail(detail);
+  };
+
+  const showDrawer = async (jobId: number) => {
+    const job = jobById.get(jobId);
+    if (!job) return;
+    filters.job = String(job.id);
+    writeUrl();
+    setDrawerOpen(true);
+    markSelectedCard(job.id);
+    if (job.lat != null && job.lon != null) {
+      mapView?.highlight(coordinateKey(job.lat, job.lon));
+      mapView?.focus(job.lat, job.lon);
+    }
+    $("drawer-content").innerHTML = `<h2>${esc(job.title)}</h2><p class="empty">Details werden geladen …</p>`;
+    try {
+      const detail = await loadDetail(job);
+      if (filters.job !== String(job.id)) return;
+      const extraction = detail.extraction;
+      const travel = meta.anchors.flatMap((anchor) => {
+        const value = job.travel[anchor.id];
+        return value?.minutes == null ? [] : [`${anchor.label}: ${value.minutes} min (${value.transfers ?? "?"}×)`];
+      }).join(" · ");
+      const links = [detail.url, ...detail.alt_urls].flatMap((value) => {
+        const url = safeUrl(value);
+        return url ? [`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(hostOf(url))} ↗</a>`] : [];
+      }).join(" ");
+      const rows = [
+        "role_family", "seniority", "education_min", "german_required", "years_experience_min",
+        "salary_min_eur_month", "workplace_mode", "contract_type", "contract_end",
+        "application_deadline", "must_skills", "nice_skills", "domain_keywords",
+      ].filter((key) => {
+        const value = extraction[key];
+        return value != null && value !== "" && !(Array.isArray(value) && !value.length);
+      }).map((key) => `<tr><td>${key}</td><td>${esc(fmt(extraction[key]))}</td></tr>`).join("");
+      const hard = job.hard_reasons;
+      const breakdown = detail.score_breakdown;
+      const breakdownRows = breakdown ? [
+        ["Skills", `${breakdown.skills ?? 0}/60`],
+        ["Domäne", `${breakdown.domain ?? 0}/25`],
+        [job.position_type === "phd" || job.position_type === "predoc" ? "PhD-Thema" : "Interessen", `${breakdown.interests ?? 0}/15`],
+      ].map(([name, value]) => `<tr><td>${name}</td><td>${value}</td></tr>`).join("") : "";
+      const currentLabel = stored.labels[String(job.id)];
+      const jevEvidence = (detail.score_evidence as { jev?: JevEvidence } | null)?.jev;
+      const pct = (value: number) => `${Math.round(value * 100)}%`;
+      const probs = detail.recommendation_probs;
+      const recBars = probs ? ([["bewerben", "Bewerben"], ["stretch", "Stretch"], ["nicht_bewerben", "Nicht"]] as [Recommendation, string][])
+        .map(([key, label]) => `<div class="bar-row"><span>${label}</span><div class="bar"><i class="rec-fill-${key}" style="width:${pct(probs[key] ?? 0)}"></i></div><span>${pct(probs[key] ?? 0)}</span></div>`).join("") : "";
+      const matrix = jevEvidence?.requirements.length ? `<table class="req-matrix"><thead><tr><th>Anforderung</th><th>Profil</th></tr></thead><tbody>${
+        jevEvidence.requirements.map((req) => `<tr title="${esc(req.job_evidence)}"><td>${req.importance === "must" ? "<b>Muss</b> · " : ""}${esc(req.requirement)}</td>
+          <td><div class="stack" aria-label="direkt ${pct(req.p_direct)}, übertragbar ${pct(req.p_transferable)}, fehlt ${pct(req.p_missing)}">
+            <i class="s-direct" style="width:${pct(req.p_direct)}"></i><i class="s-transfer" style="width:${pct(req.p_transferable)}"></i><i class="s-missing" style="width:${pct(req.p_missing)}"></i></div></td></tr>`).join("")
+      }</tbody></table><p class="legend"><i class="s-direct"></i> direkt belegt <i class="s-transfer"></i> übertragbar <i class="s-missing"></i> fehlt</p>` : "";
+      const segment = effectiveSegment(job, stored);
+      $("drawer-content").innerHTML = `<div class="drawer-kicker">${recPill(job)}${job.position_type && job.position_type !== "job" ? `<span class="chip chip-position">${POSITION_LABEL[job.position_type]}</span>` : ""}${deadlineChip(job)}</div>
+        <h2>${esc(job.title)}</h2>
+        <p class="card-sub">${esc(job.company ?? "?")} · ${esc(job.location_text ?? "?")} · seit ${daysSince(job.first_seen)} d · zuletzt gesehen ${new Date(detail.last_seen).toLocaleDateString("de-AT")}</p>
+        <p>${esc(String(extraction.summary_2_lines ?? ""))}</p>${travel ? `<p>🚆 ${esc(travel)}</p>` : ""}
+        ${job.text_quality === "stub" ? `<p class="callout warn">⚠ Dieses Inserat hat kaum Text (Stub). Score und Empfehlung beruhen fast nur auf dem Titel — Originalanzeige lesen, bevor du entscheidest.</p>` : ""}
+        ${jevEvidence && jevEvidence.not_claim > 0.5 ? `<p class="callout bad">Verlangt vermutlich Erfahrung, die du nicht hast (Nicht-Claim, p=${jevEvidence.not_claim.toFixed(2)}).</p>` : ""}
+        ${probs ? `<section class="panel panel-${segment}"><h3>Empfehlung: ${REC_LABEL[segment]}</h3>${recBars}
+          ${detail.recommendation_notes.length ? `<ul class="notes">${detail.recommendation_notes.map((note) => `<li>${esc(note)}</li>`).join("")}</ul>` : ""}</section>` : ""}
+        ${job.fit_score != null ? `<h3>Fachfit: ${job.fit_score}/100</h3>
+          ${breakdownRows ? `<table class="score-breakdown">${breakdownRows}</table>` : ""}
+          <p class="confidence">Datenbasis: ${job.score_confidence ?? "?"}/100</p>
+          <ul>${(detail.fit_reasons ?? []).map((reason) => `<li>${esc(reason)}</li>`).join("")}</ul>` : ""}
+        ${matrix ? `<h3>Anforderungen</h3>${matrix}` : ""}
+        <h3>Einordnung</h3><p>${statusBadge("formal", job.formal_status)} ${statusBadge("praktisch", job.practical_status)}</p>
+        ${detail.formal_reasons.length ? `<ul>${detail.formal_reasons.map((reason) => `<li>Formal: ${esc(reason)}</li>`).join("")}</ul>` : ""}
+        ${detail.practical_reasons.length ? `<ul>${detail.practical_reasons.map((reason) => `<li>Praktisch: ${esc(reason)}</li>`).join("")}</ul>` : ""}
+        ${detail.gaps?.length ? `<h3>Lücken</h3><ul>${detail.gaps.map((gap) => `<li>${esc(gap)}</li>`).join("")}</ul>` : ""}
+        ${detail.angle ? `<h3>Angle</h3><p><em>${esc(detail.angle)}</em></p>` : ""}
+        <h3>Meine Bewertung</h3><div class="ranking-labels">
+          ${([['yes', 'Passt'], ['maybe', 'Vielleicht'], ['no', 'Nein']] as [RankingLabel, string][]).map(([value, label]) => `<button data-action="label" data-label="${value}" class="label-button${currentLabel === value ? " on" : ""}">${label}</button>`).join("")}
+        </div>
+        ${hard && (hard.reasons.length || hard.flags.length) ? `<h3>Filter</h3><ul>${[...hard.reasons.map((reason) => `❌ ${reason}`), ...hard.flags.map((flag) => `⚠️ ${flag}`)].map((value) => `<li>${esc(value)}</li>`).join("")}</ul>` : ""}
+        <h3>Extraktion</h3><table class="ex-table">${rows}</table><p>${links}</p>`;
+    } catch (error) {
+      $("drawer-content").innerHTML = `<h2>${esc(job.title)}</h2><p class="empty">${esc(String(error))}</p>`;
+    }
+  };
+
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    filters.job = "";
+    writeUrl();
+    markSelectedCard(null);
+    mapView?.highlight(locationFilter);
+  };
+
+  $("list").addEventListener("click", (event) => {
+    const target = event.target as HTMLElement;
+    const card = target.closest<HTMLElement>("[data-job-id]");
+    if (!card) return;
+    const jobId = Number(card.dataset.jobId);
+    if (target.closest('[data-action="save"]')) {
+      event.stopPropagation();
+      stored.saved.has(jobId) ? stored.saved.delete(jobId) : stored.saved.add(jobId);
+      persistStoredState(stored);
+      if (filters.saved) scheduleRender(true, true);
+      else target.closest(".star")?.classList.toggle("on", stored.saved.has(jobId));
       return;
     }
-    for (const m of initiativeMarkers) m.remove();
-    initiativeMarkers = [];
-
-    const filtered = applyFilters(f);
-    const treffer = jobs.filter((j) => effectiveSegment(j) !== "raus").length;
-    $("meta-line").textContent =
-      `${filtered.length} angezeigt · ${treffer} Treffer von ${jobs.length} · Stand ${new Date(meta.generated_at).toLocaleDateString("de-AT")}`;
-
-    const saved = getSaved();
-    for (const job of filtered) {
-      const seg = effectiveSegment(job);
-      const card = document.createElement("div");
-      card.className = "card" + (seg === "raus" ? " muted" : "");
-      card.innerHTML = `
-        <div class="card-head">
-          <span class="score" style="background:${scoreColor(job)}">${job.fit_score ?? "–"}</span>
-          <strong>${esc(job.title)}</strong>
-          <button class="star${saved.has(job.id) ? " on" : ""}" title="merken">★</button>
-        </div>
-        <div class="card-sub">${esc(job.company ?? "?")} · ${esc(job.location_text ?? "?")} · <em>${esc(job.source)}</em></div>
-        <div class="card-badges">${cardBadges(job, f)}</div>`;
-      card.querySelector(".star")!.addEventListener("click", (e) => {
-        e.stopPropagation();
-        toggleSaved(job.id);
-        (e.target as HTMLElement).classList.toggle("on"); // in-place, kein Full-Rerender
-      });
-      card.querySelector(".chip-role")!.addEventListener("click", (e) => {
-        e.stopPropagation();
-        openRolePicker(e.target as HTMLElement, job, () => render());
-      });
-      card.addEventListener("click", () => openDrawer(job, meta));
-      list.appendChild(card);
+    const roleChip = target.closest<HTMLElement>('[data-action="role"]');
+    if (roleChip) {
+      event.stopPropagation();
+      document.querySelector(".role-picker")?.remove();
+      const select = document.createElement("select");
+      select.className = "role-picker";
+      select.innerHTML = `<option value="">– Original: ${esc(jobById.get(jobId)?.role_family ?? "?")} –</option>` +
+        ROLE_FAMILIES.map((role) => `<option value="${role}">${role}</option>`).join("");
+      select.value = stored.overrides[String(jobId)] ?? "";
+      select.onchange = () => {
+        if (select.value) stored.overrides[String(jobId)] = select.value;
+        else delete stored.overrides[String(jobId)];
+        persistStoredState(stored);
+        select.remove();
+        scheduleRender(true, true);
+      };
+      select.onblur = () => select.remove();
+      roleChip.after(select);
+      select.focus();
+      return;
     }
-    if (!filtered.length) list.innerHTML += "<p class='empty'>Keine Treffer mit diesen Filtern.</p>";
-
-    const src = map.getSource("jobs") as GeoJSONSource | undefined;
-    src?.setData(jobsGeojson(applyFilters({ ...f, segment: f.segment }), f) as never);
-  }
-
-  function renderInitiative(list: HTMLElement, map: MlMap, companies: Company[]) {
-    (map.getSource("jobs") as GeoJSONSource | undefined)?.setData(
-      { type: "FeatureCollection", features: [] } as never
-    );
-    for (const c of companies) {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <div class="card-head"><span class="score" style="background:#7c3aed">${c.initiative_score}</span>
-        <strong>${esc(c.name)}</strong></div>
-        <div class="card-sub">${esc(c.summary)}</div>
-        ${c.career_url ? `<a href="${esc(c.career_url)}" target="_blank" rel="noopener">Karriereseite ↗</a>` : ""}`;
-      list.appendChild(card);
-      for (const s of c.sites) {
-        if (s.lat != null && s.lon != null) {
-          initiativeMarkers.push(
-            new maplibregl.Marker({ color: "#7c3aed" }).setLngLat([s.lon, s.lat]).addTo(map)
-          );
-        }
-      }
-    }
-    if (!companies.length)
-      list.innerHTML = "<p class='empty'>Noch keine Initiativ-Kandidaten — Historie wächst mit jedem Tag Laufzeit.</p>";
-  }
-
-  // Farbmodus-Umschalter
-  $<HTMLSelectElement>("f-color").addEventListener("change", (e) => {
-    colorMode = (e.target as HTMLSelectElement).value as "score" | "travel";
-    render();
+    void showDrawer(jobId);
   });
-  document.querySelectorAll("#filters select, #filters input").forEach((el) =>
-    el.addEventListener(el.tagName === "SELECT" ? "change" : "input", render)
-  );
-  $("drawer-close").addEventListener("click", () => closeDrawer());
 
-  // Deeplink ?job=<id>
-  const deepJob = readFilters().job;
-  if (deepJob && jobById.has(Number(deepJob))) openDrawer(jobById.get(Number(deepJob))!, meta);
+  $("list").addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    const card = (event.target as HTMLElement).closest<HTMLElement>("[data-job-id]");
+    if (card) void showDrawer(Number(card.dataset.jobId));
+  });
+
+  document.querySelectorAll<HTMLElement>("#filters select, #filters input").forEach((element) => {
+    const handle = () => {
+      readControls();
+      scheduleRender(element.id !== "f-color", element.id !== "f-sort");
+    };
+    if (element instanceof HTMLInputElement && element.type === "number") {
+      element.addEventListener("input", () => {
+        window.clearTimeout(inputTimer);
+        inputTimer = window.setTimeout(handle, 120);
+      });
+    } else element.addEventListener("change", handle);
+  });
+  $("segments").addEventListener("click", (event) => {
+    const tab = (event.target as HTMLElement).closest<HTMLElement>("[data-segment]");
+    if (!tab) return;
+    const segment = tab.dataset.segment!;
+    if (segment === "initiative") filters.initiative = !filters.initiative;
+    else { filters.initiative = false; filters.segment = segment; }
+    syncControls();
+    scheduleRender(true, true);
+  });
+  $("positions").addEventListener("click", (event) => {
+    const tab = (event.target as HTMLElement).closest<HTMLElement>("[data-position]");
+    if (!tab) return;
+    filters.position = tab.dataset.position!;
+    scheduleRender(true, true);
+  });
+  $("drawer-close").addEventListener("click", closeDrawer);
+
+  $("drawer-content").addEventListener("click", (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-action="label"]');
+    if (!button || !filters.job) return;
+    const label = button.dataset.label as RankingLabel;
+    const existing = stored.labels[filters.job];
+    if (existing === label) delete stored.labels[filters.job];
+    else stored.labels[filters.job] = label;
+    persistStoredState(stored);
+    button.parentElement?.querySelectorAll(".label-button").forEach((element) => element.classList.remove("on"));
+    if (existing !== label) button.classList.add("on");
+    updateLabelsButton();
+  });
+
+  $("labels-export").addEventListener("click", () => {
+    const timestamp = new Date().toISOString();
+    const lines = Object.entries(stored.labels).flatMap(([id, label]) => {
+      const job = jobById.get(Number(id));
+      return job ? [JSON.stringify({
+        posting_id: job.id, label, profile_version: meta.profile_version ?? null,
+        title: job.title, company: job.company, timestamp,
+      })] : [];
+    });
+    const blob = new Blob([`${lines.join("\n")}\n`], { type: "application/x-ndjson" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `heimspiel-ranking-labels-${new Date().toISOString().slice(0, 10)}.jsonl`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { closeDrawer(); return; }
+    if (!$("drawer").classList.contains("open")) return;
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    const target = event.target as HTMLElement;
+    if (target.matches("input, select, textarea")) return;
+    const cards = [...$("list").querySelectorAll<HTMLElement>("[data-job-id]")];
+    const index = cards.findIndex((card) => card.dataset.jobId === filters.job);
+    const next = cards[index + (event.key === "ArrowDown" ? 1 : -1)];
+    if (index !== -1 && next) {
+      event.preventDefault();
+      void showDrawer(Number(next.dataset.jobId));
+    }
+  });
+
   render();
-}
+  performance.mark("heimspiel:list-ready");
+  if (filters.job && jobById.has(Number(filters.job))) void showDrawer(Number(filters.job));
 
-// ---------- Rollen-Korrektur (Override → localStorage, Few-Shot-Material) ----------
-function openRolePicker(anchorEl: HTMLElement, job: Job, onDone: () => void) {
-  document.querySelector(".role-picker")?.remove();
-  const sel = document.createElement("select");
-  sel.className = "role-picker";
-  sel.innerHTML =
-    `<option value="">– Original: ${esc(String(job.extraction.role_family))} –</option>` +
-    ROLE_FAMILIES.map((r) => `<option value="${r}">${r}</option>`).join("");
-  sel.value = getOverrides()[String(job.id)] ?? "";
-  sel.addEventListener("change", () => {
-    setOverride(job.id, sel.value || null);
-    sel.remove();
-    onDone();
-  });
-  sel.addEventListener("blur", () => sel.remove());
-  anchorEl.after(sel);
-  sel.focus();
-}
-
-// ---------- Isochronen (M5) ----------
-async function addIsochroneLayers(map: MlMap, meta: Meta, prefix: string) {
-  for (const a of meta.anchors) {
-    try {
-      const resp = await fetch(`./${prefix}/isochrones/${a.id}.geojson`);
-      if (!resp.ok) continue;
-      const gj = await resp.json();
-      map.addSource(`iso-${a.id}`, { type: "geojson", data: gj });
-      map.addLayer({
-        id: `iso-${a.id}`, type: "fill", source: `iso-${a.id}`,
-        paint: {
-          "fill-color": ["step", ["get", "class"], "#16a34a", 46, "#84cc16", 61, "#f59e0b", 91, "#ef4444"],
-          "fill-opacity": 0.18,
+  requestAnimationFrame(() => {
+    void mapModulePromise.then(({ createMapView }) => {
+      mapView = createMapView({
+        container: "map", meta, dataPrefix: prefix, filtersElement: $("filters"),
+        onLocation: (key, firstJobId, count) => {
+          const anchorJob = jobById.get(firstJobId);
+          if (anchorJob?.lat != null && anchorJob.lon != null)
+            mapView?.focus(anchorJob.lat, anchorJob.lon);
+          if (count === 1) {
+            void showDrawer(firstJobId);
+          } else {
+            locationFilter = key;
+            mapView?.highlight(key);
+            scheduleRender(true, true);
+            $("list").scrollTo({ top: 0, behavior: "smooth" });
+          }
         },
-      }, "clusters");
-      const label = document.createElement("label");
-      label.className = "toggle iso-toggle";
-      label.innerHTML = `<input type="checkbox" checked /> Iso: ${esc(a.label)}`;
-      label.querySelector("input")!.addEventListener("change", (e) => {
-        map.setLayoutProperty(`iso-${a.id}`, "visibility",
-          (e.target as HTMLInputElement).checked ? "visible" : "none");
+        onStatus: (message, mode) => {
+          const status = $("map-status");
+          status.textContent = message;
+          status.hidden = mode === "ready";
+          $("map").dataset.status = mode;
+        },
       });
-      $("filters").appendChild(label);
-    } catch { /* keine Isochronen vorhanden */ }
-  }
+      const deepLinked = filters.job ? jobById.get(Number(filters.job)) : undefined;
+      if (deepLinked?.lat != null && deepLinked.lon != null)
+        mapView.highlight(coordinateKey(deepLinked.lat, deepLinked.lon));
+      else if (locationFilter) mapView.highlight(locationFilter);
+      scheduleRender(false, true);
+    }).catch(() => {
+      const status = $("map-status");
+      status.textContent = "Karte kann in diesem Browser nicht gestartet werden.";
+      status.hidden = false;
+      $("map").dataset.status = "fallback";
+    });
+  });
 }
 
-// ---------- Drawer ----------
-function openDrawer(job: Job, meta: Meta) {
-  const ex = job.extraction;
-  const travel = meta.anchors
-    .map((a) => {
-      const t = job.travel[a.id];
-      return t?.minutes != null ? `${a.label}: ${t.minutes} min (${t.transfers ?? "?"}×)` : null;
-    })
-    .filter(Boolean)
-    .join(" · ");
-  const links = [job.url, ...job.alt_urls].filter(Boolean)
-    .map((u) => `<a href="${esc(u!)}" target="_blank" rel="noopener">${esc(hostOf(u!))} ↗</a>`)
-    .join(" ");
-  const hard = job.hard_reasons;
-  // Nur belegte Felder zeigen — leere Zeilen sind Rauschen
-  const exRows = [
-    "role_family", "seniority", "education_min", "german_required", "years_experience_min",
-    "salary_min_eur_month", "workplace_mode", "contract_type", "contract_end",
-    "application_deadline", "must_skills", "nice_skills", "domain_keywords",
-  ]
-    .filter((k) => { const v = ex[k]; return v != null && v !== "" && !(Array.isArray(v) && !v.length); })
-    .map((k) => `<tr><td>${k}</td><td>${esc(fmt(ex[k]))}</td></tr>`)
-    .join("");
-  $("drawer-content").innerHTML = `
-    <h2>${esc(job.title)}</h2>
-    <p class="card-sub">${esc(job.company ?? "?")} · ${esc(job.location_text ?? "?")} · seit ${daysSince(job.first_seen)} d · zuletzt gesehen ${new Date(job.last_seen).toLocaleDateString("de-AT")}</p>
-    <p>${esc(String(ex.summary_2_lines ?? ""))}</p>
-    ${travel ? `<p>🚆 ${travel}</p>` : ""}
-    ${job.fit_score != null ? `<h3>Score: ${job.fit_score}/100</h3><ul>${(job.fit_reasons ?? []).map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
-    ${job.gaps?.length ? `<h3>Lücken</h3><ul>${job.gaps.map((g) => `<li>${esc(g)}</li>`).join("")}</ul>` : ""}
-    ${job.angle ? `<h3>Angle</h3><p><em>${esc(job.angle)}</em></p>` : ""}
-    ${hard && (hard.reasons.length || hard.flags.length)
-      ? `<h3>Filter</h3><ul>${[...hard.reasons.map((r) => `❌ ${r}`), ...hard.flags.map((f) => `⚠️ ${f}`)]
-          .map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`
-      : ""}
-    <h3>Extraktion</h3>
-    <table class="ex-table">${exRows}</table>
-    <p>${links}</p>`;
-  $("drawer").hidden = false;
-  const p = new URLSearchParams(location.search);
-  p.set("job", String(job.id));
-  history.replaceState(null, "", `?${p}`);
-}
-function closeDrawer() {
-  $("drawer").hidden = true;
-  const p = new URLSearchParams(location.search);
-  p.delete("job");
-  history.replaceState(null, "", p.size ? `?${p}` : location.pathname);
-}
-
-main().catch((e) => {
-  document.getElementById("list")!.innerHTML = `<p class='empty'>${esc(String(e))}</p>`;
+main().catch((error) => {
+  $("list").innerHTML = `<p class="empty">${esc(String(error))}</p>`;
 });

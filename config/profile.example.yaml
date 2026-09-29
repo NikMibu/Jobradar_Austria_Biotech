@@ -6,10 +6,16 @@ profile_version: 1
 earliest_start: 2026-10-01
 education: msc_bioinformatics
 phd_wanted: false
+# Fließtext-Lebenslauf: Jev bekommt ihn als Kandidaten-State (jev.py).
+cv_summary: >-
+  MSc Bioinformatik mit zwei Jahren Praxis in NGS-Pipelines und Datenanalyse.
+# Nur bei phd_wanted: Themen, gegen die Doktoratsstellen bewertet werden.
+phd_interests: []
 role_families_allowed:
   [bioinformatics, data_science, csv_qa_validation, lab_analytics,
    downstream_process, mass_spec, data_steward, scientific_software, wet_lab_rnd]
 seniority_allowed: [entry, junior, mid]
+max_years_experience: 3
 interests:
   - Computational Biology / Bioinformatik-Pipelines
   - Data Science im Life-Science-Umfeld
@@ -18,6 +24,9 @@ skills:
   programming: [Python, R, Bash, SQL]
   bioinformatics: [NGS-Pipelines, Nextflow, RNA-Seq]
   other: [Docker, Git, Linux]
+# Ausdrücklich NICHT vorhandene Erfahrung — Jev wertet sie als fehlend, und eine
+# Stelle, die sie zwingend verlangt, wird "nicht_bewerben".
+not_claims: [GMP-Erfahrung, Personalführung]
 hard_no: [Vertrieb, Callcenter, reine Softwaretests ohne Life-Science-Bezug]
 # Anker als Bahnhöfe, nicht Adressen: besseres Routing, nichts Privates im Repo.
 # Eigene Bahnhöfe eintragen und lat/lon ergänzen (z. B. via openstreetmap.org

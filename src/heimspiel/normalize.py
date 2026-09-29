@@ -39,8 +39,25 @@ def content_hash(title: str | None, company: str | None, location: str | None) -
     return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
 
+def company_clusters(names: set[str]) -> dict[str, str]:
+    """Normalisierte Firmennamen auf einen Cluster-Schlüssel abbilden: Ein Name, dessen
+    Wortfolge Präfix eines anderen ist, gehört zu dessen Firma ("myllia" ~ "myllia
+    biotechnology", "boehringer ingelheim" ~ "boehringer ingelheim rcv"). Bewusst kein
+    Fuzzy-Match — "medizinische universität wien" ≠ "... graz"."""
+    ordered = sorted((n for n in names if n), key=lambda n: (len(n.split()), n))
+    keys: dict[str, str] = {}
+    for name in ordered:
+        tokens = name.split()
+        keys[name] = next(
+            (keys[short] for short in ordered
+             if short in keys and tokens[: len(short.split())] == short.split()),
+            name,
+        )
+    return keys
+
+
 def dedup(conn: sqlite3.Connection) -> int:
-    """Markiert Duplikate über Quellen: gleiche (normalisierte) Firma, Titel-Ähnlichkeit
+    """Markiert Duplikate über Quellen: gleiche (normalisierte, s. company_clusters) Firma, Titel-Ähnlichkeit
     token_set_ratio >= 92, innerhalb von 60 Tagen. Gewinner = längster Text; ein bereits
     extrahierter Kanon bleibt Kanon, damit Postings nicht neu extrahiert werden müssen."""
     cutoff = (datetime.now(UTC) - timedelta(days=DEDUP_WINDOW_DAYS)).isoformat()
@@ -54,8 +71,9 @@ def dedup(conn: sqlite3.Connection) -> int:
     ).fetchall()
 
     by_company: dict[str, list[sqlite3.Row]] = {}
+    keys = company_clusters({norm_company(r["raw_company"]) for r in rows})
     for r in rows:
-        by_company.setdefault(norm_company(r["raw_company"]), []).append(r)
+        by_company.setdefault(keys.get(norm_company(r["raw_company"]), ""), []).append(r)
 
     marked = 0
     for company, group in by_company.items():

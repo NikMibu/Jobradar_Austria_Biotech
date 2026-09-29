@@ -1,4 +1,11 @@
-from heimspiel.normalize import content_hash, dedup, match_company, norm_company, norm_text
+from heimspiel.normalize import (
+    company_clusters,
+    content_hash,
+    dedup,
+    match_company,
+    norm_company,
+    norm_text,
+)
 from heimspiel.sources.base import RawPosting, store_postings
 
 
@@ -65,6 +72,27 @@ def test_dedup_different_companies_untouched(conn):
         ],
     )
     assert dedup(conn) == 0
+
+
+def test_dedup_company_name_prefix_variants(conn):
+    store_postings(
+        conn,
+        [
+            _p("biotechjobs", "a", "Bioinformatician", "Myllia Biotechnology GmbH", "x" * 100),
+            _p("vbc", "b", "Bioinformatician (m/f/d)", "Myllia", "x" * 50),
+            _p("indeed", "c", "PhD Student", "Medizinische Universität Wien", "x"),
+            _p("indeed", "d", "PhD Student", "Medizinische Universität Graz", "x"),
+        ],
+    )
+    assert dedup(conn) == 1
+
+
+def test_company_clusters_prefix_only():
+    keys = company_clusters({"myllia", "myllia biotechnology", "imba", "imba institute of molecular"})
+    assert keys["myllia biotechnology"] == keys["myllia"] == "myllia"
+    assert keys["imba institute of molecular"] == "imba"
+    other = company_clusters({"medizinische universitat wien", "medizinische universitat graz"})
+    assert other["medizinische universitat wien"] != other["medizinische universitat graz"]
 
 
 def test_match_company_fuzzy(conn):

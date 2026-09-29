@@ -10,9 +10,12 @@ dependencies = [
     "pyyaml>=6.0",
     "pydantic>=2.7",
     "anthropic>=0.40",
+    "openai>=1.50",
+    "python-dotenv>=1.0",
     "rapidfuzz>=3.9",
     "requests>=2.32",
     "beautifulsoup4>=4.12",
+    "typesafe-sdk>=0.7.1",
 ]
 
 [project.optional-dependencies]

@@ -37,6 +37,7 @@ class RoleOnly(BaseModel):
         "mass_spec",
         "data_steward",
         "scientific_software",
+        "wet_lab_rnd",
         "other",
     ]
     seniority: Literal["entry", "junior", "mid", "senior"]

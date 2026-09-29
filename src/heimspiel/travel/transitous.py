@@ -72,7 +72,8 @@ def compute_missing(conn: sqlite3.Connection, profile: Profile) -> int:
                   a.id AS anchor_id, a.lat AS alat, a.lon AS alon
            FROM sites s CROSS JOIN anchors a
            LEFT JOIN travel_times t ON t.site_id = s.id AND t.anchor_id = a.id
-           WHERE t.site_id IS NULL AND s.lat IS NOT NULL AND s.lon IS NOT NULL"""
+           WHERE t.site_id IS NULL AND s.lat IS NOT NULL AND s.lon IS NOT NULL
+             AND s.in_austria = 1"""
     ).fetchall()
     when = next_tuesday_7am()
     now = datetime.now(UTC).isoformat(timespec="seconds")

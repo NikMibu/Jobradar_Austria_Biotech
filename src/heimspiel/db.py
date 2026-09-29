@@ -131,6 +131,55 @@ MIGRATIONS: list[list[str]] = [
         # in derselben Änderung erzwingt ohnehin die Neuauflösung aller Einträge.
         "ALTER TABLE location_cache ADD COLUMN in_austria INTEGER NOT NULL DEFAULT 1",
     ],
+    [
+        # Auslands-Sites sollen auf der Karte erscheinen (Nutzer-Wunsch), aber
+        # keine Transitous-Fahrzeiten bekommen (sinnlose Routen, Policy: Last
+        # klein halten) — travel/transitous.py filtert auf in_austria=1.
+        "ALTER TABLE sites ADD COLUMN in_austria INTEGER NOT NULL DEFAULT 1",
+    ],
+    [
+        # Evidenzbasiertes Ranking v2. Der alte Primärschlüssel
+        # (posting_id, profile_version) konnte entgegen der Cache-Konvention nur
+        # ein Modell/eine Formel je Profil halten. Der Rebuild erhält v1-Scores
+        # und macht Formel + Modell zu echten Teilen des Cache-Keys.
+        """CREATE TABLE scores_new(
+            posting_id INTEGER NOT NULL REFERENCES postings(id),
+            profile_version INTEGER NOT NULL,
+            hard_pass INTEGER NOT NULL,
+            hard_reasons TEXT,
+            fit_score INTEGER,
+            fit_reasons TEXT,
+            gaps TEXT,
+            angle TEXT,
+            model TEXT NOT NULL,
+            scored_at TEXT NOT NULL,
+            score_version INTEGER NOT NULL DEFAULT 1,
+            score_breakdown TEXT,
+            score_confidence INTEGER,
+            score_evidence TEXT,
+            formal_status TEXT,
+            formal_reasons TEXT,
+            practical_status TEXT,
+            practical_reasons TEXT,
+            fallback_model TEXT,
+            PRIMARY KEY (posting_id, profile_version, score_version, model)
+        )""",
+        """INSERT INTO scores_new(
+               posting_id, profile_version, hard_pass, hard_reasons, fit_score,
+               fit_reasons, gaps, angle, model, scored_at, score_version)
+           SELECT posting_id, profile_version, hard_pass, hard_reasons, fit_score,
+                  fit_reasons, gaps, angle, COALESCE(model, 'unknown'), scored_at, 1
+           FROM scores""",
+        "DROP TABLE scores",
+        "ALTER TABLE scores_new RENAME TO scores",
+    ],
+    [
+        # Jev-Scoring (SCORE_VERSION 4): Bewerbungsempfehlung + Datenbasis je Score.
+        "ALTER TABLE scores ADD COLUMN recommendation TEXT",
+        "ALTER TABLE scores ADD COLUMN recommendation_probs TEXT",
+        "ALTER TABLE scores ADD COLUMN recommendation_notes TEXT",
+        "ALTER TABLE scores ADD COLUMN text_quality TEXT",
+    ],
 ]
 
 
@@ -153,3 +202,36 @@ def migrate(conn: sqlite3.Connection) -> None:
                 conn.execute(stmt)
             conn.execute(f"PRAGMA user_version = {target}")
             conn.commit()
+
+
+# Teure, extern rate-limitierte Caches (Nominatim-Geocodes, Transitous-Fahrzeiten,
+# LLM-Standortauflösung), die einen Neuaufbau überleben. Reihenfolge = FK-Reihenfolge.
+GEO_TABLES = ["companies", "anchors", "sites", "travel_times", "location_cache"]
+
+
+def reset(path: Path | None = None, keep_geo: bool = True) -> Path:
+    """DB sichern und frisch anlegen; optional die Geo-/Fahrzeit-Caches übernehmen.
+    Rückgabe: Pfad des Backups."""
+    from datetime import datetime
+
+    p = path or paths.db_path()
+    backup = p.with_name(f"{p.name}.bak-{datetime.now():%Y%m%d-%H%M%S}")
+    if p.exists():
+        old = sqlite3.connect(p)
+        old.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        old.execute(f"VACUUM INTO '{backup}'")
+        old.close()
+        for suffix in ("", "-wal", "-shm"):
+            Path(f"{p}{suffix}").unlink(missing_ok=True)
+    conn = connect(p)
+    if keep_geo and backup.exists():
+        conn.execute("ATTACH DATABASE ? AS old", (str(backup),))
+        for table in GEO_TABLES:
+            columns = [r["name"] for r in conn.execute(f"PRAGMA main.table_info({table})")]
+            old_columns = {r["name"] for r in conn.execute(f"PRAGMA old.table_info({table})")}
+            shared = ", ".join(c for c in columns if c in old_columns)
+            conn.execute(f"INSERT INTO main.{table} ({shared}) SELECT {shared} FROM old.{table}")
+        conn.commit()
+        conn.execute("DETACH DATABASE old")
+    conn.close()
+    return backup

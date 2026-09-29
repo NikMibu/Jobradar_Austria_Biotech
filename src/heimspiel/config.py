@@ -41,7 +41,11 @@ class Profile:
     skills: dict[str, Any]
     hard_no: list[str]
     anchors: list[Anchor]
+    max_years_experience: int = 3
     travel_policy: str = "any_anchor"
+    cv_summary: str = ""
+    phd_interests: list[str] = field(default_factory=list)
+    not_claims: list[str] = field(default_factory=list)
     raw: dict[str, Any] = field(default_factory=dict)
 
 
@@ -91,10 +95,14 @@ def load_profile(path: Path | None = None) -> Profile:
         phd_wanted=bool(d.get("phd_wanted", False)),
         role_families_allowed=d.get("role_families_allowed", []),
         seniority_allowed=d.get("seniority_allowed", ["entry", "junior", "mid"]),
+        max_years_experience=int(d.get("max_years_experience", 3)),
         interests=d.get("interests", []),
         skills=d.get("skills", {}) or {},
         hard_no=d.get("hard_no", []),
         anchors=anchors,
         travel_policy=d.get("travel_policy", "any_anchor"),
+        cv_summary=d.get("cv_summary", "") or "",
+        phd_interests=d.get("phd_interests", []) or [],
+        not_claims=d.get("not_claims", []) or [],
         raw=d,
     )
